@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2> Workers </h2>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <p> {{ form.name.label}} {{form.name(size=32)}} </p>
+    <p> {{ form.contact.label}} {{form.contact(size=32)}} </p>
+    <p> {{ form.hourly_rate.label}} {{form.hourly_rate()}} </p>
+    <p> {{ form.active.label}} {{form.active()}} </p>
+    <p> {{ form.submit() }} </p>
+</form>
+
+<h3>All Workers</h3>
+<table border="1" cellpadding="5">
+    <tr>
+        <th>ID</th><th>Name</th><th>Contact</th><th>Hourly Rate</th><th>Status</th><th>Changes</th>
+    </tr>
+    {% for worker in workers %}
+    <tr>
+        <td>{{worker.id}}</td>
+        <td>{{worker.name}}</td>
+        <td>{{worker.contact}}</td>
+        <td>${{ "{:.2f}".format(worker.hourly_rate) }}</td>
+        <td>
+            {% if worker.active %}
+              Active
+            {% else %}
+              Inactive
+            {% endif %}
+          </td>
+        <td>
+            <a href="{{ url_for('edit_worker', worker_id=worker.id) }}">Edit</a>
+            <a href="{{ url_for('toggle_worker', worker_id=worker.id) }}">
+                {{ "Deactivate" if worker.active else "Activate"}}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Edit Worker</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <p>{{ form.name.label }} {{ form.name(size=32) }}</p>
+    <p>{{ form.contact.label }} {{ form.contact(size=32) }}</p>
+    <p>{{ form.hourly_rate.label }} {{ form.hourly_rate() }}</p>
+    <p>{{ form.active.label }} {{ form.active() }}</p>
+    <p>{{ form.submit(value="Update") }}</p>
+</form>
+{% endblock %}
