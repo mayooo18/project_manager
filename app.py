@@ -61,6 +61,15 @@ def toggle_worker(worker_id):
     flash(f'Worker {"activated" if worker.active else "deactivated"} successfully.')
     return redirect(url_for('workers'))
 
+@app.route('/delete_worker/<int:worker_id>', methods=['POST'])
+def delete_worker(worker_id):
+    worker = Worker.query.get_or_404(worker_id)
+    db.session.delete(worker)
+    db.session.commit()
+    flash('Worker deleted successfully.')
+    return redirect(url_for('workers'))
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

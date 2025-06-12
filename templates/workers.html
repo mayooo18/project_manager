@@ -35,6 +35,8 @@
             <a href="{{ url_for('toggle_worker', worker_id=worker.id) }}">
                 {{ "Deactivate" if worker.active else "Activate"}}
             </a>
+            <form method="POST" action="{{ url_for('delete_worker', worker_id=worker.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this worker?');">
+                <button type="submit">Delete</button>
         </td>
     </tr>
     {% endfor %}
