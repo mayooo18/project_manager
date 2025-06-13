@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Projects</h2>
+
+
+<h3>Add New Project</h3>
+<form method="POST">
+    {{ project_form.hidden_tag() }}
+    <p>{{ project_form.name.label }} {{ project_form.name(size=40) }}</p>
+    <p>{{ project_form.description.label }} {{ project_form.description(cols=40, rows=3) }}</p>
+    <p>{{ project_form.address.label }} {{ project_form.address(size=40) }}</p>
+    <p>{{ project_form.start_date.label }} {{ project_form.start_date() }}</p>
+    <p>{{ project_form.status.label }} {{ project_form.status() }}</p>
+    <p><button type="submit" name="add_project">Add Project</button></p>
+</form>
+
+<form method="GET">
+  <label for="category">Filter by Category:</label>
+  <select name="category" id="category" onchange="this.form.submit()">
+    <option value="">All</option>
+    <option value="proposal" {% if request.args.get('category') == 'proposal' %}selected{% endif %}>Proposal</option>
+    <option value="contract" {% if request.args.get('category') == 'contract' %}selected{% endif %}>Contract</option>
+    <option value="invoice" {% if request.args.get('category') == 'invoice' %}selected{% endif %}>Invoice</option>
+    <option value="lien waivers" {% if request.args.get('category') == 'lien waivers' %}selected{% endif %}>Lien Waivers</option>
+    <option value="misc" {% if request.args.get('category') == 'misc' %}selected{% endif %}>Miscellaneous</option>
+  </select>
+</form>
+
+
+<h3>All Projects</h3>
+<table border="1" cellpadding="5">
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Address</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Start Date</th>
+        <th>Files</th>
+        <th>Upload File</th>
+        <th>Actions</th>
+    </tr>
+    {% for project in projects %}
+    <tr>
+        <td>{{ project.id }}</td>
+        <td>{{ project.name }}</td>
+        <td>{{ project.address }}</td>
+        <td>
+            {{ project.description[:80] }}...
+            <details>
+                <summary>View More</summary>
+                {{ project.description }}
+            </details>
+        </td>
+        <td>{{ project.status }}</td>
+        <td>{{ project.start_date.strftime('%Y-%m-%d') if project.start_date else '' }}</td>
+
+     
+        <td>
+            <ul>
+                {% for file in project.filtered_files %}
+            <form method="POST" action="{{ url_for('delete_file', file_id=file.id) }}" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" onclick="return confirm('Delete this file?')">Delete</button>
+            </form>
+            
+            <a href="{{ url_for('edit_file', file_id=file.id) }}">Edit</a>
+            
+                <li>{{ file.filename }} - {{ file.category }}
+                    {% if file.note %}
+                        <br><small>Note: {{ file.note }}</small>
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        </td>
+
+  
+        <td>
+            <form method="POST" action="{{ url_for('upload_file', project_id=project.id) }}" enctype="multipart/form-data">
+                {{ file_form.csrf_token }}
+                {{ file_form.file() }}<br>
+                {{ file_form.category() }}<br>
+                {{ file_form.note(size=20) }}<br>
+                {{ file_form.submit(value='Upload') }}
+            </form>
+        </td>
+
+    
+        <td>
+            <a href="{{ url_for('edit_project', project_id=project.id) }}">Edit</a><br>
+            <form method="POST" action="{{ url_for('delete_project', project_id=project.id) }}" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" onclick="return confirm('Are you sure?')">Delete</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Edit File: {{ file.filename }}</h2>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <p>{{ form.category.label }} {{ form.category() }}</p>
+    <p>{{ form.note.label }} {{ form.note(size=40) }}</p>
+    <p>{{ form.submit(value='Update') }}</p>
+</form>
+
+<p><a href="{{ url_for('projects') }}">Back to Projects</a></p>
+{% endblock %}
