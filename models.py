@@ -18,6 +18,7 @@ class Project(db.Model):
     start_date = db.Column(db.Date)
     status = db.Column(db.String(50), default= "Active")
 
+    work_logs = db.relationship('WorkLog', back_populates='project', cascade='all, delete-orphan')
     files = db.relationship("ProjectFile", backref="project",cascade="all, delete")
 
 class ProjectFile(db.Model):
@@ -39,3 +40,4 @@ class WorkLog(db.Model):
     note = db.Column(db.Text)
 
     worker = db.relationship('Worker', back_populates='work_logs')
+    project = db.relationship('Project', back_populates='work_logs')
