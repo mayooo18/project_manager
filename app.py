@@ -1,8 +1,8 @@
 from flask import Flask, render_template, redirect, request, url_for, flash
 from flask_wtf.csrf import CSRFProtect
 from extensions import db  
-from forms import WorkerForm, ProjectForm, FileUploadForm
-from models import  Project, ProjectFile
+from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm
+from models import  Project, ProjectFile, WorkLog
 from werkzeug.utils import secure_filename
 import os
 
@@ -87,8 +87,8 @@ def projects():
             filtered_files = [f for f in project.files if f.category == selected_category]
     
     # Attach filtered files without overriding actual .files
-    project.filtered_files = filtered_files
-    filtered_projects.append(project)
+        project.filtered_files = filtered_files
+        filtered_projects.append(project)
 
 
     if project_form.validate_on_submit() and 'add_project' in request.form:
@@ -177,8 +177,90 @@ def edit_file(file_id):
 
     return render_template('edit_file.html', form=form, file=file)
 
+# Route for Work Logs
+@app.route('/work_logs', methods=['GET', 'POST'])
+def work_logs():
+    form = WorkLogForm()
+    filter_form = WorkLogFilterForm()
+
+    # Set dropdown choices
+    workers = Worker.query.all()
+    projects = Project.query.all()
+    form.worker_id.choices = [(w.id, w.name) for w in workers]
+    form.project_id.choices = [(p.id, p.name) for p in projects]
+    filter_form.worker_id.choices = [(-1, 'All')] + [(w.id, w.name) for w in workers]
+    filter_form.project_id.choices = [(-1, 'All')] + [(p.id, p.name) for p in projects]
 
 
+    # Handle new log submission
+    if form.validate_on_submit() and 'submit' in request.form:
+        new_log = WorkLog(
+            worker_id=form.worker_id.data,
+            project_id=form.project_id.data,
+            start_date=form.start_date.data,
+            end_date=form.end_date.data,
+            hours_worked=form.hours_worked.data,
+            note=form.note.data
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        flash('Work log added successfully')
+        return redirect(url_for('work_logs'))
+
+    # Handle filtering
+    logs_query = WorkLog.query
+    if filter_form.validate_on_submit() and 'filter' in request.form:
+        if filter_form.worker_id.data != -1:
+            logs_query = logs_query.filter_by(worker_id=filter_form.worker_id.data)
+        if filter_form.project_id.data != -1:
+            logs_query = logs_query.filter_by(project_id=filter_form.project_id.data)
+        if filter_form.start_date.data:
+            logs_query = logs_query.filter(WorkLog.start_date >= filter_form.start_date.data)
+        if filter_form.end_date.data:
+            logs_query = logs_query.filter(WorkLog.end_date <= filter_form.end_date.data)
+
+    logs = logs_query.order_by(WorkLog.start_date.desc()).all()
+
+    return render_template(
+        'work_logs.html',
+        form=form,
+        filter_form=filter_form,
+        logs=logs
+    )
+
+
+
+
+@app.route('/work_logs/edit/<int:log_id>', methods=['GET', 'POST'])
+def edit_work_log(log_id):
+    log = WorkLog.query.get_or_404(log_id)
+    form = WorkLogForm(obj=log)
+
+    form.worker_id.choices = [(w.id, w.name) for w in Worker.query.all()]
+    form.project_id.choices = [(p.id, p.name) for p in Project.query.all()]
+
+    if form.validate_on_submit():
+        log.worker_id = form.worker_id.data
+        log.project_id = form.project_id.data
+        log.start_date = form.start_date.data
+        log.end_date = form.end_date.data
+        log.hours_worked = form.hours_worked.data
+        log.note = form.note.data
+        db.session.commit()
+        flash('Work log updated successfully')
+        return redirect(url_for('work_logs'))
+
+    return render_template('edit_work_log.html', form=form, log=log)
+
+
+
+@app.route('/work_logs/delete/<int:log_id>', methods=['POST'])
+def delete_work_log(log_id):
+    log = WorkLog.query.get_or_404(log_id)
+    db.session.delete(log)
+    db.session.commit()
+    flash('Work log deleted successfully.')
+    return redirect(url_for('work_logs'))
 
 
 

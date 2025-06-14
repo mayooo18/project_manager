@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, FloatField, BooleanField, SubmitField, TextAreaField, DateField, SelectField, FileField
+from wtforms import StringField, FloatField, BooleanField, SubmitField
+from wtforms import TextAreaField, DateField, SelectField, FileField, DecimalField, TextAreaField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
 class WorkerForm(FlaskForm):
@@ -31,3 +32,18 @@ class FileUploadForm(FlaskForm):
     note = StringField('Note', validators=[Optional(), Length(max=200)])
     submit = SubmitField('Upload File')
 
+class WorkLogForm(FlaskForm):
+    worker_id = SelectField('Worker', coerce=int, validators=[DataRequired()])
+    project_id = SelectField('Project', coerce=int, validators=[DataRequired()])
+    start_date = DateField('From', format='%Y-%m-%d', validators=[DataRequired()])
+    end_date = DateField('To', format='%Y-%m-%d', validators=[DataRequired()])
+    hours_worked = FloatField('Hours Worked', validators=[DataRequired(),])
+    note = TextAreaField('Note (optional)')
+    submit = SubmitField('Log Work')
+
+class WorkLogFilterForm(FlaskForm):
+    worker_id = SelectField('Worker', coerce=int)
+    project_id = SelectField('Project', coerce=int)
+    start_date = DateField('From', format='%Y-%m-%d', validators=[], default=None)
+    end_date = DateField('To', format='%Y-%m-%d', validators=[], default=None)
+    submit = SubmitField('Filter')
