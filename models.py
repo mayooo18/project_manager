@@ -3,10 +3,12 @@ from datetime import datetime
 
 class Worker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100))
     contact = db.Column(db.String(100))
-    hourly_rate = db.Column(db.Float, nullable=False)
+    hourly_rate = db.Column(db.Float)
     active = db.Column(db.Boolean, default=True)
+
+    work_logs = db.relationship('WorkLog', back_populates='worker', cascade='all, delete-orphan')
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -31,10 +33,9 @@ class WorkLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
-    hours_worked = db.Column(db.Float, nullable=False)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    hours_worked = db.Column(db.Float)
     note = db.Column(db.Text)
 
-    worker = db.relationship('Worker', backref='work_logs')
-    project = db.relationship('Project', backref='work_logs')
+    worker = db.relationship('Worker', back_populates='work_logs')

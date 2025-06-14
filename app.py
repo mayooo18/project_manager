@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, request, url_for, flash
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from extensions import db  
 from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm
 from models import  Project, ProjectFile, WorkLog
