@@ -26,7 +26,7 @@ def workers():
     form = WorkerForm()
     if form.validate_on_submit():
         new_worker = Worker(
-            name=form.name.data,
+            name=form.  name.data,
             contact=form.contact.data,
             hourly_rate=form.hourly_rate.data,
             active=form.active.data

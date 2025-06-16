@@ -2,10 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Project Manager</title>
+    <title>{% block title %}Project Manager{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
 </head>
-<body>
-    <h1>Project Manager</h1>
-    {% block content %}{% endblock %}
+<body class="bg-gray-100 text-gray-900 font-sans">
+
+    <nav class="bg-white shadow-md mb-8">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-blue-600">Project Manager</h1>
+            <div class="space-x-4">
+                <a href="{{ url_for('home') }}" class="text-gray-700 hover:text-blue-600">Home</a>
+                <a href="{{ url_for('workers') }}" class="text-gray-700 hover:text-blue-600">Workers</a>
+                <a href="{{ url_for('projects') }}" class="text-gray-700 hover:text-blue-600">Projects</a>
+                <a href="{{ url_for('work_logs') }}" class="text-gray-700 hover:text-blue-600">Logs</a>
+                <a href="{{ url_for('payments') }}" class="text-gray-700 hover:text-blue-600">Payments</a>
+                <a href="{{ url_for('expenses') }}" class="text-gray-700 hover:text-blue-600">Expenses</a>
+                <a href="{{ url_for('income') }}" class="text-gray-700 hover:text-blue-600">Income</a>
+                <a href="{{ url_for('profitability') }}" class="text-gray-700 hover:text-blue-600">Profit</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mb-4 p-3 bg-green-100 border border-green-300 text-green-800 rounded">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
 </body>
 </html>
