@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Project Income</h2>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <p>{{ form.project_id.label }} {{ form.project_id() }}</p>
+    <p>{{ form.amount.label }} {{ form.amount() }}</p>
+    <p>{{ form.source.label }} {{ form.source() }}</p>
+    <p>{{ form.date.label }} {{ form.date() }}</p>
+    <p>{{ form.note.label }} {{ form.note(rows=3) }}</p>
+    <p>{{ form.submit() }}</p>
+</form>
+
+<h3>All Income Entries</h3>
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Project</th>
+        <th>Amount</th>
+        <th>Source</th>
+        <th>Date</th>
+        <th>Note</th>
+    </tr>
+    {% for income in incomes %}
+    <tr>
+        <td>{{ income.project.name }}</td>
+        <td>${{ '%.2f' | format(income.amount) }}</td>
+        <td>{{ income.source }}</td>
+        <td>{{ income.date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ income.note }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

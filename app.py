@@ -1,8 +1,8 @@
 from flask import Flask, render_template, redirect, request, url_for, flash
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from extensions import db  
-from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm
-from models import  Project, ProjectFile, WorkLog
+from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm, PaymentForm, PaymentFilterForm, ExpenseForm, IncomeForm
+from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income
 from werkzeug.utils import secure_filename
 import os
 
@@ -263,8 +263,178 @@ def delete_work_log(log_id):
     return redirect(url_for('work_logs'))
 
 
+@app.route('/payments', methods=['GET', 'POST'])
+def payments():
+    form = PaymentForm()
+    filter_form = PaymentFilterForm()
+    form.worker_id.choices = [(0, '---')] + [(w.id, w.name) for w in Worker.query.all()]
+    form.project_id.choices = [(0, '---')] + [(p.id, p.name) for p in Project.query.all()]
+    
+    if form.validate_on_submit():
+        new_payment = Payment(
+            worker_id=form.worker_id.data if form.worker_id.data != 0 else None,
+            project_id=form.project_id.data if form.project_id.data != 0 else None,
+            amount=form.amount.data,
+            payment_date=form.payment_date.data,
+            method=form.method.data,
+            note=form.note.data
+        )
+        db.session.add(new_payment)
+        db.session.commit()
+        flash('Payment recorded successfully')
+        return redirect(url_for('payments'))
+
+    # You can keep or filter payments here
+    all_payments = Payment.query.order_by(Payment.payment_date.desc()).all()
+    return render_template('payments.html', form=form, payments=all_payments, filter_form=filter_form)
 
 
+@app.route('/payments/edit/<int:payment_id>', methods=['GET', 'POST'])
+def edit_payment(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    form = PaymentForm(obj=payment)
+    form.worker_id.choices = [(w.id, w.name) for w in Worker.query.all()]
+
+    if form.validate_on_submit():
+        payment.worker_id = form.worker_id.data
+        payment.amount = form.amount.data
+        payment.payment_date = form.payment_date.data
+        payment.method = form.method.data
+        payment.note = form.note.data
+        db.session.commit()
+        flash('Payment updated successfully.')
+        return redirect(url_for('payments'))
+
+    return render_template('edit_payment.html', form=form, payment=payment)
+    
+
+@app.route('/payments/delete/<int:payment_id>', methods=['POST'])
+def delete_payment(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    db.session.delete(payment)
+    db.session.commit()
+    flash('Payment deleted successfully.')
+    return redirect(url_for('payments'))
+
+
+@app.route('/expenses', methods=['GET', 'POST'])
+def expenses():
+    form = ExpenseForm()
+    form.project_id.choices = [(p.id, p.name) for p in Project.query.all()]
+
+    if form.validate_on_submit():
+        filename = None
+        if form.receipt.data:
+            receipt_file = form.receipt.data
+            filename = secure_filename(receipt_file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            receipt_file.save(filepath)
+
+        new_expense = Expense(
+            project_id=form.project_id.data,
+            description=form.description.data,
+            amount=form.amount.data,
+            category=form.category.data,
+            date=form.date.data,
+            note=form.note.data,
+            receipt_filename=filename
+        )
+        db.session.add(new_expense)
+        db.session.commit()
+        flash('Expense added successfully')
+        return redirect(url_for('expenses'))
+
+    all_expenses = Expense.query.order_by(Expense.date.desc()).all()
+    return render_template('expenses.html', form=form, expenses=all_expenses)
+
+@app.route('/expenses/delete/<int:expense_id>', methods=['POST'])
+def delete_expense(expense_id):
+    expense = Expense.query.get_or_404(expense_id)
+    if expense.receipt_filename:
+        try:
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], expense.receipt_filename))
+        except FileNotFoundError:
+            pass  # If file doesn't exist, silently ignore
+    db.session.delete(expense)
+    db.session.commit()
+    flash('Expense deleted successfully')
+    return redirect(url_for('expenses'))
+
+
+
+@app.route('/expenses/edit/<int:expense_id>', methods=['GET', 'POST'])
+def edit_expense(expense_id):
+    expense = Expense.query.get_or_404(expense_id)
+    form = ExpenseForm(obj=expense)
+    form.project_id.choices = [(p.id, p.name) for p in Project.query.all()]
+
+    if form.validate_on_submit():
+        # Update fields
+        expense.project_id = form.project_id.data
+        expense.description = form.description.data
+        expense.amount = form.amount.data
+        expense.category = form.category.data
+        expense.date = form.date.data
+        expense.note = form.note.data
+
+        # Handle new receipt upload
+        if form.receipt.data:
+            if expense.receipt_filename:
+                try:
+                    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], expense.receipt_filename))
+                except FileNotFoundError:
+                    pass
+            receipt_file = form.receipt.data
+            filename = secure_filename(receipt_file.filename)
+            receipt_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            expense.receipt_filename = filename
+
+        db.session.commit()
+        flash('Expense updated successfully')
+        return redirect(url_for('expenses'))
+
+    return render_template('edit_expense.html', form=form)
+
+@app.route('/profitability')
+def profitability():
+    projects = Project.query.all()
+    data = []
+
+    for project in projects:
+        total_expenses = sum(exp.amount for exp in project.expenses)
+        total_income = sum(inc.amount for inc in project.incomes)  # 👈 use incomes from relationship
+        profit = total_income - total_expenses
+
+        data.append({
+            'project': project.name,
+            'expenses': total_expenses,
+            'income': total_income,
+            'profit': profit
+        })
+
+    return render_template('profitability.html', data=data)
+
+
+@app.route('/income', methods=['GET', 'POST'])
+def income():
+    form = IncomeForm()
+    form.project_id.choices = [(p.id, p.name) for p in Project.query.all()]
+
+    if form.validate_on_submit():
+        new_income = Income(
+            project_id=form.project_id.data,
+            amount=form.amount.data,
+            source=form.source.data,
+            date=form.date.data,
+            note=form.note.data
+        )
+        db.session.add(new_income)
+        db.session.commit()
+        flash('Income added successfully')
+        return redirect(url_for('income'))
+
+    all_income = Income.query.order_by(Income.date.desc()).all()
+    return render_template('income.html', form=form, incomes=all_income)
 
 
 if __name__ == '__main__':

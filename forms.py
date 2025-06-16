@@ -2,6 +2,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, BooleanField, SubmitField
 from wtforms import TextAreaField, DateField, SelectField, FileField, DecimalField, TextAreaField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
+from wtforms_sqlalchemy.fields import QuerySelectField
+from flask_wtf.file import FileAllowed, FileField
 
 class WorkerForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])
@@ -47,3 +49,51 @@ class WorkLogFilterForm(FlaskForm):
     start_date = DateField('From', format='%Y-%m-%d', validators=[], default=None)
     end_date = DateField('To', format='%Y-%m-%d', validators=[], default=None)
     submit = SubmitField('Filter')
+
+class PaymentForm(FlaskForm):
+    worker_id = SelectField('Worker (optional)', coerce=int, choices=[], validators=[Optional()])
+    project_id = SelectField('Project (optional)', coerce=int, choices=[], validators=[Optional()])
+    amount = FloatField('Amount', validators=[DataRequired()])
+    payment_date = DateField('Payment Date', format='%Y-%m-%d', validators=[DataRequired()])
+    method = StringField('Method', validators=[Optional()])
+    note = TextAreaField('Note', validators=[Optional()])
+    submit = SubmitField('Add Payment')
+
+
+class PaymentFilterForm(FlaskForm):
+    worker_id = SelectField('Worker', coerce=int, validators=[Optional()])
+    start_date = DateField('From', format='%Y-%m-%d', validators=[Optional()])
+    end_date = DateField('To', format='%Y-%m-%d', validators=[Optional()])
+    min_amount = DecimalField('Min Amount', validators=[Optional()])
+    max_amount = DecimalField('Max Amount', validators=[Optional()])
+    submit = SubmitField('Filter')
+
+class ExpenseForm(FlaskForm):
+    project_id = SelectField('Project', coerce=int, validators=[DataRequired()])
+    description = StringField('Description', validators=[Optional()])
+    amount= FloatField('Amount' , validators=[Optional()])
+    category = SelectField('Category', choices=[
+        ('materials', 'Materials'),
+        ('labor', 'Labor'),
+        ('equipment', 'Equipment'),
+        ('misc', 'Miscellaneous')
+    ], validators=[DataRequired()])
+    date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
+    note = TextAreaField('Note')
+    receipt = FileField('Receipt', validators=[FileAllowed(['jpg', 'png', 'pdf'], 'Images and PDFs only')])
+    submit = SubmitField('Add Expense')
+
+class FilterForm(FlaskForm):
+    project_id = SelectField('Project', coerce=int)
+    worker_id = SelectField('Worker', coerce=int)
+    start_date = DateField('From', format='%Y-%m-%d')
+    end_date = DateField('To', format='%Y-%m-%d')
+    submit = SubmitField('Filter')
+    
+class IncomeForm(FlaskForm):
+    project_id = SelectField('Project', coerce=int, validators=[DataRequired()])
+    amount = FloatField('Amount', validators=[DataRequired()])
+    source = StringField('Source', validators=[Optional()])
+    date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
+    note = TextAreaField('Note', validators=[Optional()])
+    submit = SubmitField('Add Income')

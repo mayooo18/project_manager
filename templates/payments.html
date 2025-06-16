@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Record a Payment</h2>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <p>{{ form.worker_id.label }} {{ form.worker_id() }}</p>
+    <p>{{ form.amount.label }} {{ form.amount() }}</p>
+    <p>{{ form.payment_date.label }} {{ form.payment_date() }}</p>
+    <p>{{ form.note.label }} {{ form.note(rows=2) }}</p>
+    <p>{{ form.method.label }} {{ form.method() }}</p>
+    <p><button type="submit" name="submit">Add Payment</button></p>
+</form>
+
+<hr>
+
+<h2>Filter Payments</h2>
+
+<form method="POST">
+    {{ filter_form.hidden_tag() }}
+    <p>{{ filter_form.worker_id.label }} {{ filter_form.worker_id() }}</p>
+    <p>{{ filter_form.start_date.label }} {{ filter_form.start_date() }}</p>
+    <p>{{ filter_form.end_date.label }} {{ filter_form.end_date() }}</p>
+    <p>{{ filter_form.min_amount.label }} {{ filter_form.min_amount() }}</p>
+    <p>{{ filter_form.max_amount.label }} {{ filter_form.max_amount() }}</p>
+    <p><button type="submit" name="filter">Apply Filter</button></p>
+</form>
+
+<hr>
+
+<h2>All Payments</h2>
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Worker</th>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>Method</th>
+        <th>Note</th>
+        <th>Actions</th>
+    </tr>
+    {% for payment in payments %}
+    <tr>
+        <td>{{ payment.worker.name }}</td>
+        <td>${{ "%.2f"|format(payment.amount) }}</td>
+        <td>{{ payment.payment_date.strftime('%Y-%m-%d') }}</td>d>
+        <td>{{ payment.method }}</td>
+        <td>{{ payment.note }}</td>
+        <td>
+            <a href="{{ url_for('edit_payment', payment_id=payment.id) }}">Edit</a>
+            <form method="POST" action="{{ url_for('delete_payment', payment_id=payment.id) }}" style="display:inline;" onsubmit="return confirm('Delete this payment?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+        
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

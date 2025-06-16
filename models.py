@@ -7,6 +7,9 @@ class Worker(db.Model):
     contact = db.Column(db.String(100))
     hourly_rate = db.Column(db.Float)
     active = db.Column(db.Boolean, default=True)
+    
+    payments = db.relationship("Payment", back_populates="worker", cascade="all, delete-orphan")
+
 
     work_logs = db.relationship('WorkLog', back_populates='worker', cascade='all, delete-orphan')
 
@@ -41,3 +44,39 @@ class WorkLog(db.Model):
 
     worker = db.relationship('Worker', back_populates='work_logs')
     project = db.relationship('Project', back_populates='work_logs')
+
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'))
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'))  # 👈 ADD THIS LINE
+    amount = db.Column(db.Float, nullable=False)
+    payment_date = db.Column(db.Date, nullable=False)
+    method = db.Column(db.String(50))
+    note = db.Column(db.Text)
+
+    worker = db.relationship('Worker', back_populates='payments')
+    project = db.relationship('Project', backref='payments')  # 👈 OPTIONAL
+
+class Expense(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    description = db.Column(db.String(200))
+    amount = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
+    note = db.Column(db.String(200))
+    receipt_filename = db.Column(db.String(200))
+    receipt_filepath = db.Column(db.String(300))
+
+    project = db.relationship('Project', backref='expenses')
+    
+    
+class Income(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    source = db.Column(db.String(100))
+    date = db.Column(db.DateTime, nullable=False)
+    note = db.Column(db.Text)
+
+    project = db.relationship('Project', backref='incomes')

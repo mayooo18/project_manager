@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Edit Payment</h2>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <p>{{ form.worker_id.label }} {{ form.worker_id() }}</p>
+    <p>{{ form.amount.label }} {{ form.amount() }}</p>
+    <p>{{ form.payment_date.label }} {{ form.payment_date() }}</p>
+    <p>{{ form.method.label }} {{ form.method() }}</p>
+    <p>{{ form.note.label }} {{ form.note(rows=2) }}</p>
+    <p><button type="submit">Update Payment</button></p>
+</form>
+
+<a href="{{ url_for('payments') }}">← Back to Payments</a>
+{% endblock %}

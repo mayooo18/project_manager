@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Project Profitability</h2>
+
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Project</th>
+        <th>Total Expenses</th>
+        <th>Total Income</th>
+        <th>Profit</th>
+    </tr>
+    {% for row in data %}
+    <tr>
+        <td>{{ row.project }}</td>
+        <td>${{ "%.2f"|format(row.expenses) }}</td>
+        <td>${{ "%.2f"|format(row.income) }}</td>
+        <td style="color: {% if row.profit < 0 %}red{% else %}green{% endif %}">
+            ${{ "%.2f"|format(row.profit) }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

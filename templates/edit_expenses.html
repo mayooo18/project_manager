@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Edit Expense</h2>
+<form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <p>{{ form.project_id.label }} {{ form.project_id() }}</p>
+    <p>{{ form.description.label }} {{ form.description() }}</p>
+    <p>{{ form.amount.label }} {{ form.amount() }}</p>
+    <p>{{ form.category.label }} {{ form.category() }}</p>
+    <p>{{ form.date.label }} {{ form.date() }}</p>
+    <p>{{ form.note.label }} {{ form.note(rows=2) }}</p>
+    <p>{{ form.receipt.label }} {{ form.receipt() }}</p>
+    <p><button type="submit">Update Expense</button></p>
+</form>
+{% endblock %}
