@@ -1,23 +1,41 @@
 {% extends 'base.html' %}
-{% block content %}
-<h2>Project Profitability</h2>
 
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Project</th>
-        <th>Total Expenses</th>
-        <th>Total Income</th>
-        <th>Profit</th>
-    </tr>
-    {% for row in data %}
-    <tr>
-        <td>{{ row.project }}</td>
-        <td>${{ "%.2f"|format(row.expenses) }}</td>
-        <td>${{ "%.2f"|format(row.income) }}</td>
-        <td style="color: {% if row.profit < 0 %}red{% else %}green{% endif %}">
-            ${{ "%.2f"|format(row.profit) }}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+{% block content %}
+<div class="max-w-5xl mx-auto py-8 px-4">
+  <header class="mb-8">
+    <h1 class="text-3xl font-bold">Profitability</h1>
+    <p class="text-gray-500 text-sm">Analyze your profitability per project</p>
+  </header>
+
+  <section class="mt-6">
+    <div class="overflow-x-auto bg-white shadow rounded-lg">
+      <table class="min-w-full table-auto">
+        <thead class="bg-gray-100 text-left text-sm font-medium">
+          <tr>
+            <th class="px-4 py-2">Project</th>
+            <th class="px-4 py-2">Total Expenses</th>
+            <th class="px-4 py-2">Total Income</th>
+            <th class="px-4 py-2">Profit</th>
+          </tr>
+        </thead>
+        <tbody class="text-sm">
+          {% for item in data %}
+            <tr class="border-t">
+              <td class="px-4 py-2 text-gray-800">{{ item.project }}</td>
+              <td class="px-4 py-2 text-gray-600">${{ '%.2f' | format(item.expenses) }}</td>
+              <td class="px-4 py-2 text-gray-600">${{ '%.2f' | format(item.income) }}</td>
+              <td class="px-4 py-2 {% if item.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                ${{ '%.2f' | format(item.profit) }}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" class="px-4 py-2 text-center text-gray-500">No data available.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
 {% endblock %}

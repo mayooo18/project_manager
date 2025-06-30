@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Income</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800 font-sans">
+  <div class="max-w-2xl mx-auto py-8 px-4">
+    <h1 class="text-2xl font-bold mb-6">Edit Income</h1>
+    <form method="POST" class="bg-white shadow rounded-lg p-6 space-y-6">
+      {{ form.hidden_tag() }}
+
+      <div>
+        <label class="block text-sm font-medium">{{ form.project_id.label }}</label>
+        {{ form.project_id(class="mt-1 block w-full rounded border-gray-300") }}
+        {% for error in form.project_id.errors %}
+          <span class="text-red-500 text-xs">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">{{ form.amount.label }}</label>
+        {{ form.amount(class="mt-1 block w-full rounded border-gray-300") }}
+        {% for error in form.amount.errors %}
+          <span class="text-red-500 text-xs">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">{{ form.source.label }}</label>
+        {{ form.source(class="mt-1 block w-full rounded border-gray-300") }}
+        {% for error in form.source.errors %}
+          <span class="text-red-500 text-xs">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">{{ form.date.label }}</label>
+        {{ form.date(class="mt-1 block w-full rounded border-gray-300") }}
+        {% for error in form.date.errors %}
+          <span class="text-red-500 text-xs">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">{{ form.note.label }}</label>
+        {{ form.note(class="mt-1 block w-full rounded border-gray-300") }}
+        {% for error in form.note.errors %}
+          <span class="text-red-500 text-xs">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="flex space-x-4">
+        {{ form.submit(class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded hover:bg-indigo-700") }}
+        <a href="{{ url_for('income') }}" class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded hover:bg-gray-400">Cancel</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

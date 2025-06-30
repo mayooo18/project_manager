@@ -27,6 +27,8 @@
                   <p class="text-neutral-500 text-sm font-normal leading-normal">Project Manager</p>
                 </div>
                 <div class="flex flex-col gap-2">
+
+
                     <a href="{{ url_for('workers') }}" class="no-underline">
                         <div class="flex items-center gap-3 px-3 py-2 hover:bg-neutral-100 rounded-md transition-colors">
                           <div class="text-[#141414]" data-icon="Users" data-size="24px" data-weight="regular">
@@ -39,7 +41,10 @@
                     <p class="text-[#141414] text-sm font-medium leading-normal">Workers</p>
                   </div>
                 </a>
-                  <div class="flex items-center gap-3 px-3 py-2 rounded-xl bg-[#ededed]">
+
+
+                <a href="{{ url_for('projects') }}" class="no-underline">
+                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-neutral-100 rounded-md transition-colors">
                     <div class="text-[#141414]" data-icon="Folder" data-size="24px" data-weight="fill">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
                         <path
@@ -49,27 +54,41 @@
                     </div>
                     <p class="text-[#141414] text-sm font-medium leading-normal">Projects</p>
                   </div>
-                  <div class="flex items-center gap-3 px-3 py-2">
+                </a>
+
+
+                <a href="{{ url_for('work_logs') }}" class="no-underline">
+                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-neutral-100 rounded-md transition-colors">
                     <div class="text-[#141414]" data-icon="Clock" data-size="24px" data-weight="regular">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
                         <path
                           d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"
-                        ></path>
+                        />
                       </svg>
                     </div>
                     <p class="text-[#141414] text-sm font-medium leading-normal">Work Log</p>
                   </div>
-                  <div class="flex items-center gap-3 px-3 py-2">
+                </a>
+                
+
+
+                <a href="{{ url_for('payments') }}" class="no-underline">
+                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-neutral-100 rounded-md transition-colors">
                     <div class="text-[#141414]" data-icon="CurrencyDollar" data-size="24px" data-weight="regular">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
                         <path
                           d="M152,120H136V56h8a32,32,0,0,1,32,32,8,8,0,0,0,16,0,48.05,48.05,0,0,0-48-48h-8V24a8,8,0,0,0-16,0V40h-8a48,48,0,0,0,0,96h8v64H104a32,32,0,0,1-32-32,8,8,0,0,0-16,0,48.05,48.05,0,0,0,48,48h16v16a8,8,0,0,0,16,0V216h16a48,48,0,0,0,0-96Zm-40,0a32,32,0,0,1,0-64h8v64Zm40,80H136V136h16a32,32,0,0,1,0,64Z"
-                        ></path>
+                        />
                       </svg>
                     </div>
                     <p class="text-[#141414] text-sm font-medium leading-normal">Payment</p>
                   </div>
-                  <div class="flex items-center gap-3 px-3 py-2">
+                </a>
+                
+
+
+                <a href="{{ url_for('expenses') }}" class="no-underline">
+                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-neutral-100 rounded-md transition-colors">
                     <div class="text-[#141414]" data-icon="Receipt" data-size="24px" data-weight="regular">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
                         <path
@@ -79,7 +98,12 @@
                     </div>
                     <p class="text-[#141414] text-sm font-medium leading-normal">Expenses</p>
                   </div>
-                  <div class="flex items-center gap-3 px-3 py-2">
+                </a>
+                
+
+
+                <a href="{{ url_for('income') }}" class="no-underline">
+                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-neutral-100 rounded-md transition-colors">
                     <div class="text-[#141414]" data-icon="CurrencyDollar" data-size="24px" data-weight="regular">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
                         <path
@@ -89,30 +113,45 @@
                     </div>
                     <p class="text-[#141414] text-sm font-medium leading-normal">Income</p>
                   </div>
-                  <div class="flex items-center gap-3 px-3 py-2">
-                    <div class="text-[#141414]" data-icon="ChartBar" data-size="24px" data-weight="regular">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
-                        <path
-                          d="M224,200h-8V40a8,8,0,0,0-8-8H152a8,8,0,0,0-8,8V80H96a8,8,0,0,0-8,8v40H48a8,8,0,0,0-8,8v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16ZM160,48h40V200H160ZM104,96h40V200H104ZM56,144H88v56H56Z"
-                        ></path>
-                      </svg>
+
+
+
+                  <a href="{{ url_for('profitability') }}" class="no-underline">
+                    <div class="flex items-center gap-3 px-3 py-2 hover:bg-neutral-100 rounded-md transition-colors">
+                      <div class="text-[#141414]" data-icon="ChartBar" data-size="24px" data-weight="regular">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                          <path
+                            d="M224,200h-8V40a8,8,0,0,0-8-8H152a8,8,0,0,0-8,8V80H96a8,8,0,0,0-8,8v40H48a8,8,0,0,0-8,8v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16ZM160,48h40V200H160ZM104,96h40V200H104ZM56,144H88v56H56Z"
+                          ></path>
+                        </svg>
+                      </div>
+                      <p class="text-[#141414] text-sm font-medium leading-normal">Profitability</p>
                     </div>
-                    <p class="text-[#141414] text-sm font-medium leading-normal">Profitability</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="mt-"></div>
+                  </a>
+                  
+
+        
             <h2 class="text-[#141414] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Quick Links</h2>
-            <div class="flex flex-wrap gap-4 p-4">
-              <div class="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#dbdbdb]">
-                <p class="text-[#141414] text-base font-medium leading-normal">Workers</p>
-                <p class="text-[#141414] tracking-light text-2xl font-bold leading-tight">12</p>
-              </div>
-              <div class="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#dbdbdb]">
-                <p class="text-[#141414] text-base font-medium leading-normal">Projects</p>
-                <p class="text-[#141414] tracking-light text-2xl font-bold leading-tight">5</p>
-              </div>
+<div class="flex flex-wrap gap-4 p-4">
+
+  <!-- Workers -->
+  <a href="{{ url_for('workers') }}" class="no-underline flex-1 min-w-[158px]">
+    <div class="flex flex-col gap-2 rounded-xl p-6 border border-[#dbdbdb] hover:bg-neutral-100 transition-colors">
+      <p class="text-[#141414] text-base font-medium leading-normal">Workers</p>
+      <p class="text-[#141414] tracking-light text-2xl font-bold leading-tight">{{ worker_count }}</p>
+    </div>
+  </a>
+
+  <!-- Projects -->
+  <a href="{{ url_for('projects') }}" class="no-underline flex-1 min-w-[158px]">
+    <div class="flex flex-col gap-2 rounded-xl p-6 border border-[#dbdbdb] hover:bg-neutral-100 transition-colors">
+      <p class="text-[#141414] text-base font-medium leading-normal">Projects</p>
+      <p class="text-[#141414] tracking-light text-2xl font-bold leading-tight">{{ project_count }}</p>
+    </div>
+  </a>
+
+</div>
+
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, BooleanField, SubmitField
-from wtforms import TextAreaField, DateField, SelectField, FileField, DecimalField, TextAreaField
+from wtforms import TextAreaField, DateField, SelectField, FileField, DecimalField, TextAreaField, PasswordField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 from wtforms_sqlalchemy.fields import QuerySelectField
 from flask_wtf.file import FileAllowed, FileField
@@ -97,3 +97,10 @@ class IncomeForm(FlaskForm):
     date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
     note = TextAreaField('Note', validators=[Optional()])
     submit = SubmitField('Add Income')
+
+    
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')

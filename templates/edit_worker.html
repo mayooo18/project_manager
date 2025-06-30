@@ -1,13 +1,49 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Edit Worker</h2>
-<form method="POST">
-    {{ form.hidden_tag() }}
-    <p>{{ form.name.label }} {{ form.name(size=32) }}</p>
-    <p>{{ form.contact.label }} {{ form.contact(size=32) }}</p>
-    <p>{{ form.hourly_rate.label }} {{ form.hourly_rate() }}</p>
-    <p>{{ form.active.label }} {{ form.active() }}</p>
-    <p>{{ form.submit(value="Update") }}</p>
-</form>
+
+<!-- templates/edit_worker.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+</head>
+<body class="bg-white font-sans text-[#141414]">
+  <div class="max-w-2xl mx-auto py-10 px-6">
+    <h1 class="text-3xl font-bold mb-6">Edit Worker</h1>
+
+    <form method="POST">
+      {{ form.hidden_tag() }}
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Name</label>
+        {{ form.name(class="w-full rounded-xl border border-gray-300 p-3") }}
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Contact</label>
+        {{ form.contact(class="w-full rounded-xl border border-gray-300 p-3") }}
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Hourly Rate</label>
+        {{ form.hourly_rate(class="w-full rounded-xl border border-gray-300 p-3") }}
+      </div>
+
+      <div class="mb-4 flex items-center gap-2">
+        {{ form.active(class="rounded border-gray-300") }}
+        <label class="text-sm">Active</label>
+      </div>
+
+      <div class="flex gap-4 mt-6">
+        <button type="submit" class="bg-black text-white rounded-full px-6 py-2 font-bold">Save</button>
+        <a href="{{ url_for('workers') }}" class="text-[#757575] hover:underline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
+
 {% endblock %}
