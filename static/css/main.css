@@ -1,402 +1,584 @@
-/* Custom CSS fixes for Project Manager - Add this to your main.css */
+/* Add this to your static/css/main.css - UNIFIED STYLING FOR ALL TEMPLATES */
 
-/* Fix broken HTML structure and inconsistent styling */
+/* Import Tailwind CSS */
+@import url('https://cdn.tailwindcss.com');
+
+/* Base styling overrides */
 body {
     font-family: 'Inter', 'Roboto', sans-serif !important;
     line-height: 1.6;
+    background-color: #f3f4f6 !important;
 }
 
-/* Fix form styling consistency across all pages */
-.form-input, 
+/* Fix templates that extend base.html but have their own DOCTYPE */
+.extends-base {
+    /* Remove duplicate styling when extending base */
+}
+
+/* Override problematic inline styles */
+[style*="font-family"] {
+    font-family: 'Inter', 'Roboto', sans-serif !important;
+}
+
+/* Universal form styling */
 input[type="text"], 
 input[type="email"], 
 input[type="password"], 
 input[type="number"], 
 input[type="date"], 
+input[type="file"],
 select, 
-textarea {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-    background-color: white;
+textarea,
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100% !important;
+    padding: 0.75rem 1rem !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.875rem !important;
+    transition: all 0.2s ease !important;
+    background-color: white !important;
+    color: #374151 !important;
 }
 
-.form-input:focus, 
-input[type="text"]:focus, 
-input[type="email"]:focus, 
-input[type="password"]:focus, 
-input[type="number"]:focus, 
-input[type="date"]:focus, 
+input:focus, 
 select:focus, 
-textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+textarea:focus,
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
 }
 
-/* Fix button styling consistency */
-button[type="submit"], 
-.btn-primary {
-    background-color: #3b82f6;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+/* Universal button styling */
+button[type="submit"],
+.btn,
+.btn-primary,
+input[type="submit"] {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 0.5rem !important;
+    border: none !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
 }
 
-button[type="submit"]:hover, 
+button[type="submit"]:hover,
+.btn:hover,
 .btn-primary:hover {
-    background-color: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    background-color: #2563eb !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
 }
 
-/* Fix table styling across all pages */
+/* Secondary buttons */
+.btn-secondary,
+button[type="reset"] {
+    background-color: #e5e7eb !important;
+    color: #374151 !important;
+}
+
+.btn-secondary:hover,
+button[type="reset"]:hover {
+    background-color: #d1d5db !important;
+}
+
+/* Table styling - universal */
 table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: white;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background-color: white !important;
+    border-radius: 0.5rem !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    margin-bottom: 1rem !important;
 }
 
 table th {
-    background-color: #f9fafb;
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 600;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: #6b7280;
-    border-bottom: 1px solid #e5e7eb;
+    background-color: #f9fafb !important;
+    padding: 0.75rem !important;
+    text-align: left !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    color: #6b7280 !important;
+    border-bottom: 1px solid #e5e7eb !important;
 }
 
 table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid #f3f4f6;
-    font-size: 0.875rem;
-    color: #374151;
+    padding: 0.75rem !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    font-size: 0.875rem !important;
+    color: #374151 !important;
+    vertical-align: middle !important;
 }
 
 table tr:hover {
-    background-color: #f9fafb;
+    background-color: #f9fafb !important;
 }
 
-/* Fix navigation styling */
+/* Fix container and layout issues */
+.container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 1.5rem !important;
+}
+
+.layout-content-container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 1.5rem !important;
+}
+
+/* Card styling - universal */
+.card,
+.bg-white,
+.shadow {
+    background-color: white !important;
+    border-radius: 0.75rem !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Navigation fixes */
+nav {
+    background-color: white !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    margin-bottom: 2rem !important;
+}
+
 nav a {
-    color: #374151;
-    text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    transition: all 0.2s ease;
-    font-weight: 500;
+    color: #374151 !important;
+    text-decoration: none !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.375rem !important;
+    transition: all 0.2s ease !important;
+    font-weight: 500 !important;
 }
 
 nav a:hover {
-    background-color: #f3f4f6;
-    color: #1f2937;
+    background-color: #f3f4f6 !important;
+    color: #1f2937 !important;
 }
 
-/* Fix card/container styling */
-.card, 
-.bg-white {
-    background-color: white;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-    margin-bottom: 1.5rem;
-}
-
-/* Fix flash message styling */
-.flash-message, 
-.alert {
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
-    border: 1px solid;
-}
-
-.flash-message.success, 
+/* Flash message styling */
+.flash-message,
+.alert,
 .bg-green-100 {
-    background-color: #dcfce7;
-    border-color: #86efac;
-    color: #166534;
+    padding: 0.75rem 1rem !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 1rem !important;
+    border: 1px solid !important;
 }
 
-.flash-message.error, 
-.bg-red-100 {
-    background-color: #fef2f2;
-    border-color: #fca5a5;
-    color: #dc2626;
+.flash-message,
+.bg-green-100 {
+    background-color: #dcfce7 !important;
+    border-color: #86efac !important;
+    color: #166534 !important;
 }
 
-/* Fix form validation error styling */
-.form-error, 
-.text-red-500 {
-    color: #dc2626;
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
+/* Status badges */
+.badge,
+.status-badge,
+.rounded-full {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 9999px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    text-transform: capitalize !important;
 }
 
-/* Fix status badge styling */
-.status-badge, 
-.badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: capitalize;
-}
+.bg-green-100 { background-color: #dcfce7 !important; color: #166534 !important; }
+.bg-blue-100 { background-color: #dbeafe !important; color: #1e40af !important; }
+.bg-yellow-100 { background-color: #fef3c7 !important; color: #d97706 !important; }
+.bg-red-100 { background-color: #fef2f2 !important; color: #dc2626 !important; }
+.bg-gray-100 { background-color: #f3f4f6 !important; color: #374151 !important; }
 
-.status-active { background-color: #dcfce7; color: #166534; }
-.status-completed { background-color: #dbeafe; color: #1e40af; }
-.status-hold { background-color: #fef3c7; color: #d97706; }
-
-/* Fix responsive layout issues */
-@media (max-width: 768px) {
-    .container {
-        padding: 1rem;
-    }
-    
-    table {
-        font-size: 0.75rem;
-    }
-    
-    .grid-cols-2 {
-        grid-template-columns: 1fr;
-    }
-    
-    .hidden-mobile {
-        display: none;
-    }
-}
-
-/* Fix specific page issues */
-
-/* Login page fixes */
-.login-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.login-form {
-    background: white;
-    padding: 2rem;
-    border-radius: 1rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-}
-
-/* Workers page fixes */
-.workers-table .toggle-btn {
-    padding: 0.375rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.workers-table .toggle-btn.active {
-    background-color: #dcfce7;
-    color: #166534;
-}
-
-.workers-table .toggle-btn.inactive {
-    background-color: #fef2f2;
-    color: #dc2626;
-}
-
-/* Projects page fixes */
-.project-files {
-    max-width: 200px;
-    overflow: hidden;
-}
-
-.project-files a {
-    color: #3b82f6;
-    text-decoration: none;
-    font-size: 0.875rem;
-}
-
-.project-files a:hover {
-    text-decoration: underline;
-}
-
-/* Work logs page fixes - fix the broken HTML structure */
-.work-logs-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1.5rem;
-}
-
-/* Payments page fixes */
-.payment-amount {
-    font-weight: 600;
-    color: #059669;
-}
-
-.payment-method {
-    background-color: #f3f4f6;
-    color: #374151;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-}
-
-/* Expenses page fixes */
-.expense-amount {
-    font-weight: 600;
-    color: #dc2626;
-}
-
-.expense-category {
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.expense-category.materials { background-color: #dbeafe; color: #1e40af; }
-.expense-category.labor { background-color: #dcfce7; color: #166534; }
-.expense-category.equipment { background-color: #fef3c7; color: #d97706; }
-.expense-category.misc { background-color: #f3f4f6; color: #374151; }
-
-/* Fix file upload styling */
-input[type="file"] {
-    padding: 0.5rem;
-    border: 1px dashed #d1d5db;
-    border-radius: 0.5rem;
-    background-color: #f9fafb;
-}
-
-input[type="file"]:focus {
-    border-color: #3b82f6;
-    background-color: white;
-}
-
-/* Fix checkbox styling */
-input[type="checkbox"] {
-    width: auto;
-    margin-right: 0.5rem;
-    accent-color: #3b82f6;
-}
-
-/* Action buttons styling */
+/* Action buttons */
 .action-buttons {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
+    display: flex !important;
+    gap: 0.5rem !important;
+    align-items: center !important;
 }
 
 .action-btn {
-    padding: 0.375rem;
-    border-radius: 0.375rem;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    padding: 0.375rem !important;
+    border-radius: 0.375rem !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    background: transparent !important;
 }
 
 .action-btn.edit {
-    color: #3b82f6;
-    background-color: transparent;
+    color: #3b82f6 !important;
 }
 
 .action-btn.edit:hover {
-    background-color: #eff6ff;
+    background-color: #eff6ff !important;
 }
 
 .action-btn.delete {
-    color: #dc2626;
-    background-color: transparent;
+    color: #dc2626 !important;
 }
 
 .action-btn.delete:hover {
-    background-color: #fef2f2;
+    background-color: #fef2f2 !important;
 }
 
-/* Fix truncation and overflow issues */
-.truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+/* Material Icons */
+.material-icons {
+    vertical-align: middle !important;
+    font-size: 1.25rem !important;
 }
 
-.max-w-xs { max-width: 20rem; }
-.max-w-sm { max-width: 24rem; }
-.max-w-md { max-width: 28rem; }
-
-/* Fix spacing issues */
-.space-y-4 > * + * { margin-top: 1rem; }
-.space-y-6 > * + * { margin-top: 1.5rem; }
-.space-x-4 > * + * { margin-left: 1rem; }
-
-/* Fix flexbox alignment issues */
-.flex-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.flex-between {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-/* Add smooth transitions everywhere */
-* {
-    transition: all 0.2s ease;
-}
-
-/* Fix any remaining layout issues */
-.container-fix {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-}
-
-/* Override any problematic existing styles */
-.layout-content-container {
-    max-width: none !important;
+/* Fix file upload styling */
+input[type="file"] {
+    padding: 0.5rem !important;
+    border: 1px dashed #d1d5db !important;
+    border-radius: 0.5rem !important;
+    background-color: #f9fafb !important;
     width: 100% !important;
 }
 
-/* Fix material icons alignment */
-.material-icons {
-    vertical-align: middle;
-    font-size: 1.25rem;
+input[type="file"]:focus {
+    border-color: #3b82f6 !important;
+    background-color: white !important;
 }
 
-/* Additional mobile responsiveness */
-@media (max-width: 640px) {
-    .responsive-hide {
-        display: none;
+/* Checkbox styling */
+input[type="checkbox"] {
+    width: auto !important;
+    margin-right: 0.5rem !important;
+    accent-color: #3b82f6 !important;
+}
+
+/* Fix specific template issues */
+
+/* Home.html fixes */
+.home-content {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+}
+
+.home-content .flex-col {
+    gap: 1.5rem !important;
+}
+
+/* Workers.html fixes */
+.workers-container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 1.5rem !important;
+}
+
+/* Projects.html fixes */
+.projects-container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 1.5rem !important;
+}
+
+/* Work logs fixes */
+.work-logs-container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 1.5rem !important;
+}
+
+/* Fix duplicate DOCTYPE issues */
+.extends-base-template {
+    /* Override any duplicate styles from templates that extend base but have their own head */
+}
+
+/* Responsive fixes */
+@media (max-width: 768px) {
+    .container,
+    .layout-content-container {
+        padding: 1rem !important;
     }
     
-    .mobile-stack {
-        display: block !important;
+    table {
+        font-size: 0.75rem !important;
     }
     
-    .mobile-full {
-        width: 100% !important;
+    .grid-cols-2 {
+        grid-template-columns: 1fr !important;
     }
+    
+    .hidden-mobile {
+        display: none !important;
+    }
+    
+    /* Stack form elements on mobile */
+    .md\\:grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .lg\\:grid-cols-3,
+    .lg\\:grid-cols-4,
+    .lg\\:grid-cols-5 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Fix spacing and layout */
+.space-y-4 > * + * { margin-top: 1rem !important; }
+.space-y-6 > * + * { margin-top: 1.5rem !important; }
+.space-x-4 > * + * { margin-left: 1rem !important; }
+
+/* Grid fixes */
+.grid {
+    display: grid !important;
+}
+
+.grid-cols-1 { grid-template-columns: repeat(1, 1fr) !important; }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
+.gap-4 { gap: 1rem !important; }
+.gap-6 { gap: 1.5rem !important; }
+
+/* Flexbox fixes */
+.flex {
+    display: flex !important;
+}
+
+.flex-col {
+    flex-direction: column !important;
+}
+
+.items-center {
+    align-items: center !important;
+}
+
+.justify-between {
+    justify-content: space-between !important;
+}
+
+.justify-center {
+    justify-content: center !important;
+}
+
+/* Text and color fixes */
+.text-center {
+    text-align: center !important;
+}
+
+.text-left {
+    text-align: left !important;
+}
+
+.font-bold {
+    font-weight: 700 !important;
+}
+
+.font-semibold {
+    font-weight: 600 !important;
+}
+
+.font-medium {
+    font-weight: 500 !important;
+}
+
+/* Override any conflicting Tailwind classes */
+.w-full {
+    width: 100% !important;
+}
+
+.max-w-md {
+    max-width: 28rem !important;
+}
+
+.max-w-lg {
+    max-width: 32rem !important;
+}
+
+.max-w-xl {
+    max-width: 36rem !important;
+}
+
+.max-w-2xl {
+    max-width: 42rem !important;
+}
+
+.max-w-4xl {
+    max-width: 56rem !important;
+}
+
+.max-w-5xl {
+    max-width: 64rem !important;
+}
+
+.max-w-7xl {
+    max-width: 80rem !important;
+}
+
+/* Fix any remaining layout issues */
+.mx-auto {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.p-4 { padding: 1rem !important; }
+.p-6 { padding: 1.5rem !important; }
+.p-8 { padding: 2rem !important; }
+.px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+.py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+.py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+.py-6 { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
+
+.mb-4 { margin-bottom: 1rem !important; }
+.mb-6 { margin-bottom: 1.5rem !important; }
+.mb-8 { margin-bottom: 2rem !important; }
+.mt-6 { margin-top: 1.5rem !important; }
+
+/* Ensure all text is readable */
+.text-gray-900,
+.text-gray-800,
+.text-gray-700 {
+    color: #1f2937 !important;
+}
+
+.text-gray-600,
+.text-gray-500 {
+    color: #6b7280 !important;
+}
+
+.text-blue-600 {
+    color: #2563eb !important;
+}
+
+.text-red-600 {
+    color: #dc2626 !important;
+}
+
+.text-green-600 {
+    color: #059669 !important;
+}
+
+/* Fix any border radius issues */
+.rounded {
+    border-radius: 0.25rem !important;
+}
+
+.rounded-lg {
+    border-radius: 0.5rem !important;
+}
+
+.rounded-xl {
+    border-radius: 0.75rem !important;
+}
+
+/* Shadow fixes */
+.shadow {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+}
+
+.shadow-md {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Fix any transition issues */
+.transition-all {
+    transition: all 0.2s ease !important;
+}
+
+.transition-colors {
+    transition: color 0.2s ease, background-color 0.2s ease !important;
+}
+
+/* Ensure consistency across all templates */
+* {
+    box-sizing: border-box !important;
+}
+
+/* Fix overflow issues */
+.overflow-hidden {
+    overflow: hidden !important;
+}
+
+.overflow-x-auto {
+    overflow-x: auto !important;
+}
+
+/* Fix positioning */
+.relative {
+    position: relative !important;
+}
+
+.absolute {
+    position: absolute !important;
+}
+
+/* Fix display properties */
+.block {
+    display: block !important;
+}
+
+.inline {
+    display: inline !important;
+}
+
+.inline-block {
+    display: inline-block !important;
+}
+
+.inline-flex {
+    display: inline-flex !important;
+}
+
+/* Final overrides for any remaining issues */
+.layout-content-container * {
+    font-family: 'Inter', 'Roboto', sans-serif !important;
+}
+
+/* Make sure all forms look consistent */
+form {
+    background-color: white !important;
+    padding: 1.5rem !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    margin-bottom: 1.5rem !important;
+}
+
+form label {
+    display: block !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Fix any remaining header issues */
+h1, h2, h3, h4, h5, h6 {
+    color: #1f2937 !important;
+    font-weight: 700 !important;
+    margin-bottom: 1rem !important;
+}
+
+h1 {
+    font-size: 2rem !important;
+}
+
+h2 {
+    font-size: 1.5rem !important;
+}
+
+h3 {
+    font-size: 1.25rem !important;
 }
