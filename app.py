@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, request, url_for, flash
+from flask import Flask, render_template, redirect, request, url_for, flash, session
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from extensions import db  
 from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm, PaymentForm, PaymentFilterForm, ExpenseForm, IncomeForm, LoginForm
@@ -39,10 +39,12 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
             login_user(user)
+            session.permanent = True 
             flash('Logged in successfully.')
             return redirect(url_for('home'))
         else:
             flash('Invalid username or password.')
+            return redirect(url_for('login'))
             
     return render_template('login.html', form=form)
 
