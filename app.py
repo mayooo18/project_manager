@@ -6,7 +6,10 @@ from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Inc
 from werkzeug.utils import secure_filename
 import os
 from flask_login import LoginManager, login_required, current_user, login_user, logout_user
-
+import logging 
+from datetime import timedelta, datetime
+from sqlalchemy import text
+from sqlalchemy.exc import OperationalError, DisconnectionError
 
 
 
@@ -556,6 +559,143 @@ def delete_income(income_id):
     flash('Income deleted successfully.')
     return redirect(url_for('income'))
 
+#Monitoring route
+logging.basicConfig(level=logging.INFO)
+db_logger = logging.getLogger('database')
+
+class DatabaseHealthMonitor:
+    def __init__(self, db):
+        self.db = db
+        self.last_health_check = None
+        self.consecutive_failures = 0
+        self.max_failures = 3
+        
+    def check_connection_health(self):
+        """Proactive health check to catch issues early"""
+        try:
+            with self.db.engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+                self.consecutive_failures = 0
+                self.last_health_check = datetime.utcnow()
+                return True
+        except (OperationalError, DisconnectionError) as e:
+            self.consecutive_failures += 1
+            db_logger.warning(f"Database health check failed: {e}")
+            return False
+    
+    def should_check_health(self):
+        """Check if we need to run a health check"""
+        if not self.last_health_check:
+            return True
+        return datetime.utcnow() - self.last_health_check > timedelta(minutes=5)
+
+# Initialize the monitor
+health_monitor = DatabaseHealthMonitor(db)
+
+def database_retry(max_retries=3, delay=1, backoff=2):
+    """Decorator to retry database operations with exponential backoff"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Check connection health periodically
+            if health_monitor.should_check_health():
+                health_monitor.check_connection_health()
+            
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (OperationalError, DisconnectionError) as e:
+                    error_msg = str(e)
+                    
+                    # Log the specific error
+                    db_logger.error(f"Database error on attempt {attempt + 1}: {error_msg}")
+                    
+                    # Check if it's a recoverable SSL/connection error
+                    recoverable_errors = [
+                        "SSL connection has been closed unexpectedly",
+                        "server closed the connection unexpectedly",
+                        "connection not open",
+                        "connection already closed",
+                        "could not connect to server"
+                    ]
+                    
+                    is_recoverable = any(err in error_msg.lower() for err in recoverable_errors)
+                    
+                    if is_recoverable and attempt < max_retries - 1:
+                        # Rollback any pending transaction
+                        try:
+                            db.session.rollback()
+                        except:
+                            pass
+                        
+                        # Wait before retrying (exponential backoff)
+                        wait_time = delay * (backoff ** attempt)
+                        db_logger.info(f"Retrying in {wait_time} seconds...")
+                        time.sleep(wait_time)
+                        continue
+                    
+                    # If not recoverable or max retries reached, re-raise
+                    raise e
+                except Exception as e:
+                    # Non-database errors should not be retried
+                    raise e
+            
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+# Add this route to your app for health monitoring
+@app.route('/health')
+def health_check():
+    """Health endpoint for monitoring systems"""
+    try:
+        # Test database connection
+        with db.engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        
+        return {
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'database': 'connected'
+        }, 200
+    except Exception as e:
+        return {
+            'status': 'unhealthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'database': 'disconnected',
+            'error': str(e)
+        }, 503
+
+# Add error handlers for better monitoring
+@app.errorhandler(OperationalError)
+def handle_database_error(error):
+    error_msg = str(error)
+    db_logger.error(f"Database operational error: {error_msg}")
+    
+    try:
+        db.session.rollback()
+    except:
+        pass
+    
+    # Check if it's an SSL connection error
+    if "SSL connection has been closed unexpectedly" in error_msg:
+        flash('Connection temporarily lost. Please try again.')
+    else:
+        flash('Database error. Please try again in a moment.')
+    
+    return redirect(url_for('home'))
+
+@app.errorhandler(DisconnectionError)
+def handle_disconnection_error(error):
+    db_logger.error(f"Database disconnection error: {error}")
+    
+    try:
+        db.session.rollback()
+    except:
+        pass
+    
+    flash('Connection lost. Please try again.')
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
         with app.app_context():
