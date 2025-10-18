@@ -83,173 +83,166 @@
   <br>
   <br><br>
 
-  <section class="bg-white p-6 rounded-lg shadow-md">
-    <div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-semibold text-gray-700">All Projects</h2>
-    <div>
-    <label class="sr-only" for="filter-category">Filter by Category</label>
-    <form method="GET" class="inline">
-        <label class="sr-only" for="category">Filter by Category</label>
-        <select name="category" id="category" class="mt-1 block pl-3 pr-10 py-2 text-base border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          onchange="this.form.submit()">
-          <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All</option>
-          <option value="proposal" {% if selected_category == 'proposal' %}selected{% endif %}>Proposal</option>
-          <option value="contract" {% if selected_category == 'contract' %}selected{% endif %}>Contract</option>
-          <option value="invoice" {% if selected_category == 'invoice' %}selected{% endif %}>Invoice</option>
-          <option value="lien" {% if selected_category == 'lien' %}selected{% endif %}>Lien Waivers</option>
-          <option value="misc" {% if selected_category == 'misc' %}selected{% endif %}>Miscellaneous</option>
-        </select>
-      </form>
-    </div>
-    </div>
-    
-    <!-- Projects List -->
-    <div class="space-y-6">
-        {% for project in projects %}
-        <div class="border border-gray-200 rounded-lg p-4">
-          <!-- Project Header -->
-          <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
-            <div>
-              <p class="text-xs text-gray-500 uppercase">ID</p>
-              <p class="text-sm font-medium text-gray-900">{{ project.id }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-500 uppercase">Name</p>
-              <p class="text-sm font-medium text-gray-900">{{ project.name }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-500 uppercase">Address</p>
-              <p class="text-sm text-gray-500">{{ project.address }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-500 uppercase">Status</p>
+  <section class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Files</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for project in projects %}
+          <tr class="hover:bg-gray-50">
+            <!-- Project Name & ID -->
+            <td class="px-4 py-3">
+              <p class="text-sm font-semibold text-gray-900">{{ project.name }}</p>
+              <p class="text-xs text-gray-500">ID: {{ project.id }}</p>
+              {% if project.description %}
+              <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ project.description[:100] }}{{ '...' if project.description|length > 100 else '' }}</p>
+              {% endif %}
+            </td>
+            
+            <!-- Address -->
+            <td class="px-4 py-3 text-sm text-gray-600 max-w-xs">
+              <span class="line-clamp-2">{{ project.address or '—' }}</span>
+            </td>
+            
+            <!-- Status -->
+            <td class="px-4 py-3">
               {% if project.status == 'Active' %}
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                   Active
                 </span>
               {% elif project.status == 'Completed' %}
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                   Completed
                 </span>
               {% elif project.status == 'On Hold' %}
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
                   On Hold
                 </span>
-              {% else %}
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                  {{ project.status }}
-                </span>
               {% endif %}
-            </div>
-            <div>
-              <p class="text-xs text-gray-500 uppercase">Start Date</p>
-              <p class="text-sm text-gray-500">{{ project.start_date.strftime('%Y-%m-%d') if project.start_date }}</p>
-            </div>
-            <div class="flex items-center justify-end space-x-2">
-              <a href="{{ url_for('edit_project', project_id=project.id) }}" 
-                 class="text-indigo-600 hover:text-indigo-900"
-                 title="Edit project">
-                <span class="material-icons text-base">edit</span>
-              </a>
-              <form method="POST" action="{{ url_for('delete_project', project_id=project.id) }}" class="inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" 
-                        class="text-red-600 hover:text-red-900"
-                        onclick="return confirm('Are you sure you want to delete this project?')"
-                        title="Delete project">
-                  <span class="material-icons text-base">delete</span>
-                </button>
-              </form>
-            </div>
-          </div>
-    
-          <!-- Description -->
-          {% if project.description %}
-          <div class="mb-4">
-            <p class="text-xs text-gray-500 uppercase mb-1">Description</p>
-            <p class="text-sm text-gray-700">{{ project.description }}</p>
-          </div>
-          {% endif %}
-    
-          <!-- Files Section -->
-          <div class="border-t pt-4">
-            <p class="text-xs text-gray-500 uppercase mb-2">Files</p>
+            </td>
             
-            {% if project.filtered_files %}
-            <div class="space-y-2 mb-4">
-              {% for f in project.filtered_files %}
-              <div class="flex items-center justify-between bg-gray-50 p-2 rounded">
-                <a href="{{ url_for('static', filename='uploads/' ~ f.filename) }}" 
-                   class="text-indigo-600 hover:text-indigo-900 text-sm flex-1 truncate" 
-                   target="_blank"
-                   title="{{ f.filename }}">
-                  <span class="material-icons text-sm align-middle mr-1">description</span>
-                  {{ f.filename }}
+            <!-- Start Date -->
+            <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+              {{ project.start_date.strftime('%m/%d/%Y') if project.start_date else '—' }}
+            </td>
+            
+            <!-- Files -->
+            <td class="px-4 py-3">
+              <details class="text-sm">
+                <summary class="cursor-pointer text-indigo-600 hover:text-indigo-900 flex items-center">
+                  <span class="material-icons text-sm mr-1">folder</span>
+                  {{ project.filtered_files|length }} files
+                </summary>
+                <div class="mt-2 space-y-1 bg-gray-50 p-2 rounded max-h-48 overflow-y-auto">
+                  {% if project.filtered_files %}
+                    {% for f in project.filtered_files %}
+                    <div class="flex items-center justify-between text-xs">
+                      <a href="{{ url_for('static', filename='uploads/' ~ f.filename) }}" 
+                         class="text-indigo-600 hover:underline truncate flex-1" 
+                         target="_blank">
+                        {{ f.filename }}
+                      </a>
+                      <div class="flex items-center space-x-1 ml-2">
+                        <a href="{{ url_for('edit_file', file_id=f.id) }}" 
+                           class="text-blue-500 hover:text-blue-700">
+                          <span class="material-icons" style="font-size: 12px;">edit</span>
+                        </a>
+                        <form method="POST" action="{{ url_for('delete_file', file_id=f.id) }}" class="inline">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="submit" 
+                                  class="text-red-500 hover:text-red-700"
+                                  onclick="return confirm('Delete file?')">
+                            <span class="material-icons" style="font-size: 12px;">delete</span>
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Quick Upload in Dropdown -->
+                    <form method="POST" enctype="multipart/form-data" 
+                          action="{{ url_for('upload_file', project_id=project.id) }}" 
+                          class="mt-2 pt-2 border-t border-gray-200">
+                      {{ file_form.hidden_tag() }}
+                      <div class="space-y-1">
+                        {{ file_form.file(class="text-xs w-full") }}
+                        <div class="flex gap-1">
+                          {{ file_form.category(class="flex-1 px-1 py-1 text-xs border rounded") }}
+                          <button type="submit" 
+                                  class="px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
+                            Upload
+                          </button>
+                        </div>
+                        {{ file_form.note(class="w-full px-1 py-1 text-xs border rounded", placeholder="Note", rows="1") }}
+                      </div>
+                    </form>
+                  {% else %}
+                    <p class="text-xs text-gray-400">No files</p>
+                    
+                    <!-- Quick Upload When No Files -->
+                    <form method="POST" enctype="multipart/form-data" 
+                          action="{{ url_for('upload_file', project_id=project.id) }}" 
+                          class="mt-2">
+                      {{ file_form.hidden_tag() }}
+                      <div class="space-y-1">
+                        {{ file_form.file(class="text-xs w-full") }}
+                        <div class="flex gap-1">
+                          {{ file_form.category(class="flex-1 px-1 py-1 text-xs border rounded") }}
+                          <button type="submit" 
+                                  class="px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
+                            Upload
+                          </button>
+                        </div>
+                        {{ file_form.note(class="w-full px-1 py-1 text-xs border rounded", placeholder="Note", rows="1") }}
+                      </div>
+                    </form>
+                  {% endif %}
+                </div>
+              </details>
+            </td>
+            
+            <!-- Actions -->
+            <td class="px-4 py-3 whitespace-nowrap">
+              <div class="flex items-center space-x-2">
+                <a href="{{ url_for('edit_project', project_id=project.id) }}" 
+                   class="text-indigo-600 hover:text-indigo-900"
+                   title="Edit">
+                  <span class="material-icons text-base">edit</span>
                 </a>
-                <div class="flex items-center space-x-2 ml-2">
-                  <a href="{{ url_for('edit_file', file_id=f.id) }}" 
-                     class="text-blue-500 hover:text-blue-700"
-                     title="Edit file">
-                    <span class="material-icons text-sm">edit</span>
-                  </a>
-                  <form method="POST" action="{{ url_for('delete_file', file_id=f.id) }}" class="inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" 
-                            class="text-red-500 hover:text-red-700"
-                            onclick="return confirm('Delete this file?')"
-                            title="Delete file">
-                      <span class="material-icons text-sm">delete</span>
-                    </button>
-                  </form>
-                </div>
+                <form method="POST" action="{{ url_for('delete_project', project_id=project.id) }}" class="inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" 
+                          class="text-red-600 hover:text-red-900"
+                          onclick="return confirm('Delete this project?')"
+                          title="Delete">
+                    <span class="material-icons text-base">delete</span>
+                  </button>
+                </form>
               </div>
-              {% if f.category == 'misc' and f.note %}
-              <p class="text-xs text-gray-400 italic ml-6">Note: {{ f.note }}</p>
-              {% endif %}
-              {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-sm text-gray-400 mb-4">No files uploaded yet</p>
-            {% endif %}
-    
-            <!-- Upload Form -->
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <p class="text-sm font-medium text-gray-700 mb-3">Upload New File</p>
-              <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload_file', project_id=project.id) }}">
-                {{ file_form.hidden_tag() }}
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    {{ file_form.file(class="text-sm w-full") }}
-                  </div>
-                  <div>
-                    {{ file_form.category(class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md") }}
-                  </div>
-                  <div class="flex items-end">
-                    <button type="submit" 
-                            class="w-full px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 flex items-center justify-center">
-                      <span class="material-icons text-sm mr-1">cloud_upload</span>
-                      Upload
-                    </button>
-                  </div>
-                </div>
-                
-                <div class="mt-2">
-                  {{ file_form.note(class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md", placeholder="Optional note (for misc files)") }}
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-        {% else %}
-        <div class="text-center py-8 text-gray-500">
-          No projects found.
-        </div>
-        {% endfor %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+              No projects found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-    
-    </section>
-    
-    </div>
-    </body></html>
-{% endblock %}
+  </section>
+  
+  </div>
+  </body>
+  </html>
+  {% endblock %}
