@@ -18,15 +18,17 @@ class Worker(db.Model):
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), nullable = False)
+    name = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text)
     address = db.Column(db.String(200))
     start_date = db.Column(db.Date)
-    status = db.Column(db.String(50), default= "Active")
+    status = db.Column(db.String(50), default="Active")
 
     work_logs = db.relationship('WorkLog', back_populates='project', cascade='all, delete-orphan')
-    files = db.relationship("ProjectFile", backref="project",cascade="all, delete")
-
+    files = db.relationship("ProjectFile", backref="project", cascade="all, delete-orphan")
+    expenses = db.relationship('Expense', backref='project', cascade='all, delete-orphan')
+    incomes = db.relationship('Income', backref='incomes', cascade='all, delete-orphan')
+    payments = db.relationship('Payment', backref='project', cascade='all, delete-orphan')
 class ProjectFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
