@@ -1,26 +1,53 @@
-/* Add this to your static/css/main.css - UNIFIED STYLING FOR ALL TEMPLATES */
+/* Dark Theme - Project Manager */
 
 /* Import Tailwind CSS */
 @import url('https://cdn.tailwindcss.com');
 
-/* Base styling overrides */
+/* ===== DARK THEME BASE ===== */
 body {
     font-family: 'Inter', 'Roboto', sans-serif !important;
     line-height: 1.6;
-    background-color: #f3f4f6 !important;
+    background-color: #000000 !important;
+    color: #e5e7eb !important;
 }
 
-/* Fix templates that extend base.html but have their own DOCTYPE */
-.extends-base {
-    /* Remove duplicate styling when extending base */
+/* ===== NAVIGATION ===== */
+nav {
+    background-color: #2d2d2d !important;
+    box-shadow: 0 1px 3px rgba(255, 107, 53, 0.2) !important;
+    margin-bottom: 2rem !important;
 }
 
-/* Override problematic inline styles */
-[style*="font-family"] {
-    font-family: 'Inter', 'Roboto', sans-serif !important;
+nav h1 {
+    color: #ff6b35 !important;
 }
 
-/* Universal form styling */
+nav a {
+    color: #d1d5db !important;
+    text-decoration: none !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.375rem !important;
+    transition: all 0.2s ease !important;
+    font-weight: 500 !important;
+}
+
+nav a:hover {
+    background-color: #3d3d3d !important;
+    color: #ff8c5a !important;
+}
+
+/* ===== CARDS & PANELS ===== */
+.bg-white,
+.card,
+.shadow {
+    background-color: #1a1a1a !important;
+    border-radius: 0.75rem !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 1px 3px rgba(255, 107, 53, 0.1) !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* ===== FORMS ===== */
 input[type="text"], 
 input[type="email"], 
 input[type="password"], 
@@ -34,12 +61,12 @@ textarea,
 .form-textarea {
     width: 100% !important;
     padding: 0.75rem 1rem !important;
-    border: 1px solid #d1d5db !important;
+    border: 1px solid #374151 !important;
     border-radius: 0.5rem !important;
     font-size: 0.875rem !important;
     transition: all 0.2s ease !important;
-    background-color: white !important;
-    color: #374151 !important;
+    background-color: #262626 !important;
+    color: #e5e7eb !important;
 }
 
 input:focus, 
@@ -49,16 +76,21 @@ textarea:focus,
 .form-select:focus,
 .form-textarea:focus {
     outline: none !important;
-    border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    border-color: #ff6b35 !important;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2) !important;
 }
 
-/* Universal button styling */
+input::placeholder,
+textarea::placeholder {
+    color: #6b7280 !important;
+}
+
+/* ===== BUTTONS ===== */
 button[type="submit"],
 .btn,
 .btn-primary,
 input[type="submit"] {
-    background-color: #3b82f6 !important;
+    background-color: #ff6b35 !important;
     color: white !important;
     padding: 0.75rem 1.5rem !important;
     border-radius: 0.5rem !important;
@@ -75,120 +107,93 @@ input[type="submit"] {
 button[type="submit"]:hover,
 .btn:hover,
 .btn-primary:hover {
-    background-color: #2563eb !important;
+    background-color: #ff8c5a !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4) !important;
 }
 
-/* Secondary buttons */
 .btn-secondary,
 button[type="reset"] {
-    background-color: #e5e7eb !important;
-    color: #374151 !important;
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
 }
 
 .btn-secondary:hover,
 button[type="reset"]:hover {
-    background-color: #d1d5db !important;
+    background-color: #4b5563 !important;
 }
 
-/* Table styling - universal */
+/* ===== TABLES ===== */
 table {
     width: 100% !important;
     border-collapse: collapse !important;
-    background-color: white !important;
+    background-color: #1a1a1a !important;
     border-radius: 0.5rem !important;
     overflow: hidden !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 1px 3px rgba(255, 107, 53, 0.1) !important;
     margin-bottom: 1rem !important;
 }
 
 table th {
-    background-color: #f9fafb !important;
+    background-color: #262626 !important;
     padding: 0.75rem !important;
     text-align: left !important;
     font-weight: 600 !important;
     font-size: 0.75rem !important;
     text-transform: uppercase !important;
-    color: #6b7280 !important;
-    border-bottom: 1px solid #e5e7eb !important;
+    color: #9ca3af !important;
+    border-bottom: 1px solid #374151 !important;
 }
 
 table td {
     padding: 0.75rem !important;
-    border-bottom: 1px solid #f3f4f6 !important;
+    border-bottom: 1px solid #262626 !important;
     font-size: 0.875rem !important;
-    color: #374151 !important;
+    color: #d1d5db !important;
     vertical-align: middle !important;
 }
 
 table tr:hover {
-    background-color: #f9fafb !important;
+    background-color: #262626 !important;
 }
 
-/* Fix container and layout issues */
-.container {
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-    padding: 1.5rem !important;
+/* ===== TEXT COLORS ===== */
+.text-gray-900,
+.text-gray-800,
+.text-gray-700 {
+    color: #e5e7eb !important;
 }
 
-.layout-content-container {
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-    padding: 1.5rem !important;
+.text-gray-600,
+.text-gray-500 {
+    color: #9ca3af !important;
 }
 
-/* Card styling - universal */
-.card,
-.bg-white,
-.shadow {
-    background-color: white !important;
-    border-radius: 0.75rem !important;
-    padding: 1.5rem !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
-    margin-bottom: 1.5rem !important;
+.text-gray-400 {
+    color: #6b7280 !important;
 }
 
-/* Navigation fixes */
-nav {
-    background-color: white !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-    margin-bottom: 2rem !important;
+/* ===== ORANGE ACCENTS ===== */
+.text-indigo-600,
+.text-blue-600 {
+    color: #ff6b35 !important;
 }
 
-nav a {
-    color: #374151 !important;
-    text-decoration: none !important;
-    padding: 0.5rem 1rem !important;
-    border-radius: 0.375rem !important;
-    transition: all 0.2s ease !important;
-    font-weight: 500 !important;
+.text-indigo-900:hover,
+.text-blue-900:hover {
+    color: #ff8c5a !important;
 }
 
-nav a:hover {
-    background-color: #f3f4f6 !important;
-    color: #1f2937 !important;
+.bg-indigo-600 {
+    background-color: #ff6b35 !important;
 }
 
-/* Flash message styling */
-.flash-message,
-.alert,
-.bg-green-100 {
-    padding: 0.75rem 1rem !important;
-    border-radius: 0.5rem !important;
-    margin-bottom: 1rem !important;
-    border: 1px solid !important;
+.bg-indigo-700:hover,
+.hover\:bg-indigo-700:hover {
+    background-color: #ff8c5a !important;
 }
 
-.flash-message,
-.bg-green-100 {
-    background-color: #dcfce7 !important;
-    border-color: #86efac !important;
-    color: #166534 !important;
-}
-
-/* Status badges */
+/* ===== STATUS BADGES ===== */
 .badge,
 .status-badge,
 .rounded-full {
@@ -201,13 +206,67 @@ nav a:hover {
     text-transform: capitalize !important;
 }
 
-.bg-green-100 { background-color: #dcfce7 !important; color: #166534 !important; }
-.bg-blue-100 { background-color: #dbeafe !important; color: #1e40af !important; }
-.bg-yellow-100 { background-color: #fef3c7 !important; color: #d97706 !important; }
-.bg-red-100 { background-color: #fef2f2 !important; color: #dc2626 !important; }
-.bg-gray-100 { background-color: #f3f4f6 !important; color: #374151 !important; }
+.bg-green-100 { 
+    background-color: #065f46 !important; 
+    color: #34d399 !important; 
+}
 
-/* Action buttons */
+.bg-blue-100 { 
+    background-color: #1e3a8a !important; 
+    color: #60a5fa !important; 
+}
+
+.bg-yellow-100 { 
+    background-color: #78350f !important; 
+    color: #fbbf24 !important; 
+}
+
+.bg-red-100 { 
+    background-color: #7f1d1d !important; 
+    color: #f87171 !important; 
+}
+
+.bg-gray-100 { 
+    background-color: #262626 !important; 
+    color: #9ca3af !important; 
+}
+
+/* ===== BORDERS ===== */
+.border-gray-300,
+.border-gray-200 {
+    border-color: #374151 !important;
+}
+
+.divide-gray-200 > * + * {
+    border-color: #374151 !important;
+}
+
+/* ===== BACKGROUNDS ===== */
+.bg-gray-50 {
+    background-color: #262626 !important;
+}
+
+.bg-gray-100 {
+    background-color: #111111 !important;
+}
+
+/* ===== FLASH MESSAGES ===== */
+.flash-message,
+.alert {
+    padding: 0.75rem 1rem !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 1rem !important;
+    border: 1px solid !important;
+}
+
+.flash-message,
+.bg-green-100.border-green-300 {
+    background-color: #065f46 !important;
+    border-color: #059669 !important;
+    color: #34d399 !important;
+}
+
+/* ===== ACTION BUTTONS ===== */
 .action-buttons {
     display: flex !important;
     gap: 0.5rem !important;
@@ -224,11 +283,11 @@ nav a:hover {
 }
 
 .action-btn.edit {
-    color: #3b82f6 !important;
+    color: #ff6b35 !important;
 }
 
 .action-btn.edit:hover {
-    background-color: #eff6ff !important;
+    background-color: #262626 !important;
 }
 
 .action-btn.delete {
@@ -236,337 +295,54 @@ nav a:hover {
 }
 
 .action-btn.delete:hover {
-    background-color: #fef2f2 !important;
+    background-color: #7f1d1d !important;
 }
 
-/* Material Icons */
-.material-icons {
-    vertical-align: middle !important;
-    font-size: 1.25rem !important;
-}
-
-/* Fix file upload styling */
+/* ===== FILE UPLOAD ===== */
 input[type="file"] {
     padding: 0.5rem !important;
-    border: 1px dashed #d1d5db !important;
+    border: 1px dashed #374151 !important;
     border-radius: 0.5rem !important;
-    background-color: #f9fafb !important;
+    background-color: #262626 !important;
     width: 100% !important;
+    color: #d1d5db !important;
 }
 
 input[type="file"]:focus {
-    border-color: #3b82f6 !important;
-    background-color: white !important;
+    border-color: #ff6b35 !important;
+    background-color: #1a1a1a !important;
 }
 
-/* Checkbox styling */
+/* ===== CHECKBOX ===== */
 input[type="checkbox"] {
     width: auto !important;
     margin-right: 0.5rem !important;
-    accent-color: #3b82f6 !important;
+    accent-color: #ff6b35 !important;
 }
 
-/* Fix specific template issues */
-
-/* Home.html fixes */
-.home-content {
-    max-width: 1200px !important;
-    margin: 0 auto !important;
+/* ===== DETAILS/SUMMARY (for dropdowns) ===== */
+details summary {
+    cursor: pointer;
+    color: #ff6b35 !important;
 }
 
-.home-content .flex-col {
-    gap: 1.5rem !important;
+details summary:hover {
+    color: #ff8c5a !important;
 }
 
-/* Workers.html fixes */
-.workers-container {
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-    padding: 1.5rem !important;
+/* ===== LINKS ===== */
+a {
+    color: #ff6b35 !important;
+    text-decoration: none !important;
 }
 
-/* Projects.html fixes */
-.projects-container {
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-    padding: 1.5rem !important;
+a:hover {
+    color: #ff8c5a !important;
 }
 
-/* Work logs fixes */
-.work-logs-container {
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-    padding: 1.5rem !important;
-}
-
-/* Fix duplicate DOCTYPE issues */
-.extends-base-template {
-    /* Override any duplicate styles from templates that extend base but have their own head */
-}
-
-/* Responsive fixes */
-@media (max-width: 768px) {
-    .container,
-    .layout-content-container {
-        padding: 1rem !important;
-    }
-    
-    table {
-        font-size: 0.75rem !important;
-    }
-    
-    .grid-cols-2 {
-        grid-template-columns: 1fr !important;
-    }
-    
-    .hidden-mobile {
-        display: none !important;
-    }
-    
-    /* Stack form elements on mobile */
-    .md\\:grid-cols-2 {
-        grid-template-columns: 1fr !important;
-    }
-    
-    .lg\\:grid-cols-3,
-    .lg\\:grid-cols-4,
-    .lg\\:grid-cols-5 {
-        grid-template-columns: 1fr !important;
-    }
-}
-
-/* Fix spacing and layout */
-.space-y-4 > * + * { margin-top: 1rem !important; }
-.space-y-6 > * + * { margin-top: 1.5rem !important; }
-.space-x-4 > * + * { margin-left: 1rem !important; }
-
-/* Grid fixes */
-.grid {
-    display: grid !important;
-}
-
-.grid-cols-1 { grid-template-columns: repeat(1, 1fr) !important; }
-.grid-cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
-.gap-4 { gap: 1rem !important; }
-.gap-6 { gap: 1.5rem !important; }
-
-/* Flexbox fixes */
-.flex {
-    display: flex !important;
-}
-
-.flex-col {
-    flex-direction: column !important;
-}
-
-.items-center {
-    align-items: center !important;
-}
-
-.justify-between {
-    justify-content: space-between !important;
-}
-
-.justify-center {
-    justify-content: center !important;
-}
-
-/* Text and color fixes */
-.text-center {
-    text-align: center !important;
-}
-
-.text-left {
-    text-align: left !important;
-}
-
-.font-bold {
-    font-weight: 700 !important;
-}
-
-.font-semibold {
-    font-weight: 600 !important;
-}
-
-.font-medium {
-    font-weight: 500 !important;
-}
-
-/* Override any conflicting Tailwind classes */
-.w-full {
-    width: 100% !important;
-}
-
-.max-w-md {
-    max-width: 28rem !important;
-}
-
-.max-w-lg {
-    max-width: 32rem !important;
-}
-
-.max-w-xl {
-    max-width: 36rem !important;
-}
-
-.max-w-2xl {
-    max-width: 42rem !important;
-}
-
-.max-w-4xl {
-    max-width: 56rem !important;
-}
-
-.max-w-5xl {
-    max-width: 64rem !important;
-}
-
-.max-w-7xl {
-    max-width: 80rem !important;
-}
-
-/* Fix any remaining layout issues */
-.mx-auto {
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
-
-.p-4 { padding: 1rem !important; }
-.p-6 { padding: 1.5rem !important; }
-.p-8 { padding: 2rem !important; }
-.px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
-.py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
-.py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
-.py-6 { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
-
-.mb-4 { margin-bottom: 1rem !important; }
-.mb-6 { margin-bottom: 1.5rem !important; }
-.mb-8 { margin-bottom: 2rem !important; }
-.mt-6 { margin-top: 1.5rem !important; }
-
-/* Ensure all text is readable */
-.text-gray-900,
-.text-gray-800,
-.text-gray-700 {
-    color: #1f2937 !important;
-}
-
-.text-gray-600,
-.text-gray-500 {
-    color: #6b7280 !important;
-}
-
-.text-blue-600 {
-    color: #2563eb !important;
-}
-
-.text-red-600 {
-    color: #dc2626 !important;
-}
-
-.text-green-600 {
-    color: #059669 !important;
-}
-
-/* Fix any border radius issues */
-.rounded {
-    border-radius: 0.25rem !important;
-}
-
-.rounded-lg {
-    border-radius: 0.5rem !important;
-}
-
-.rounded-xl {
-    border-radius: 0.75rem !important;
-}
-
-/* Shadow fixes */
-.shadow {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
-}
-
-.shadow-md {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
-}
-
-.shadow-lg {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Fix any transition issues */
-.transition-all {
-    transition: all 0.2s ease !important;
-}
-
-.transition-colors {
-    transition: color 0.2s ease, background-color 0.2s ease !important;
-}
-
-/* Ensure consistency across all templates */
-* {
-    box-sizing: border-box !important;
-}
-
-/* Fix overflow issues */
-.overflow-hidden {
-    overflow: hidden !important;
-}
-
-.overflow-x-auto {
-    overflow-x: auto !important;
-}
-
-/* Fix positioning */
-.relative {
-    position: relative !important;
-}
-
-.absolute {
-    position: absolute !important;
-}
-
-/* Fix display properties */
-.block {
-    display: block !important;
-}
-
-.inline {
-    display: inline !important;
-}
-
-.inline-block {
-    display: inline-block !important;
-}
-
-.inline-flex {
-    display: inline-flex !important;
-}
-
-/* Final overrides for any remaining issues */
-.layout-content-container * {
-    font-family: 'Inter', 'Roboto', sans-serif !important;
-}
-
-/* Make sure all forms look consistent */
-form {
-    background-color: white !important;
-    padding: 1.5rem !important;
-    border-radius: 0.75rem !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-    margin-bottom: 1.5rem !important;
-}
-
-form label {
-    display: block !important;
-    font-weight: 500 !important;
-    color: #374151 !important;
-    margin-bottom: 0.5rem !important;
-}
-
-/* Fix any remaining header issues */
+/* ===== HEADERS ===== */
 h1, h2, h3, h4, h5, h6 {
-    color: #1f2937 !important;
+    color: #e5e7eb !important;
     font-weight: 700 !important;
     margin-bottom: 1rem !important;
 }
@@ -581,4 +357,49 @@ h2 {
 
 h3 {
     font-size: 1.25rem !important;
+}
+
+/* ===== LABELS ===== */
+label {
+    color: #d1d5db !important;
+}
+
+/* ===== MATERIAL ICONS ===== */
+.material-icons {
+    vertical-align: middle !important;
+    font-size: 1.25rem !important;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .container,
+    .layout-content-container {
+        padding: 1rem !important;
+    }
+    
+    table {
+        font-size: 0.75rem !important;
+    }
+    
+    .grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ===== UTILITY CLASSES ===== */
+.w-full {
+    width: 100% !important;
+}
+
+.mx-auto {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.transition-all {
+    transition: all 0.2s ease !important;
+}
+
+* {
+    box-sizing: border-box !important;
 }
