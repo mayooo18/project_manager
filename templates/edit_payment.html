@@ -28,7 +28,7 @@
     {% endwith %}
 
     <div class="bg-white p-6 rounded-lg shadow-md">
-      <form method="POST">
+      <form method="POST" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -62,6 +62,29 @@
             {{ form.method(class_="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500") }}
           </div>
 
+          <!-- Receipt Upload -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="receipt">Receipt</label>
+            {% if payment.receipt_filename %}
+              <div class="mb-2">
+                <a href="{{ url_for('static', filename='uploads/' ~ payment.receipt_filename) }}" 
+                   target="_blank" 
+                   class="text-blue-600 hover:text-blue-800 text-sm">
+                  <span class="material-icons text-sm align-middle">description</span>
+                  Current: {{ payment.receipt_filename }}
+                </a>
+              </div>
+            {% endif %}
+            <div class="mt-1 flex items-center">
+              <label for="receipt-upload" class="cursor-pointer bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+                {% if payment.receipt_filename %}Replace File{% else %}Choose File{% endif %}
+              </label>
+              {{ form.receipt(id="receipt-upload", class_="sr-only", accept=".jpg,.jpeg,.png,.pdf") }}
+              <span class="ml-3 text-sm text-gray-500" id="file-chosen">no file selected</span>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Supported formats: JPG, PNG, PDF</p>
+          </div>
+
           <!-- Note -->
           <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-1" for="note">Note</label>
@@ -80,6 +103,16 @@
       </form>
     </div>
   </div>
+
+  <script>
+    const actualBtn = document.getElementById('receipt-upload');
+    const fileChosen = document.getElementById('file-chosen');
+    if (actualBtn) {
+      actualBtn.addEventListener('change', function () {
+        fileChosen.textContent = this.files[0]?.name || 'no file selected';
+      });
+    }
+  </script>
 </body>
 </html>
 

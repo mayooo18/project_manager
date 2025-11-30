@@ -331,13 +331,24 @@ def payments():
     
     # Handle submission
     if form.validate_on_submit():
+        # Handle receipt upload
+        filename = None
+        filepath = None
+        if form.receipt.data:
+            receipt_file = form.receipt.data
+            filename = secure_filename(receipt_file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            receipt_file.save(filepath)
+        
         new_payment = Payment(
             worker_id=form.worker_id.data if form.worker_id.data != 0 else None,
             project_id=form.project_id.data if form.project_id.data != 0 else None,
             amount=form.amount.data,
             payment_date=form.payment_date.data,
             method=form.method.data,
-            note=form.note.data
+            note=form.note.data,
+            receipt_filename=filename,
+            receipt_filepath=filepath
         )
         db.session.add(new_payment)
         db.session.commit()
@@ -381,14 +392,35 @@ def payments():
 def edit_payment(payment_id):
     payment = Payment.query.get_or_404(payment_id)
     form = PaymentForm(obj=payment)
-    form.worker_id.choices = [(w.id, w.name) for w in Worker.query.all()]
+    form.worker_id.choices = [(0, '---')] + [(w.id, w.name) for w in Worker.query.all()]
+    form.project_id.choices = [(0, '---')] + [(p.id, p.name) for p in Project.query.all()]
 
     if form.validate_on_submit():
-        payment.worker_id = form.worker_id.data
+        payment.worker_id = form.worker_id.data if form.worker_id.data != 0 else None
+        payment.project_id = form.project_id.data if form.project_id.data != 0 else None
         payment.amount = form.amount.data
         payment.payment_date = form.payment_date.data
         payment.method = form.method.data
         payment.note = form.note.data
+        
+        # Handle new receipt upload
+        if form.receipt.data:
+            # Delete old receipt if exists
+            if payment.receipt_filename:
+                try:
+                    old_filepath = os.path.join(app.config['UPLOAD_FOLDER'], payment.receipt_filename)
+                    if os.path.exists(old_filepath):
+                        os.remove(old_filepath)
+                except FileNotFoundError:
+                    pass
+            
+            receipt_file = form.receipt.data
+            filename = secure_filename(receipt_file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            receipt_file.save(filepath)
+            payment.receipt_filename = filename
+            payment.receipt_filepath = filepath
+        
         db.session.commit()
         flash('Payment updated successfully.')
         return redirect(url_for('payments'))
@@ -400,6 +432,16 @@ def edit_payment(payment_id):
 @login_required
 def delete_payment(payment_id):
     payment = Payment.query.get_or_404(payment_id)
+    
+    # Delete receipt file if exists
+    if payment.receipt_filename:
+        try:
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], payment.receipt_filename)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        except FileNotFoundError:
+            pass
+    
     db.session.delete(payment)
     db.session.commit()
     flash('Payment deleted successfully.')
@@ -701,4 +743,3 @@ if __name__ == '__main__':
         with app.app_context():
             db.create_all()
         app.run(debug=True)
- 

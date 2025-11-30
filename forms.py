@@ -57,6 +57,7 @@ class PaymentForm(FlaskForm):
     payment_date = DateField('Payment Date', format='%Y-%m-%d', validators=[DataRequired()])
     method = StringField('Method', validators=[Optional()])
     note = TextAreaField('Note', validators=[Optional()])
+    receipt = FileField('Receipt', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Images and PDFs only')])
     submit = SubmitField('Add Payment')
 
 

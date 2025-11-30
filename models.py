@@ -61,9 +61,12 @@ class Payment(db.Model):
     payment_date = db.Column(db.Date, nullable=False)
     method = db.Column(db.String(50))
     note = db.Column(db.Text)
+    receipt_filename = db.Column(db.String(200))
+    receipt_filepath = db.Column(db.String(300))
 
     worker = db.relationship('Worker', back_populates='payments')
     # No project relationship needed here - it's defined in Project
+
 class ProjectFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)

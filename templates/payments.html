@@ -24,7 +24,7 @@
 
     <!-- Record a Payment Form -->
     <div class="bg-white p-6 rounded-lg shadow-md">
-      <form method="POST">
+      <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -65,7 +65,21 @@
               <option value="Cash">Cash</option>
               <option value="Credit Card">Credit Card</option>
               <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Check">Check</option>
             </select>
+          </div>
+
+          <!-- Receipt Upload -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="receipt">Receipt (optional)</label>
+            <div class="mt-1 flex items-center">
+              <label for="receipt-upload" class="cursor-pointer bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Choose File
+              </label>
+              <input type="file" id="receipt-upload" name="receipt" accept=".jpg,.jpeg,.png,.pdf" class="sr-only" />
+              <span class="ml-3 text-sm text-gray-500" id="file-chosen">no file selected</span>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Supported formats: JPG, PNG, PDF (max 16MB)</p>
           </div>
 
           <!-- Note -->
@@ -153,6 +167,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Receipt</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
           </tr>
@@ -164,6 +179,13 @@
             <td class="px-6 py-4 text-sm text-gray-500">${{ '%.2f' | format(payment.amount) }}</td>
             <td class="px-6 py-4 text-sm text-gray-500">{{ payment.payment_date.strftime('%m/%d/%Y') }}</td>
             <td class="px-6 py-4 text-sm text-gray-500">{{ payment.method or '—' }}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              {% if payment.receipt_filename %}
+                <a class="text-blue-600 hover:text-blue-900" href="{{ url_for('static', filename='uploads/' ~ payment.receipt_filename) }}" target="_blank">View</a>
+              {% else %}
+                No File
+              {% endif %}
+            </td>
             <td class="px-6 py-4 text-sm text-gray-500 truncate max-w-xs">{{ payment.note or '—' }}</td>
             <td class="px-6 py-4 text-sm font-medium">
               <a href="{{ url_for('edit_payment', payment_id=payment.id) }}"
@@ -182,13 +204,23 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No payments found.</td>
+            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">No payments found.</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
+
+  <script>
+    const actualBtn = document.getElementById('receipt-upload');
+    const fileChosen = document.getElementById('file-chosen');
+    if (actualBtn) {
+      actualBtn.addEventListener('change', function () {
+        fileChosen.textContent = this.files[0]?.name || 'no file selected';
+      });
+    }
+  </script>
 </body>
 </html>
 

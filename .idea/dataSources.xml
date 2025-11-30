@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="optimal_ses_db@dpg-d2ublcer433s73e5rcb0-a.oregon-postgres.render.com" uuid="fd552f13-c2a5-4ff4-b53f-63e1a8f59eae">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://dpg-d2ublcer433s73e5rcb0-a.oregon-postgres.render.com:5432/optimal_ses_db</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+  </component>
+</project>
