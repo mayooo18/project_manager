@@ -1,41 +1,51 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto py-8 px-4">
-  <header class="mb-8">
-    <h1 class="text-3xl font-bold">Profitability</h1>
-    <p class="text-gray-500 text-sm">Analyze your profitability per project</p>
-  </header>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Profitability</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800 font-sans">
+  <div class="max-w-5xl mx-auto py-8 px-4">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold">Profitability</h1>
+      <p class="text-gray-500 text-sm">Analyze your profitability per project</p>
+    </header>
 
-  <section class="mt-6">
-    <div class="overflow-x-auto bg-white shadow rounded-lg">
-      <table class="min-w-full table-auto">
-        <thead class="bg-gray-100 text-left text-sm font-medium">
-          <tr>
-            <th class="px-4 py-2">Project</th>
-            <th class="px-4 py-2">Total Expenses</th>
-            <th class="px-4 py-2">Total Income</th>
-            <th class="px-4 py-2">Profit</th>
-          </tr>
-        </thead>
-        <tbody class="text-sm">
-          {% for item in data %}
-            <tr class="border-t">
-              <td class="px-4 py-2 text-gray-800">{{ item.project }}</td>
-              <td class="px-4 py-2 text-gray-600">${{ '%.2f' | format(item.expenses) }}</td>
-              <td class="px-4 py-2 text-gray-600">${{ '%.2f' | format(item.income) }}</td>
-              <td class="px-4 py-2 {% if item.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
-                ${{ '%.2f' | format(item.profit) }}
-              </td>
-            </tr>
-          {% else %}
+    <section class="mt-6">
+      <div class="overflow-x-auto bg-white shadow rounded-lg">
+        <table class="min-w-full table-auto">
+          <thead class="bg-gray-100 text-left text-sm font-medium">
             <tr>
-              <td colspan="4" class="px-4 py-2 text-center text-gray-500">No data available.</td>
+              <th class="px-4 py-2">Project</th>
+              <th class="px-4 py-2">Total Expenses</th>
+              <th class="px-4 py-2">Total Income</th>
+              <th class="px-4 py-2">Profit</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
-</div>
+          </thead>
+          <tbody class="text-sm">
+            {% for item in data %}
+              <tr class="border-t">
+                <td class="px-4 py-2 text-gray-800">{{ item.project }}</td>
+                <td class="px-4 py-2 text-gray-600">${{ '%.2f' | format(item.expenses) }}</td>
+                <td class="px-4 py-2 text-gray-600">${{ '%.2f' | format(item.income) }}</td>
+                <td class="px-4 py-2 {% if item.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                  ${{ '%.2f' | format(item.profit) }}
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="4" class="px-4 py-2 text-center text-gray-500">No data available.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
 {% endblock %}
