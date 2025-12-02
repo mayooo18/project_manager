@@ -648,7 +648,7 @@ def document_form():
 
 @app.route('/documents/view')
 @login_required
-def generate_document():
+def view_document():
     # Get document data from session
     doc_data = session.get('document_data')
     

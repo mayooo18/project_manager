@@ -28,7 +28,7 @@
     {% endwith %}
 
     <div class="bg-white p-6 rounded-lg shadow-md">
-      <form method="POST" action="{{ url_for('generate_document') }}">
+      <form method="POST" action="{{ url_for('document_form') }}">
         {{ form.hidden_tag() }}
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
