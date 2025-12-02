@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ doc_type }} - {{ invoice_number }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      body { margin: 0; }
+      .no-print { display: none; }
+      .print-container { box-shadow: none; }
+    }
+    body { 
+      font-family: Arial, sans-serif;
+      background-color: #f3f4f6;
+    }
+    .print-container {
+      max-width: 8.5in;
+      margin: 2rem auto;
+      background: white;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .header-line {
+      border-bottom: 2px solid #000;
+      margin: 1rem 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    table td, table th {
+      padding: 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .total-row {
+      border-top: 2px solid #000;
+      font-weight: bold;
+    }
+    .scope-item {
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Action Buttons (No Print) -->
+  <div class="no-print text-center py-4 space-x-4">
+    <button onclick="window.print()" 
+      class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm">
+      Print / Save as PDF
+    </button>
+    <a href="{{ url_for('document_form') }}" 
+      class="inline-block bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm">
+      Create New Document
+    </a>
+    <a href="{{ url_for('home') }}" 
+      class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm">
+      Back to Home
+    </a>
+  </div>
+
+  <!-- Document Content -->
+  <div class="print-container">
+    
+    <!-- Header with Logo and Company Info -->
+    <div class="flex justify-between items-start mb-4">
+      <div>
+        <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Optimal Solutions" style="height: 80px; width: auto;">
+      </div>
+      <div class="text-right text-sm">
+        <p class="font-bold text-lg">Optimal Solutions</p>
+        <p>1204 W County Line Rd</p>
+        <p>Beecher IL, 60401</p>
+        <p>708-825-4774</p>
+        <p>MendezConstruction39@yahoo.com</p>
+      </div>
+    </div>
+
+    <div class="header-line"></div>
+
+    <!-- Document Title and Info -->
+    <div class="flex justify-between items-start mb-4">
+      <h1 class="text-2xl font-bold">{{ doc_type }}</h1>
+      <div class="text-right text-sm">
+        <p><span class="font-semibold">INVOICE #</span> {{ invoice_number }}</p>
+        <p><span class="font-semibold">DATE</span> {{ date }}</p>
+        {% if po_number %}
+        <p><span class="font-semibold">P.O. #</span> {{ po_number }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Client Information -->
+    <div class="mb-4">
+      <p class="font-semibold mb-1">TO</p>
+      <p class="font-bold">{{ client_name }}</p>
+      <p>{{ client_address }}</p>
+    </div>
+
+    <!-- Project Name -->
+    <div class="mb-4">
+      <p class="font-semibold mb-1">FOR</p>
+      <p>{{ project_name }}</p>
+    </div>
+
+    <!-- Scope of Work Table -->
+    <table class="border border-gray-300">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="border border-gray-300 font-semibold" style="width: 70%;">Description</th>
+          <th class="border border-gray-300 font-semibold text-right" style="width: 30%;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in scope_items %}
+        <tr>
+          <td class="border border-gray-300">{{ item }}</td>
+          <td class="border border-gray-300 text-right"></td>
+        </tr>
+        {% endfor %}
+        
+        <!-- Divider Row -->
+        <tr>
+          <td colspan="2" style="padding: 0.25rem;"></td>
+        </tr>
+        
+        <!-- Materials Notes (if provided) -->
+        {% if materials_notes %}
+        <tr>
+          <td colspan="2" class="border-0 text-sm" style="padding: 0.5rem 0;">
+            <p class="font-semibold mb-1">Materials:</p>
+            <p>{{ materials_notes }}</p>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding: 0.25rem;"></td>
+        </tr>
+        {% endif %}
+        
+        <!-- Total Row -->
+        <tr class="total-row">
+          <td class="border-t-2 border-black font-bold text-right pr-4">Total</td>
+          <td class="border-t-2 border-black font-bold text-right">
+            ${{ "%.2f"|format(total_price) }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="mt-6 text-sm">
+      <p class="font-semibold mb-2">Make all checks payable to Optimal Solutions</p>
+      <p class="mb-2">Payment is due once work is completed</p>
+      <p>If you have any questions concerning this {{ doc_type.lower() }}, contact:</p>
+      <p>Mario Mendez | 708-825-4774 | MendezConstruction39@yahoo.com</p>
+    </div>
+
+    <!-- Thank You -->
+    <div class="text-center mt-8 pt-4 border-t-2 border-gray-300">
+      <p class="font-bold text-lg">THANK YOU FOR YOUR BUSINESS!</p>
+    </div>
+
+  </div>
+</body>
+</html>

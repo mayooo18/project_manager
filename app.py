@@ -1,3 +1,5 @@
+from functools import wraps
+import time
 from flask import Flask, render_template, redirect, request, url_for, flash, session
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from extensions import db  
@@ -10,6 +12,8 @@ import logging
 from datetime import timedelta, datetime
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, DisconnectionError
+from document_forms import DocumentForm
+import re
 
 
 
@@ -600,6 +604,72 @@ def delete_income(income_id):
     db.session.commit()
     flash('Income deleted successfully.')
     return redirect(url_for('income'))
+
+# Document Generation Routes
+def parse_scope_items(scope_text):
+    """
+    Parse scope of work text into individual items.
+    Splits on periods, semicolons, or newlines.
+    """
+    if not scope_text:
+        return []
+    
+    # Replace semicolons and newlines with periods for uniform splitting
+    scope_text = scope_text.replace(';', '.')
+    scope_text = scope_text.replace('\n', '.')
+    
+    # Split by periods and clean up
+    items = [item.strip() for item in scope_text.split('.') if item.strip()]
+    
+    return items
+
+@app.route('/documents/create', methods=['GET', 'POST'])
+@login_required
+def document_form():
+    form = DocumentForm()
+    if form.validate_on_submit():
+        # Store form data in session for the document view
+        session['document_data'] = {
+            'doc_type': form.doc_type.data,
+            'invoice_number': form.invoice_number.data,
+            'date': form.date.data.strftime('%m-%d-%y'),
+            'client_name': form.client_name.data,
+            'client_address': form.client_address.data,
+            'project_name': form.project_name.data,
+            'scope_of_work': form.scope_of_work.data,
+            'materials_notes': form.materials_notes.data,
+            'total_price': float(form.total_price.data),
+            'po_number': form.po_number.data if form.po_number.data else None
+        }
+        flash('Document generated successfully!')
+        return redirect(url_for('generate_document'))
+    
+    return render_template('documents/form.html', form=form)
+
+@app.route('/documents/view')
+@login_required
+def generate_document():
+    # Get document data from session
+    doc_data = session.get('document_data')
+    
+    if not doc_data:
+        flash('No document data found. Please create a new document.')
+        return redirect(url_for('document_form'))
+    
+    # Parse scope items
+    scope_items = parse_scope_items(doc_data['scope_of_work'])
+    
+    return render_template('documents/document.html',
+                         doc_type=doc_data['doc_type'],
+                         invoice_number=doc_data['invoice_number'],
+                         date=doc_data['date'],
+                         client_name=doc_data['client_name'],
+                         client_address=doc_data['client_address'],
+                         project_name=doc_data['project_name'],
+                         scope_items=scope_items,
+                         materials_notes=doc_data['materials_notes'],
+                         total_price=doc_data['total_price'],
+                         po_number=doc_data.get('po_number'))
 
 #Monitoring route
 logging.basicConfig(level=logging.INFO)
