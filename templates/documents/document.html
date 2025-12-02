@@ -52,12 +52,16 @@
       class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm">
       Print / Save as PDF
     </button>
+    <a href="{{ url_for('download_document') }}" 
+      class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm">
+      Download Word Document
+    </a>
     <a href="{{ url_for('document_form') }}" 
       class="inline-block bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm">
       Create New Document
     </a>
     <a href="{{ url_for('home') }}" 
-      class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm">
+      class="inline-block bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm">
       Back to Home
     </a>
   </div>

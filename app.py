@@ -14,6 +14,11 @@ from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, DisconnectionError
 from document_forms import DocumentForm
 import re
+from docx import Document
+from docx.shared import Pt, Inches, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from io import BytesIO
+from flask import send_file  
 
 
 
@@ -671,6 +676,155 @@ def view_document():
                          total_price=doc_data['total_price'],
                          po_number=doc_data.get('po_number'))
 
+
+@app.route('/documents/download')
+@login_required
+def download_document():
+    """Generate and download the document as a Word file"""
+    doc_data = session.get('document_data')
+    
+    if not doc_data:
+        flash('No document data found. Please create a new document.')
+        return redirect(url_for('document_form'))
+    
+    # Parse scope items
+    scope_items = parse_scope_items(doc_data['scope_of_work'])
+    
+    # Create Word document
+    doc = Document()
+    
+    # Set up default font
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Arial'
+    font.size = Pt(11)
+    
+    # Add header section with company info
+    header_section = doc.add_paragraph()
+    header_section.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    
+    company_name = header_section.add_run('Optimal Solutions\n')
+    company_name.bold = True
+    company_name.font.size = Pt(14)
+    
+    header_section.add_run('1204 W County Line Rd\n')
+    header_section.add_run('Beecher IL, 60401\n')
+    header_section.add_run('708-825-4774\n')
+    header_section.add_run('MendezConstruction39@yahoo.com\n')
+    
+    # Add horizontal line
+    doc.add_paragraph('_' * 80)
+    
+    # Document title and info
+    title_para = doc.add_paragraph()
+    title_run = title_para.add_run(doc_data['doc_type'])
+    title_run.bold = True
+    title_run.font.size = Pt(18)
+    
+    # Invoice/Date info
+    info_para = doc.add_paragraph()
+    info_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    info_para.add_run(f"INVOICE # {doc_data['invoice_number']}\n").bold = True
+    info_para.add_run(f"DATE {doc_data['date']}\n").bold = True
+    if doc_data.get('po_number'):
+        info_para.add_run(f"P.O. # {doc_data['po_number']}\n").bold = True
+    
+    doc.add_paragraph()  # Spacing
+    
+    # Client information
+    to_para = doc.add_paragraph()
+    to_para.add_run('TO\n').bold = True
+    to_para.add_run(f"{doc_data['client_name']}\n").bold = True
+    to_para.add_run(f"{doc_data['client_address']}\n")
+    
+    doc.add_paragraph()  # Spacing
+    
+    # Project name
+    for_para = doc.add_paragraph()
+    for_para.add_run('FOR\n').bold = True
+    for_para.add_run(f"{doc_data['project_name']}\n")
+    
+    doc.add_paragraph()  # Spacing
+    
+    # Scope of work table
+    table = doc.add_table(rows=1, cols=2)
+    table.style = 'Light Grid Accent 1'
+    
+    # Header row
+    header_cells = table.rows[0].cells
+    header_cells[0].text = 'Description'
+    header_cells[1].text = 'Amount'
+    
+    # Make header bold
+    for cell in header_cells:
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.font.bold = True
+    
+    # Add scope items
+    for item in scope_items:
+        row_cells = table.add_row().cells
+        row_cells[0].text = item
+        row_cells[1].text = ''
+    
+    # Add spacing row
+    table.add_row()
+    
+    # Materials notes if provided
+    if doc_data.get('materials_notes'):
+        materials_row = table.add_row().cells
+        materials_para = materials_row[0].paragraphs[0]
+        materials_para.add_run('Materials:\n').bold = True
+        materials_para.add_run(doc_data['materials_notes'])
+        materials_row[0].merge(materials_row[1])
+        table.add_row()  # Spacing
+    
+    # Total row
+    total_row = table.add_row().cells
+    total_row[0].text = 'Total'
+    total_row[1].text = f"${doc_data['total_price']:.2f}"
+    
+    # Make total row bold
+    for cell in total_row:
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.font.bold = True
+    
+    doc.add_paragraph()  # Spacing
+    
+    # Footer
+    footer_para = doc.add_paragraph()
+    footer_para.add_run('Make all checks payable to Optimal Solutions\n').bold = True
+    footer_para.add_run('Payment is due once work is completed\n')
+    footer_para.add_run('\nIf you have any questions concerning this ')
+    footer_para.add_run(doc_data['doc_type'].lower())
+    footer_para.add_run(', contact:\n')
+    footer_para.add_run('Mario Mendez | 708-825-4774 | MendezConstruction39@yahoo.com\n')
+    
+    doc.add_paragraph()  # Spacing
+    doc.add_paragraph('_' * 80)
+    
+    # Thank you
+    thanks_para = doc.add_paragraph()
+    thanks_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    thanks_run = thanks_para.add_run('THANK YOU FOR YOUR BUSINESS!')
+    thanks_run.bold = True
+    thanks_run.font.size = Pt(14)
+    
+    # Save to BytesIO object
+    file_stream = BytesIO()
+    doc.save(file_stream)
+    file_stream.seek(0)
+    
+    # Generate filename
+    filename = f"{doc_data['doc_type']}_{doc_data['invoice_number']}_{doc_data['client_name'].replace(' ', '_')}.docx"
+    
+    return send_file(
+        file_stream,
+        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        as_attachment=True,
+        download_name=filename
+    )
 #Monitoring route
 logging.basicConfig(level=logging.INFO)
 db_logger = logging.getLogger('database')
