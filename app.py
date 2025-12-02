@@ -628,28 +628,63 @@ def parse_scope_items(scope_text):
     
     return items
 
+# EXACT FIX FOR YOUR app.py
+# Replace your document_form route (around line 375) with this:
+
 @app.route('/documents/create', methods=['GET', 'POST'])
 @login_required
 def document_form():
     form = DocumentForm()
+    
+    # Enhanced debugging for form submission
+    if request.method == 'POST':
+        app.logger.info("=== FORM SUBMISSION DEBUG ===")
+        app.logger.info(f"Raw form data: {dict(request.form)}")
+        app.logger.info(f"CSRF token present: {bool(request.form.get('csrf_token'))}")
+        app.logger.info(f"Form validates: {form.validate_on_submit()}")
+        
+        if not form.validate_on_submit():
+            app.logger.error(f"Validation failed with errors: {form.errors}")
+            # Flash each error to user
+            for field_name, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{field_name}: {error}', 'error')
+    
     if form.validate_on_submit():
-        # Store form data in session for the document view
-        session['document_data'] = {
-            'doc_type': form.doc_type.data,
-            'invoice_number': form.invoice_number.data,
-            'date': form.date.data.strftime('%m-%d-%y'),
-            'client_name': form.client_name.data,
-            'client_address': form.client_address.data,
-            'project_name': form.project_name.data,
-            'scope_of_work': form.scope_of_work.data,
-            'materials_notes': form.materials_notes.data,
-            'total_price': float(form.total_price.data),
-            'po_number': form.po_number.data if form.po_number.data else None
-        }
-        session.modified = True  # ← ADD THIS LINE
-
-        flash('Document generated successfully!')
-        return redirect(url_for('view_document'))  # ← Fixed this line
+        try:
+            app.logger.info("Form validated successfully, storing session data")
+            
+            # Store form data in session
+            session['document_data'] = {
+                'doc_type': form.doc_type.data,
+                'invoice_number': form.invoice_number.data,
+                'date': form.date.data.strftime('%m-%d-%y'),
+                'client_name': form.client_name.data,
+                'client_address': form.client_address.data,
+                'project_name': form.project_name.data,
+                'scope_of_work': form.scope_of_work.data,
+                'materials_notes': form.materials_notes.data if form.materials_notes.data else '',
+                'total_price': float(form.total_price.data),
+                'po_number': form.po_number.data if form.po_number.data else None
+            }
+            
+            # CRITICAL: Mark session as modified
+            session.modified = True
+            
+            app.logger.info(f"Session data stored for client: {form.client_name.data}")
+            app.logger.info(f"Redirecting to view_document")
+            
+            flash('Document generated successfully!', 'success')
+            return redirect(url_for('view_document'))
+            
+        except Exception as e:
+            app.logger.error(f"Error storing session data: {e}", exc_info=True)
+            flash(f'Error generating document: {str(e)}', 'error')
+            return render_template('documents/form.html', form=form)
+    
+    # If we reach here with POST, it means validation failed
+    if request.method == 'POST':
+        app.logger.warning("Rendering form with validation errors")
     
     return render_template('documents/form.html', form=form)
 
