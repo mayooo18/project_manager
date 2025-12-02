@@ -642,7 +642,7 @@ def document_form():
             'po_number': form.po_number.data if form.po_number.data else None
         }
         flash('Document generated successfully!')
-        return redirect(url_for('generate_document'))
+        return redirect(url_for('view_document'))  # ← Fixed this line
     
     return render_template('documents/form.html', form=form)
 
