@@ -693,33 +693,35 @@ def document_form():
 def view_document():
     # Get document data from session
     doc_data = session.get('document_data')
-    
+
     if not doc_data:
         flash('No document data found. Please create a new document.')
         return redirect(url_for('document_form'))
-    
-    try:  # ← ADD TRY-CATCH
-        # ... existing code ...
-        return render_template('documents/document.html', ...)
+
+    try:
+        # Parse scope items from the raw scope_of_work text
+        scope_items = parse_scope_items(doc_data.get('scope_of_work', ''))
+
+        # IMPORTANT: pass each field as a keyword argument,
+        # not a single dict or positional arg.
+        return render_template(
+            'documents/document.html',
+            doc_type=doc_data['doc_type'],
+            invoice_number=doc_data['invoice_number'],
+            date=doc_data['date'],
+            client_name=doc_data['client_name'],
+            client_address=doc_data['client_address'],
+            project_name=doc_data['project_name'],
+            scope_items=scope_items,
+            materials_notes=doc_data.get('materials_notes', ''),
+            total_price=doc_data['total_price'],
+            po_number=doc_data.get('po_number')
+        )
+
     except Exception as e:
-        flash(f'Error: {str(e)}', 'error')
         app.logger.error(f"Error in view_document: {e}", exc_info=True)
+        flash('There was a problem generating the document.', 'error')
         return redirect(url_for('document_form'))
-    
-    # Parse scope items
-    scope_items = parse_scope_items(doc_data['scope_of_work'])
-    
-    return render_template('documents/document.html',
-                         doc_type=doc_data['doc_type'],
-                         invoice_number=doc_data['invoice_number'],
-                         date=doc_data['date'],
-                         client_name=doc_data['client_name'],
-                         client_address=doc_data['client_address'],
-                         project_name=doc_data['project_name'],
-                         scope_items=scope_items,
-                         materials_notes=doc_data['materials_notes'],
-                         total_price=doc_data['total_price'],
-                         po_number=doc_data.get('po_number'))
 
 
 @app.route('/documents/download')
