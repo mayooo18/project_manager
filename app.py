@@ -646,6 +646,8 @@ def document_form():
             'total_price': float(form.total_price.data),
             'po_number': form.po_number.data if form.po_number.data else None
         }
+        session.modified = True  # ← ADD THIS LINE
+
         flash('Document generated successfully!')
         return redirect(url_for('view_document'))  # ← Fixed this line
     
@@ -659,6 +661,14 @@ def view_document():
     
     if not doc_data:
         flash('No document data found. Please create a new document.')
+        return redirect(url_for('document_form'))
+    
+    try:  # ← ADD TRY-CATCH
+        # ... existing code ...
+        return render_template('documents/document.html', ...)
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        app.logger.error(f"Error in view_document: {e}", exc_info=True)
         return redirect(url_for('document_form'))
     
     # Parse scope items
