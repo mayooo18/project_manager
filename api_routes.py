@@ -405,15 +405,8 @@ def openapi_spec():
         },
         "servers": [{"url": base_url}],
         "components": {
-            "securitySchemes": {
-                "ApiKeyAuth": {
-                    "type": "apiKey",
-                    "in": "header",
-                    "name": "X-API-Key"
-                }
-            }
+            "schemas": {}
         },
-        "security": [{"ApiKeyAuth": []}],
         "paths": {
             "/api/projects": {
                 "get": {
