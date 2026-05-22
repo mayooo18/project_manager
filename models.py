@@ -95,9 +95,35 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
     password_hash = db.Column(db.String(512), nullable=False)
+    phone_number = db.Column(db.String(20), unique=True, nullable=True)
+    sms_pending_action_id = db.Column(db.Integer, nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+
+class ProjectNote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    note_type = db.Column(db.String(20), nullable=False)  # 'voice', 'customer', 'general'
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    project = db.relationship('Project', backref=db.backref('notes', cascade='all, delete-orphan'))
+
+
+class AIActionLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    channel = db.Column(db.String(20), nullable=False)  # 'web', 'sms', 'voice'
+    original_msg = db.Column(db.Text, nullable=False)
+    transcript = db.Column(db.Text, nullable=True)
+    tool_called = db.Column(db.String(50), nullable=True)
+    extracted_data = db.Column(db.Text, nullable=True)  # JSON string
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'confirmed', 'rejected'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    confirmed_at = db.Column(db.DateTime, nullable=True)
+    result_id = db.Column(db.Integer, nullable=True)

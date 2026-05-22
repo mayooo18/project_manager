@@ -13,6 +13,8 @@ from datetime import timedelta, datetime
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, DisconnectionError
 from document_forms import DocumentForm
+from ai_routes import ai_bp
+from api_routes import api_bp as field_api_bp
 import re
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -27,6 +29,8 @@ app.config.from_object("config.Config")
 
 db.init_app(app)
 csrf = CSRFProtect(app)
+app.register_blueprint(ai_bp)
+app.register_blueprint(field_api_bp)
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 

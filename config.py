@@ -58,3 +58,9 @@ class Config:
     SESSION_COOKIE_SECURE = True if os.environ.get('ENVIRONMENT') == 'production' else False
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+    API_SECRET_KEY = os.environ.get('API_SECRET_KEY')
+    TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
+    TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
+    TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
