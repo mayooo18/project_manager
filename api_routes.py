@@ -8,7 +8,7 @@ from models import Worker, Project, WorkLog, Expense, Income, ProjectFile, Proje
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 
-# ── Validation helper ──────────────────────────────────────────────────────
+# ── Validation helpers ─────────────────────────────────────────────────────
 def validate_required(data, *fields):
     """Return (True, None) if all fields present, else (False, error response)."""
     missing = [f for f in fields if not data.get(f)]
@@ -16,6 +16,26 @@ def validate_required(data, *fields):
         msg = f"Missing required field(s): {', '.join(missing)}. Please provide them and try again."
         return False, (jsonify({'error': msg, 'missing_fields': missing}), 400)
     return True, None
+
+
+def find_worker(name):
+    """Fuzzy-find a worker; return (worker, None) or (None, error response)."""
+    worker = Worker.query.filter(Worker.name.ilike(f"%{name}%")).first()
+    if not worker:
+        available = [w.name for w in Worker.query.filter_by(active=True).all()]
+        msg = f"Worker '{name}' not found. Available workers: {', '.join(available) or 'none yet'}."
+        return None, (jsonify({'error': msg, 'available_workers': available}), 404)
+    return worker, None
+
+
+def find_project(name):
+    """Fuzzy-find a project; return (project, None) or (None, error response)."""
+    project = Project.query.filter(Project.name.ilike(f"%{name}%")).first()
+    if not project:
+        available = [p.name for p in Project.query.filter_by(status='Active').all()]
+        msg = f"Project '{name}' not found. Active projects: {', '.join(available) or 'none yet'}."
+        return None, (jsonify({'error': msg, 'available_projects': available}), 404)
+    return project, None
 
 
 # ── Auth ───────────────────────────────────────────────────────────────────
@@ -205,9 +225,9 @@ def voice_note():
     ok, err = validate_required(data, 'project_name', 'content')
     if not ok:
         return err
-    project = Project.query.filter(
-        Project.name.ilike(f"%{data['project_name']}%")
-    ).first_or_404()
+    project, err = find_project(data['project_name'])
+    if err:
+        return err
     note = ProjectNote(
         project_id=project.id,
         note_type='voice',
@@ -235,12 +255,12 @@ def field_work_log():
     ok, err = validate_required(data, 'worker_name', 'project_name', 'hours_worked', 'date')
     if not ok:
         return err
-    worker = Worker.query.filter(
-        Worker.name.ilike(f"%{data['worker_name']}%")
-    ).first_or_404()
-    project = Project.query.filter(
-        Project.name.ilike(f"%{data['project_name']}%")
-    ).first_or_404()
+    worker, err = find_worker(data['worker_name'])
+    if err:
+        return err
+    project, err = find_project(data['project_name'])
+    if err:
+        return err
     log = WorkLog(
         worker_id=worker.id,
         project_id=project.id,
@@ -262,9 +282,9 @@ def field_expense():
     ok, err = validate_required(data, 'project_name', 'amount', 'category', 'date')
     if not ok:
         return err
-    project = Project.query.filter(
-        Project.name.ilike(f"%{data['project_name']}%")
-    ).first_or_404()
+    project, err = find_project(data['project_name'])
+    if err:
+        return err
     expense = Expense(
         project_id=project.id,
         amount=data['amount'],
@@ -283,10 +303,13 @@ def field_expense():
 @api_bp.route('/field/photo', methods=['POST'])
 @require_api_key
 def field_photo():
-    data = request.get_json()
-    project = Project.query.filter(
-        Project.name.ilike(f"%{data['project_name']}%")
-    ).first_or_404()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'project_name', 'filename')
+    if not ok:
+        return err
+    project, err = find_project(data['project_name'])
+    if err:
+        return err
     file_record = ProjectFile(
         project_id=project.id,
         filename=data['filename'],
@@ -310,9 +333,9 @@ def customer_note():
     ok, err = validate_required(data, 'project_name', 'content')
     if not ok:
         return err
-    project = Project.query.filter(
-        Project.name.ilike(f"%{data['project_name']}%")
-    ).first_or_404()
+    project, err = find_project(data['project_name'])
+    if err:
+        return err
     note = ProjectNote(
         project_id=project.id,
         note_type='customer',
