@@ -8,6 +8,16 @@ from models import Worker, Project, WorkLog, Expense, Income, ProjectFile, Proje
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 
+# ── Validation helper ──────────────────────────────────────────────────────
+def validate_required(data, *fields):
+    """Return (True, None) if all fields present, else (False, error response)."""
+    missing = [f for f in fields if not data.get(f)]
+    if missing:
+        msg = f"Missing required field(s): {', '.join(missing)}. Please provide them and try again."
+        return False, (jsonify({'error': msg, 'missing_fields': missing}), 400)
+    return True, None
+
+
 # ── Auth ───────────────────────────────────────────────────────────────────
 def require_api_key(f):
     @wraps(f)
@@ -36,7 +46,10 @@ def list_projects():
 @api_bp.route('/projects', methods=['POST'])
 @require_api_key
 def create_project():
-    data = request.get_json()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'name')
+    if not ok:
+        return err
     project = Project(
         name=data['name'],
         description=data.get('description'),
@@ -119,7 +132,10 @@ def list_workers():
 @api_bp.route('/workers', methods=['POST'])
 @require_api_key
 def create_worker_api():
-    data = request.get_json()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'name', 'hourly_rate')
+    if not ok:
+        return err
     worker = Worker(
         name=data['name'],
         hourly_rate=data['hourly_rate'],
@@ -185,7 +201,10 @@ def worker_logs(worker_id):
 @api_bp.route('/field/voice-note', methods=['POST'])
 @require_api_key
 def voice_note():
-    data = request.get_json()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'project_name', 'content')
+    if not ok:
+        return err
     project = Project.query.filter(
         Project.name.ilike(f"%{data['project_name']}%")
     ).first_or_404()
@@ -212,7 +231,10 @@ def voice_note():
 @api_bp.route('/field/work-log', methods=['POST'])
 @require_api_key
 def field_work_log():
-    data = request.get_json()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'worker_name', 'project_name', 'hours_worked', 'date')
+    if not ok:
+        return err
     worker = Worker.query.filter(
         Worker.name.ilike(f"%{data['worker_name']}%")
     ).first_or_404()
@@ -236,7 +258,10 @@ def field_work_log():
 @api_bp.route('/field/expense', methods=['POST'])
 @require_api_key
 def field_expense():
-    data = request.get_json()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'project_name', 'amount', 'category', 'date')
+    if not ok:
+        return err
     project = Project.query.filter(
         Project.name.ilike(f"%{data['project_name']}%")
     ).first_or_404()
@@ -281,7 +306,10 @@ def field_photo():
 @api_bp.route('/field/customer-note', methods=['POST'])
 @require_api_key
 def customer_note():
-    data = request.get_json()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'project_name', 'content')
+    if not ok:
+        return err
     project = Project.query.filter(
         Project.name.ilike(f"%{data['project_name']}%")
     ).first_or_404()
@@ -308,7 +336,10 @@ def customer_note():
 @api_bp.route('/field/reminder', methods=['POST'])
 @require_api_key
 def create_reminder():
-    data = request.get_json()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'title', 'date', 'time')
+    if not ok:
+        return err
     return jsonify({
         'message': 'Reminder ready for Google Calendar',
         'calendar_event': {

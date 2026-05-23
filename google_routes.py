@@ -22,6 +22,15 @@ SCOPES = ' '.join([
 REDIRECT_URI = 'https://optimalsesmanager.onrender.com/api/google/callback'
 
 
+# ── Validation helper ──────────────────────────────────────────────────────
+def validate_required(data, *fields):
+    missing = [f for f in fields if not data.get(f)]
+    if missing:
+        msg = f"Missing required field(s): {', '.join(missing)}. Please provide them and try again."
+        return False, (jsonify({'error': msg, 'missing_fields': missing}), 400)
+    return True, None
+
+
 # ── Auth helpers ───────────────────────────────────────────────────────────
 def get_credentials():
     refresh_token = os.environ.get('GOOGLE_REFRESH_TOKEN')
@@ -273,7 +282,10 @@ def append_doc():
 @google_bp.route('/create-calendar-event', methods=['POST'])
 @require_api_key
 def create_calendar_event():
-    data = request.get_json()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'title', 'date', 'time')
+    if not ok:
+        return err
 
     try:
         creds = get_credentials()
@@ -313,7 +325,10 @@ def create_calendar_event():
 @google_bp.route('/send-email', methods=['POST'])
 @require_api_key
 def send_email():
-    data = request.get_json()
+    data = request.get_json() or {}
+    ok, err = validate_required(data, 'to', 'subject', 'body')
+    if not ok:
+        return err
 
     try:
         creds = get_credentials()
