@@ -191,7 +191,7 @@ def append_doc():
     doc_id = data.get('doc_id')
     section = data.get('section', 'Field Notes').upper()
     content = data.get('content')
-    date_str = data.get('date', datetime.now().strftime('%m/%d/%Y'))
+    date_str = datetime.now().strftime('%m/%d/%Y %I:%M %p')
 
     try:
         creds = get_credentials()
