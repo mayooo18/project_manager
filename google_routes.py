@@ -61,34 +61,52 @@ def require_api_key(f):
 def google_auth():
     flow = Flow.from_client_config(CLIENT_CONFIG, scopes=SCOPES)
     flow.redirect_uri = CLIENT_CONFIG['web']['redirect_uris'][0]
-    auth_url, state = flow.authorization_url(
+    auth_url, _ = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='consent'
+        prompt='consent',
+        state='optimalses'
     )
-    session['google_state'] = state
     return redirect(auth_url)
 
 
 @google_bp.route('/callback')
 def google_callback():
-    flow = Flow.from_client_config(
-        CLIENT_CONFIG,
-        scopes=SCOPES,
-        state=session.get('google_state')
-    )
-    flow.redirect_uri = CLIENT_CONFIG['web']['redirect_uris'][0]
-    flow.fetch_token(authorization_response=request.url)
-    creds = flow.credentials
-    refresh_token = creds.refresh_token
-    return f"""
-    <html><body style="background:#111;color:#e5e7eb;font-family:sans-serif;padding:2rem;">
-    <h2 style="color:#ff6b35">✅ Google Connected Successfully!</h2>
-    <p>Copy this refresh token and add it to your Render environment variables as <strong>GOOGLE_REFRESH_TOKEN</strong>:</p>
-    <textarea style="width:100%;height:80px;background:#2d2d2d;color:#4ade80;border:1px solid #ff6b35;padding:0.5rem;border-radius:0.5rem;font-size:0.85rem">{refresh_token}</textarea>
-    <p style="color:#9ca3af;margin-top:1rem">After adding to Render, redeploy and you're done.</p>
-    </body></html>
-    """
+    try:
+        flow = Flow.from_client_config(
+            CLIENT_CONFIG,
+            scopes=SCOPES,
+            state='optimalses'
+        )
+        flow.redirect_uri = CLIENT_CONFIG['web']['redirect_uris'][0]
+
+        # Build full URL — force https for Render
+        auth_response = request.url
+        if auth_response.startswith('http://'):
+            auth_response = auth_response.replace('http://', 'https://', 1)
+
+        flow.fetch_token(authorization_response=auth_response)
+        creds = flow.credentials
+        refresh_token = creds.refresh_token
+
+        return f"""
+        <html><body style="background:#111;color:#e5e7eb;font-family:sans-serif;padding:2rem;">
+        <h2 style="color:#ff6b35">✅ Google Connected!</h2>
+        <p>Copy this refresh token and add it to Render as <strong>GOOGLE_REFRESH_TOKEN</strong>:</p>
+        <textarea style="width:100%;height:100px;background:#2d2d2d;color:#4ade80;
+                         border:1px solid #ff6b35;padding:0.5rem;border-radius:0.5rem;
+                         font-size:0.85rem;font-family:monospace">{refresh_token}</textarea>
+        <p style="color:#9ca3af;margin-top:1rem">After adding to Render → Save Changes → redeploy. Done.</p>
+        </body></html>
+        """
+    except Exception as e:
+        return f"""
+        <html><body style="background:#111;color:#e5e7eb;font-family:sans-serif;padding:2rem;">
+        <h2 style="color:#ef4444">❌ Error</h2>
+        <pre style="background:#2d2d2d;padding:1rem;border-radius:0.5rem;color:#fbbf24">{str(e)}</pre>
+        <p><a href="/api/google/auth" style="color:#ff6b35">Try again</a></p>
+        </body></html>
+        """
 
 
 # ── Google Drive ───────────────────────────────────────────────────────────
