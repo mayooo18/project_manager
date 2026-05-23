@@ -271,7 +271,8 @@ def field_work_log():
     db.session.add(log)
     db.session.commit()
     return jsonify({
-        'message': f"Logged {data['hours_worked']} hrs for {worker.name} on {project.name}"
+        'message': f"Logged {data['hours_worked']} hrs for {worker.name} on {project.name}",
+        'log_id': log.id
     })
 
 
@@ -296,7 +297,8 @@ def field_expense():
     db.session.add(expense)
     db.session.commit()
     return jsonify({
-        'message': f"${data['amount']} expense logged for {project.name}"
+        'message': f"${data['amount']} expense logged for {project.name}",
+        'expense_id': expense.id
     })
 
 
@@ -444,6 +446,103 @@ def project_profit(project_id):
         'total_cost': round(total_expenses + labor_cost, 2),
         'profit': round(total_income - total_expenses - labor_cost, 2)
     })
+
+
+# ── Recent Entries & Delete ────────────────────────────────────────────────
+@api_bp.route('/field/recent', methods=['GET'])
+@require_api_key
+def recent_entries():
+    limit = request.args.get('limit', 100, type=int)
+    entry_type = request.args.get('type')       # 'work-log', 'expense', 'note'
+    project_name = request.args.get('project')  # partial match
+
+    entries = []
+
+    if not entry_type or entry_type == 'work-log':
+        q = WorkLog.query
+        if project_name:
+            q = q.join(Project).filter(Project.name.ilike(f'%{project_name}%'))
+        logs = q.order_by(WorkLog.id.desc()).limit(limit).all()
+        for l in logs:
+            entries.append({
+                'type': 'work-log',
+                'id': l.id,
+                'worker': l.worker.name,
+                'project': l.project.name,
+                'hours': l.hours_worked,
+                'date': str(l.start_date),
+                'note': l.note
+            })
+
+    if not entry_type or entry_type == 'expense':
+        q = Expense.query
+        if project_name:
+            q = q.join(Project).filter(Project.name.ilike(f'%{project_name}%'))
+        expenses = q.order_by(Expense.id.desc()).limit(limit).all()
+        for e in expenses:
+            entries.append({
+                'type': 'expense',
+                'id': e.id,
+                'project': e.project.name,
+                'amount': e.amount,
+                'category': e.category,
+                'date': e.date.strftime('%Y-%m-%d'),
+                'description': e.description,
+                'note': e.note
+            })
+
+    if not entry_type or entry_type == 'note':
+        q = ProjectNote.query
+        if project_name:
+            q = q.join(Project).filter(Project.name.ilike(f'%{project_name}%'))
+        notes = q.order_by(ProjectNote.id.desc()).limit(limit).all()
+        for n in notes:
+            entries.append({
+                'type': 'note',
+                'id': n.id,
+                'note_type': n.note_type,
+                'project': n.project.name,
+                'content': n.content,
+                'date': n.created_at.strftime('%Y-%m-%d %I:%M %p')
+            })
+
+    # Sort all combined results by id descending (most recent first)
+    entries.sort(key=lambda x: x['id'], reverse=True)
+
+    return jsonify({
+        'count': len(entries),
+        'entries': entries[:limit]
+    })
+
+
+@api_bp.route('/field/work-log/<int:log_id>', methods=['DELETE'])
+@require_api_key
+def delete_work_log(log_id):
+    log = WorkLog.query.get_or_404(log_id)
+    summary = f"{log.hours_worked} hrs for {log.worker.name} on {log.project.name} ({log.start_date})"
+    db.session.delete(log)
+    db.session.commit()
+    return jsonify({'message': f"Deleted: {summary}"})
+
+
+@api_bp.route('/field/expense/<int:expense_id>', methods=['DELETE'])
+@require_api_key
+def delete_expense(expense_id):
+    expense = Expense.query.get_or_404(expense_id)
+    summary = f"${expense.amount} {expense.category} on {expense.project.name} ({expense.date.strftime('%Y-%m-%d')})"
+    db.session.delete(expense)
+    db.session.commit()
+    return jsonify({'message': f"Deleted: {summary}"})
+
+
+@api_bp.route('/field/note/<int:note_id>', methods=['DELETE'])
+@require_api_key
+def delete_note(note_id):
+    note = ProjectNote.query.get_or_404(note_id)
+    summary = f"{note.note_type} note on {note.project.name}: \"{note.content[:60]}...\""
+    db.session.delete(note)
+    db.session.commit()
+    return jsonify({'message': f"Deleted: {summary}"})
 
 
 # ── OpenAPI Spec ───────────────────────────────────────────────────────────
@@ -706,6 +805,42 @@ def openapi_spec():
                     "operationId": "getTodayBriefing",
                     "summary": "Get today's work summary — who is working where",
                     "responses": {"200": {"description": "Today's briefing"}}
+                }
+            },
+            "/api/field/recent": {
+                "get": {
+                    "operationId": "getRecentEntries",
+                    "summary": "Get up to 100 recent work logs, expenses, and notes with their IDs. Use this before deleting to find the right entry.",
+                    "parameters": [
+                        {"name": "type", "in": "query", "schema": {"type": "string", "enum": ["work-log", "expense", "note"]}, "description": "Filter by entry type"},
+                        {"name": "project", "in": "query", "schema": {"type": "string"}, "description": "Filter by project name (partial match)"},
+                        {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 100}}
+                    ],
+                    "responses": {"200": {"description": "List of recent entries with IDs"}}
+                }
+            },
+            "/api/field/work-log/{log_id}": {
+                "delete": {
+                    "operationId": "deleteWorkLog",
+                    "summary": "Delete a work log entry by ID. Always confirm with the user before calling this.",
+                    "parameters": [{"name": "log_id", "in": "path", "required": True, "schema": {"type": "integer"}}],
+                    "responses": {"200": {"description": "Work log deleted"}}
+                }
+            },
+            "/api/field/expense/{expense_id}": {
+                "delete": {
+                    "operationId": "deleteExpense",
+                    "summary": "Delete an expense entry by ID. Always confirm with the user before calling this.",
+                    "parameters": [{"name": "expense_id", "in": "path", "required": True, "schema": {"type": "integer"}}],
+                    "responses": {"200": {"description": "Expense deleted"}}
+                }
+            },
+            "/api/field/note/{note_id}": {
+                "delete": {
+                    "operationId": "deleteNote",
+                    "summary": "Delete a project note by ID. Always confirm with the user before calling this.",
+                    "parameters": [{"name": "note_id", "in": "path", "required": True, "schema": {"type": "integer"}}],
+                    "responses": {"200": {"description": "Note deleted"}}
                 }
             },
             "/api/reports/payroll": {
