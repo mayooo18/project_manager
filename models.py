@@ -23,6 +23,8 @@ class Project(db.Model):
     address = db.Column(db.String(200))
     start_date = db.Column(db.Date)
     status = db.Column(db.String(50), default="Active")
+    google_folder_id = db.Column(db.String(200), nullable=True)
+    google_doc_id = db.Column(db.String(200), nullable=True)
 
     work_logs = db.relationship('WorkLog', back_populates='project', cascade='all, delete-orphan')
     files = db.relationship("ProjectFile", backref="project", cascade="all, delete-orphan")

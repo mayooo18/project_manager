@@ -59,7 +59,9 @@ def list_projects():
         'name': p.name,
         'status': p.status,
         'address': p.address,
-        'description': p.description
+        'description': p.description,
+        'google_doc_id': p.google_doc_id,
+        'google_folder_id': p.google_folder_id
     } for p in projects])
 
 
@@ -104,6 +106,8 @@ def project_summary(project_id):
         'status': p.status,
         'address': p.address,
         'description': p.description,
+        'google_doc_id': p.google_doc_id,
+        'google_folder_id': p.google_folder_id,
         'total_income': total_income,
         'total_expenses': total_expenses,
         'labor_cost': round(labor_cost, 2),

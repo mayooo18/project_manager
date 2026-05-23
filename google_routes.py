@@ -9,6 +9,8 @@ from email.mime.text import MIMEText
 import base64
 import requests as http_requests
 from urllib.parse import urlencode
+from extensions import db
+from models import Project
 
 google_bp = Blueprint('google', __name__, url_prefix='/api/google')
 
@@ -180,6 +182,15 @@ def create_folder():
             removeParents='root',
             fields='id, parents'
         ).execute()
+
+        # Save IDs back to the project in the database
+        project_record = Project.query.filter(
+            Project.name.ilike(f'%{project_name}%')
+        ).first()
+        if project_record:
+            project_record.google_folder_id = project_id
+            project_record.google_doc_id = doc_id
+            db.session.commit()
 
         return jsonify({
             'message': f"Folder and doc created for {project_name}",
