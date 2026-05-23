@@ -671,6 +671,83 @@ def openapi_spec():
                     "parameters": [{"name": "project_id", "in": "path", "required": True, "schema": {"type": "integer"}}],
                     "responses": {"200": {"description": "Project profit report"}}
                 }
+            },
+            "/api/google/create-folder": {
+                "post": {
+                    "operationId": "createGoogleFolder",
+                    "summary": "Create a Google Drive project folder with subfolders (Photos, Documents, Receipts, Voice Notes) and a linked Google Doc for notes",
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {"schema": {
+                            "type": "object",
+                            "required": ["project_name"],
+                            "properties": {
+                                "project_name": {"type": "string"}
+                            }
+                        }}}
+                    },
+                    "responses": {"200": {"description": "Folder and doc created, returns google_doc_id and folder_id"}}
+                }
+            },
+            "/api/google/append-doc": {
+                "post": {
+                    "operationId": "appendToGoogleDoc",
+                    "summary": "Append a voice note or customer note to a project's Google Doc",
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {"schema": {
+                            "type": "object",
+                            "required": ["doc_id", "content"],
+                            "properties": {
+                                "doc_id": {"type": "string", "description": "Google Doc ID"},
+                                "section": {"type": "string", "description": "e.g. Field Notes, Customer Notes"},
+                                "content": {"type": "string"},
+                                "date": {"type": "string"}
+                            }
+                        }}}
+                    },
+                    "responses": {"200": {"description": "Note appended to doc"}}
+                }
+            },
+            "/api/google/create-calendar-event": {
+                "post": {
+                    "operationId": "createCalendarEvent",
+                    "summary": "Create a Google Calendar event or reminder",
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {"schema": {
+                            "type": "object",
+                            "required": ["title", "date"],
+                            "properties": {
+                                "title": {"type": "string"},
+                                "date": {"type": "string", "description": "YYYY-MM-DD"},
+                                "time": {"type": "string", "description": "HH:MM, default 08:00"},
+                                "end_time": {"type": "string", "description": "HH:MM, default 09:00"},
+                                "description": {"type": "string"}
+                            }
+                        }}}
+                    },
+                    "responses": {"200": {"description": "Calendar event created"}}
+                }
+            },
+            "/api/google/send-email": {
+                "post": {
+                    "operationId": "sendEmail",
+                    "summary": "Send an email from Mario's Gmail account",
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {"schema": {
+                            "type": "object",
+                            "required": ["to", "subject", "body"],
+                            "properties": {
+                                "to": {"type": "string", "description": "Recipient email address"},
+                                "subject": {"type": "string"},
+                                "body": {"type": "string"}
+                            }
+                        }}}
+                    },
+                    "responses": {"200": {"description": "Email sent"}}
+                }
             }
         }
     }
