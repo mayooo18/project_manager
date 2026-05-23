@@ -34,6 +34,10 @@ app.register_blueprint(ai_bp)
 app.register_blueprint(field_api_bp)
 app.register_blueprint(google_bp)
 
+# API routes use API key auth — exempt from CSRF
+csrf.exempt(field_api_bp)
+csrf.exempt(google_bp)
+
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
