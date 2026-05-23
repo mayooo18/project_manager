@@ -179,7 +179,7 @@
             <td class="table-cell">{{ log.project.name }}</td>
             <td class="table-cell">
               {{ log.start_date.strftime('%m/%d/%Y') }}
-              {% if log.start_date != log.end_date %}
+              {% if log.end_date and log.start_date != log.end_date %}
                 – {{ log.end_date.strftime('%m/%d/%Y') }}
               {% endif %}
             </td>
