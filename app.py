@@ -15,6 +15,7 @@ from sqlalchemy.exc import OperationalError, DisconnectionError
 from document_forms import DocumentForm
 from ai_routes import ai_bp
 from api_routes import api_bp as field_api_bp
+from google_routes import google_bp
 import re
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -31,6 +32,7 @@ db.init_app(app)
 csrf = CSRFProtect(app)
 app.register_blueprint(ai_bp)
 app.register_blueprint(field_api_bp)
+app.register_blueprint(google_bp)
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
