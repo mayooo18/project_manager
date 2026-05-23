@@ -1,6 +1,7 @@
 import os
 from flask import Blueprint, request, jsonify, redirect
 from functools import wraps
+from datetime import datetime
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -188,9 +189,9 @@ def create_folder():
 def append_doc():
     data = request.get_json()
     doc_id = data.get('doc_id')
-    section = data.get('section', 'Field Notes')
+    section = data.get('section', 'Field Notes').upper()
     content = data.get('content')
-    date_str = data.get('date', '')
+    date_str = data.get('date', datetime.now().strftime('%m/%d/%Y'))
 
     try:
         creds = get_credentials()
@@ -199,22 +200,68 @@ def append_doc():
 
         docs = build('docs', 'v1', credentials=creds)
         doc = docs.documents().get(documentId=doc_id).execute()
-        end_index = doc['body']['content'][-1]['endIndex'] - 1
+        body_content = doc['body']['content']
 
-        text_to_append = f"\n\n[{section}] — {date_str}\n{content}\n"
+        # Build full text from document
+        full_text = ''
+        for element in body_content:
+            if 'paragraph' in element:
+                for el in element['paragraph'].get('elements', []):
+                    if 'textRun' in el:
+                        full_text += el['textRun']['content']
 
-        docs.documents().batchUpdate(
-            documentId=doc_id,
-            body={'requests': [{
-                'insertText': {
-                    'location': {'index': end_index},
-                    'text': text_to_append
-                }
-            }]}
-        ).execute()
+        section_marker = f'═══ {section} ═══'
+        new_line = f'{date_str} — {content}\n'
+        section_idx = full_text.find(section_marker)
+
+        if section_idx == -1:
+            # Section doesn't exist — append heading + note at end
+            end_index = body_content[-1]['endIndex'] - 1
+            insert_text = f'\n\n{section_marker}\n{new_line}'
+            docs.documents().batchUpdate(documentId=doc_id, body={
+                'requests': [{'insertText': {'location': {'index': end_index}, 'text': insert_text}}]
+            }).execute()
+        else:
+            # Section exists — find where to insert (before next section or at end)
+            next_section_idx = full_text.find('═══', section_idx + len(section_marker))
+
+            if next_section_idx == -1:
+                # No next section — append at end of doc
+                end_index = body_content[-1]['endIndex'] - 1
+                docs.documents().batchUpdate(documentId=doc_id, body={
+                    'requests': [{'insertText': {'location': {'index': end_index}, 'text': new_line}}]
+                }).execute()
+            else:
+                # Find the doc index just before the next section heading
+                char_pos = 0
+                insert_doc_index = None
+                for element in body_content:
+                    if insert_doc_index:
+                        break
+                    if 'paragraph' in element:
+                        for el in element['paragraph'].get('elements', []):
+                            if 'textRun' in el:
+                                text = el['textRun']['content']
+                                if char_pos + len(text) >= next_section_idx - 1:
+                                    offset = max(0, next_section_idx - 2 - char_pos)
+                                    insert_doc_index = el['startIndex'] + offset
+                                    break
+                                char_pos += len(text)
+
+                if insert_doc_index:
+                    docs.documents().batchUpdate(documentId=doc_id, body={
+                        'requests': [{'insertText': {'location': {'index': insert_doc_index}, 'text': new_line}}]
+                    }).execute()
+                else:
+                    # Fallback — append at end
+                    end_index = body_content[-1]['endIndex'] - 1
+                    docs.documents().batchUpdate(documentId=doc_id, body={
+                        'requests': [{'insertText': {'location': {'index': end_index}, 'text': new_line}}]
+                    }).execute()
 
         return jsonify({
             'message': 'Note appended to Google Doc',
+            'section': section,
             'doc_url': f'https://docs.google.com/document/d/{doc_id}'
         })
 
