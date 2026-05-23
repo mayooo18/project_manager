@@ -1,32 +1,24 @@
 import os
-from flask import Blueprint, request, jsonify, redirect, session
+from flask import Blueprint, request, jsonify, redirect
 from functools import wraps
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText
 import base64
-import json
+import requests as http_requests
+from urllib.parse import urlencode
 
 google_bp = Blueprint('google', __name__, url_prefix='/api/google')
 
-SCOPES = [
+SCOPES = ' '.join([
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/documents',
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/gmail.send'
-]
+])
 
-CLIENT_CONFIG = {
-    "web": {
-        "client_id": os.environ.get('GOOGLE_CLIENT_ID'),
-        "client_secret": os.environ.get('GOOGLE_CLIENT_SECRET'),
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "redirect_uris": [os.environ.get('GOOGLE_REDIRECT_URI', 'https://optimalsesmanager.onrender.com/api/google/callback')]
-    }
-}
+REDIRECT_URI = 'https://optimalsesmanager.onrender.com/api/google/callback'
 
 
 # ── Auth helpers ───────────────────────────────────────────────────────────
@@ -40,7 +32,7 @@ def get_credentials():
         token_uri="https://oauth2.googleapis.com/token",
         client_id=os.environ.get('GOOGLE_CLIENT_ID'),
         client_secret=os.environ.get('GOOGLE_CLIENT_SECRET'),
-        scopes=SCOPES
+        scopes=SCOPES.split()
     )
     creds.refresh(Request())
     return creds
@@ -59,35 +51,44 @@ def require_api_key(f):
 # ── OAuth Flow ─────────────────────────────────────────────────────────────
 @google_bp.route('/auth')
 def google_auth():
-    flow = Flow.from_client_config(CLIENT_CONFIG, scopes=SCOPES)
-    flow.redirect_uri = CLIENT_CONFIG['web']['redirect_uris'][0]
-    auth_url, _ = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true',
-        prompt='consent',
-        state='optimalses'
-    )
-    return redirect(auth_url)
+    params = urlencode({
+        'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
+        'redirect_uri': REDIRECT_URI,
+        'response_type': 'code',
+        'scope': SCOPES,
+        'access_type': 'offline',
+        'prompt': 'consent'
+    })
+    return redirect(f'https://accounts.google.com/o/oauth2/auth?{params}')
 
 
 @google_bp.route('/callback')
 def google_callback():
     try:
-        flow = Flow.from_client_config(
-            CLIENT_CONFIG,
-            scopes=SCOPES,
-            state='optimalses'
-        )
-        flow.redirect_uri = CLIENT_CONFIG['web']['redirect_uris'][0]
+        code = request.args.get('code')
+        if not code:
+            return '<h2>Error: No code returned from Google</h2>'
 
-        # Build full URL — force https for Render
-        auth_response = request.url
-        if auth_response.startswith('http://'):
-            auth_response = auth_response.replace('http://', 'https://', 1)
+        # Exchange code for tokens directly — no PKCE
+        token_resp = http_requests.post('https://oauth2.googleapis.com/token', data={
+            'code': code,
+            'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
+            'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET'),
+            'redirect_uri': REDIRECT_URI,
+            'grant_type': 'authorization_code'
+        })
 
-        flow.fetch_token(authorization_response=auth_response)
-        creds = flow.credentials
-        refresh_token = creds.refresh_token
+        tokens = token_resp.json()
+        refresh_token = tokens.get('refresh_token', '')
+
+        if not refresh_token:
+            return f"""
+            <html><body style="background:#111;color:#e5e7eb;font-family:sans-serif;padding:2rem;">
+            <h2 style="color:#ef4444">⚠️ No refresh token returned</h2>
+            <pre style="background:#2d2d2d;padding:1rem;border-radius:0.5rem;color:#fbbf24">{tokens}</pre>
+            <p><a href="/api/google/auth" style="color:#ff6b35">Try again</a></p>
+            </body></html>
+            """
 
         return f"""
         <html><body style="background:#111;color:#e5e7eb;font-family:sans-serif;padding:2rem;">
