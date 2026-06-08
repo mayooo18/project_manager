@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template
 from flask_login import login_required, current_user
 from extensions import db
-from models import AIActionLog, Worker, Project, WorkLog, Expense
+from models import AIActionLog, Worker, Project, WorkLog, Expense, Reminder
 from ai_assistant import process_message, validate_action
 import json
 from datetime import datetime
@@ -104,6 +104,19 @@ def confirm():
                 date=datetime.strptime(data['date'], '%Y-%m-%d'),
                 description=data.get('description'),
                 note=data.get('note')
+            )
+            db.session.add(record)
+            db.session.flush()
+            result_id = record.id
+
+        elif tool == 'set_reminder':
+            due = None
+            if data.get('due_date'):
+                due = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
+            record = Reminder(
+                user_id=current_user.id,
+                text=data['text'],
+                due_date=due
             )
             db.session.add(record)
             db.session.flush()

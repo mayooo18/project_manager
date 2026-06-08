@@ -29,6 +29,10 @@ You have access to these tools:
 5. query_project_profit — Look up profit for a project
    Required: project_name
 
+6. set_reminder — Save a reminder to check later on the site
+   Required: text
+   Optional: due_date (YYYY-MM-DD)
+
 Rules:
 - NEVER invent or guess worker names, project names, or amounts not stated by the user
 - If a required field is missing or unclear, set clarification_needed to a specific question
@@ -119,6 +123,21 @@ TOOLS = [
                 "required": ["project_name"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "set_reminder",
+            "description": "Save a reminder for the user to see on the site",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "description": "What to be reminded about"},
+                    "due_date": {"type": "string", "description": "YYYY-MM-DD, optional"}
+                },
+                "required": ["text"]
+            }
+        }
     }
 ]
 
@@ -128,6 +147,7 @@ REQUIRED_FIELDS = {
     "add_expense": ["project_name", "amount", "category", "date"],
     "add_invoice_item": ["invoice_number", "description", "amount"],
     "query_project_profit": ["project_name"],
+    "set_reminder": ["text"],
 }
 
 

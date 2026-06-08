@@ -3,7 +3,7 @@ from functools import wraps
 from datetime import datetime, date, timedelta
 import os
 from extensions import db
-from models import Worker, Project, WorkLog, Expense, Income, ProjectFile, ProjectNote
+from models import Worker, Project, WorkLog, Expense, Income, ProjectFile, ProjectNote, Reminder
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -366,14 +366,35 @@ def customer_note():
 @require_api_key
 def create_reminder():
     data = request.get_json() or {}
-    ok, err = validate_required(data, 'title', 'date', 'time')
+    ok, err = validate_required(data, 'title')
     if not ok:
         return err
+
+    due = None
+    if data.get('date'):
+        try:
+            due = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        except ValueError:
+            pass
+
+    # Save to the site so it shows on the Reminders page
+    from flask_login import current_user
+    from sqlalchemy import text as sa_text
+    # API calls aren't session-authenticated, so store under user id 1 (the owner)
+    reminder = Reminder(
+        user_id=1,
+        text=data['title'] + (f" — {data.get('description')}" if data.get('description') else ''),
+        due_date=due
+    )
+    db.session.add(reminder)
+    db.session.commit()
+
     return jsonify({
-        'message': 'Reminder ready for Google Calendar',
+        'message': 'Reminder saved to dashboard',
+        'reminder_id': reminder.id,
         'calendar_event': {
             'title': data['title'],
-            'date': data['date'],
+            'date': data.get('date', ''),
             'time': data.get('time', '08:00'),
             'description': data.get('description', ''),
             'project': data.get('project_name', '')

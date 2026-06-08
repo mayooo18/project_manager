@@ -117,6 +117,17 @@ class ProjectNote(db.Model):
     project = db.relationship('Project', backref=db.backref('notes', cascade='all, delete-orphan'))
 
 
+class Reminder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    due_date = db.Column(db.Date, nullable=True)
+    is_done = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('reminders', cascade='all, delete-orphan'))
+
+
 class AIActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

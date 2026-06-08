@@ -16,6 +16,7 @@ from document_forms import DocumentForm
 from ai_routes import ai_bp
 from api_routes import api_bp as field_api_bp
 from google_routes import google_bp
+from reminder_routes import reminder_bp
 import re
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -33,6 +34,7 @@ csrf = CSRFProtect(app)
 app.register_blueprint(ai_bp)
 app.register_blueprint(field_api_bp)
 app.register_blueprint(google_bp)
+app.register_blueprint(reminder_bp)
 
 # API routes use API key auth — exempt from CSRF
 csrf.exempt(field_api_bp)

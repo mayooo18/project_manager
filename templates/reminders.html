@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Reminders{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-white">Reminders</h1>
+    <span class="text-sm text-gray-400">
+      {% if active %}{{ active|length }} active{% else %}No active reminders{% endif %}
+    </span>
+  </div>
+
+  <!-- Active reminders -->
+  {% if active %}
+  <div id="active-list" class="flex flex-col gap-3 mb-10">
+    {% for r in active %}
+    <div id="reminder-{{ r.id }}" class="flex items-start justify-between gap-4 bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
+      <div class="flex items-start gap-3 flex-1 min-w-0">
+        <!-- circle check button -->
+        <button onclick="markDone({{ r.id }})"
+          class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 border-orange-500 hover:bg-orange-500 transition-colors"
+          title="Mark done">
+        </button>
+        <div class="min-w-0">
+          <p class="text-gray-100 text-sm leading-snug">{{ r.text }}</p>
+          {% if r.due_date %}
+          <p class="text-orange-400 text-xs mt-1">Due {{ r.due_date.strftime('%b %d, %Y') }}</p>
+          {% endif %}
+          <p class="text-gray-500 text-xs mt-0.5">Added {{ r.created_at.strftime('%b %d') }}</p>
+        </div>
+      </div>
+      <button onclick="deleteReminder({{ r.id }})"
+        class="flex-shrink-0 text-gray-600 hover:text-red-400 transition-colors text-lg leading-none pt-0.5"
+        title="Delete">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center mb-10">
+    <p class="text-gray-400 text-sm">No active reminders.</p>
+    <p class="text-gray-600 text-xs mt-1">Use the AI chat &rarr; try "Remind me to call the client on Friday"</p>
+  </div>
+  {% endif %}
+
+  <!-- Completed -->
+  {% if done %}
+  <details class="group">
+    <summary class="cursor-pointer text-gray-500 text-sm mb-3 select-none list-none flex items-center gap-2">
+      <span class="group-open:rotate-90 transition-transform inline-block">&#9654;</span>
+      Completed ({{ done|length }})
+    </summary>
+    <div class="flex flex-col gap-2 mt-2">
+      {% for r in done %}
+      <div id="reminder-{{ r.id }}" class="flex items-start justify-between gap-4 bg-gray-950 border border-gray-800 rounded-xl px-5 py-3 opacity-60">
+        <div class="flex items-start gap-3 flex-1 min-w-0">
+          <div class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-gray-700 flex items-center justify-center">
+            <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8.414 15l-4.121-4.121a1 1 0 011.414-1.414L8.414 12.172l7.879-7.879a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <p class="text-gray-500 text-sm line-through leading-snug">{{ r.text }}</p>
+        </div>
+        <button onclick="deleteReminder({{ r.id }})"
+          class="flex-shrink-0 text-gray-700 hover:text-red-400 transition-colors text-lg leading-none pt-0.5"
+          title="Delete">&times;</button>
+      </div>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+
+</div>
+
+<script>
+const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+async function markDone(id) {
+  const res = await fetch(`/reminders/${id}/done`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrf }
+  });
+  if (res.ok) document.getElementById(`reminder-${id}`).remove();
+}
+
+async function deleteReminder(id) {
+  const res = await fetch(`/reminders/${id}`, {
+    method: 'DELETE',
+    headers: { 'X-CSRFToken': csrf }
+  });
+  if (res.ok) document.getElementById(`reminder-${id}`).remove();
+}
+</script>
+
+</body>
+</html>
+{% endblock %}
