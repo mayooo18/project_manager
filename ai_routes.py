@@ -67,7 +67,7 @@ def confirm():
         if tool == 'create_worker':
             record = Worker(
                 name=data['name'],
-                hourly_rate=data['hourly_rate'],
+                daily_rate=data['daily_rate'],
                 contact=data.get('contact'),
                 active=data.get('active', True)
             )
@@ -85,7 +85,7 @@ def confirm():
             record = WorkLog(
                 worker_id=worker.id,
                 project_id=project.id,
-                hours_worked=data['hours_worked'],
+                days_worked=data['days_worked'],
                 start_date=datetime.strptime(data['start_date'], '%Y-%m-%d').date(),
                 note=data.get('note')
             )

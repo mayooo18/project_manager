@@ -96,8 +96,8 @@ def project_summary(project_id):
     p = Project.query.get_or_404(project_id)
     total_income = sum(i.amount for i in p.incomes)
     total_expenses = sum(e.amount for e in p.expenses)
-    labor_cost = sum((l.hours_worked or 0) * l.worker.hourly_rate for l in p.work_logs)
-    total_hours = sum(l.hours_worked or 0 for l in p.work_logs)
+    labor_cost = sum((l.days_worked or 0) * l.worker.daily_rate for l in p.work_logs)
+    total_days = sum(l.days_worked or 0 for l in p.work_logs)
     notes = ProjectNote.query.filter_by(project_id=project_id)\
         .order_by(ProjectNote.created_at.desc()).limit(5).all()
     return jsonify({
@@ -112,7 +112,7 @@ def project_summary(project_id):
         'total_expenses': total_expenses,
         'labor_cost': round(labor_cost, 2),
         'profit': round(total_income - total_expenses - labor_cost, 2),
-        'total_hours': total_hours,
+        'total_days': total_days,
         'recent_notes': [{
             'type': n.note_type,
             'content': n.content,
@@ -148,7 +148,7 @@ def list_workers():
     return jsonify([{
         'id': w.id,
         'name': w.name,
-        'hourly_rate': w.hourly_rate,
+        'daily_rate': w.daily_rate,
         'contact': w.contact
     } for w in workers])
 
@@ -157,12 +157,12 @@ def list_workers():
 @require_api_key
 def create_worker_api():
     data = request.get_json() or {}
-    ok, err = validate_required(data, 'name', 'hourly_rate')
+    ok, err = validate_required(data, 'name', 'daily_rate')
     if not ok:
         return err
     worker = Worker(
         name=data['name'],
-        hourly_rate=data['hourly_rate'],
+        daily_rate=data['daily_rate'],
         contact=data.get('contact'),
         active=data.get('active', True)
     )
@@ -176,8 +176,8 @@ def create_worker_api():
 def update_worker_api(worker_id):
     worker = Worker.query.get_or_404(worker_id)
     data = request.get_json()
-    if 'hourly_rate' in data:
-        worker.hourly_rate = data['hourly_rate']
+    if 'daily_rate' in data:
+        worker.daily_rate = data['daily_rate']
     if 'contact' in data:
         worker.contact = data['contact']
     if 'active' in data:
@@ -205,17 +205,17 @@ def worker_logs(worker_id):
         WorkLog.worker_id == worker_id,
         WorkLog.start_date >= since
     ).all()
-    total_hours = sum(l.hours_worked or 0 for l in logs)
+    total_days = sum(l.days_worked or 0 for l in logs)
     return jsonify({
         'worker': worker.name,
-        'hourly_rate': worker.hourly_rate,
+        'daily_rate': worker.daily_rate,
         'period_days': days,
-        'total_hours': total_hours,
-        'total_pay': round(total_hours * worker.hourly_rate, 2),
+        'total_days': total_days,
+        'total_pay': round(total_days * worker.daily_rate, 2),
         'logs': [{
             'project': l.project.name,
             'date': str(l.start_date),
-            'hours': l.hours_worked,
+            'days': l.days_worked,
             'note': l.note
         } for l in logs]
     })
@@ -256,7 +256,7 @@ def voice_note():
 @require_api_key
 def field_work_log():
     data = request.get_json() or {}
-    ok, err = validate_required(data, 'worker_name', 'project_name', 'hours_worked', 'date')
+    ok, err = validate_required(data, 'worker_name', 'project_name', 'days_worked', 'date')
     if not ok:
         return err
     worker, err = find_worker(data['worker_name'])
@@ -268,14 +268,14 @@ def field_work_log():
     log = WorkLog(
         worker_id=worker.id,
         project_id=project.id,
-        hours_worked=data['hours_worked'],
+        days_worked=data['days_worked'],
         start_date=datetime.strptime(data['date'], '%Y-%m-%d').date() if data.get('date') else date.today(),
         note=data.get('note')
     )
     db.session.add(log)
     db.session.commit()
     return jsonify({
-        'message': f"Logged {data['hours_worked']} hrs for {worker.name} on {project.name}",
+        'message': f"Logged {data['days_worked']} days for {worker.name} on {project.name}",
         'log_id': log.id
     })
 
@@ -414,7 +414,7 @@ def today_briefing():
             summary[name] = []
         summary[name].append({
             'worker': log.worker.name,
-            'hours': log.hours_worked,
+            'days': log.days_worked,
             'note': log.note
         })
     active_projects = Project.query.filter_by(status='Active').count()
@@ -440,13 +440,13 @@ def payroll_report():
             WorkLog.worker_id == worker.id,
             WorkLog.start_date >= since
         ).all()
-        total_hours = sum(l.hours_worked or 0 for l in logs)
-        if total_hours > 0:
+        total_days = sum(l.days_worked or 0 for l in logs)
+        if total_days > 0:
             report.append({
                 'worker': worker.name,
-                'hourly_rate': worker.hourly_rate,
-                'total_hours': total_hours,
-                'total_pay': round(total_hours * worker.hourly_rate, 2)
+                'daily_rate': worker.daily_rate,
+                'total_days': total_days,
+                'total_pay': round(total_days * worker.daily_rate, 2)
             })
     return jsonify({
         'period_days': days,
@@ -462,7 +462,7 @@ def project_profit(project_id):
     p = Project.query.get_or_404(project_id)
     total_income = sum(i.amount for i in p.incomes)
     total_expenses = sum(e.amount for e in p.expenses)
-    labor_cost = sum((l.hours_worked or 0) * l.worker.hourly_rate for l in p.work_logs)
+    labor_cost = sum((l.days_worked or 0) * l.worker.daily_rate for l in p.work_logs)
     return jsonify({
         'project': p.name,
         'total_income': total_income,
@@ -494,7 +494,7 @@ def recent_entries():
                 'id': l.id,
                 'worker': l.worker.name,
                 'project': l.project.name,
-                'hours': l.hours_worked,
+                'days': l.days_worked,
                 'date': str(l.start_date),
                 'note': l.note
             })
@@ -544,7 +544,7 @@ def recent_entries():
 @require_api_key
 def delete_work_log(log_id):
     log = WorkLog.query.get_or_404(log_id)
-    summary = f"{log.hours_worked} hrs for {log.worker.name} on {log.project.name} ({log.start_date})"
+    summary = f"{log.days_worked} days for {log.worker.name} on {log.project.name} ({log.start_date})"
     db.session.delete(log)
     db.session.commit()
     return jsonify({'message': f"Deleted: {summary}"})
@@ -657,10 +657,10 @@ def openapi_spec():
                         "required": True,
                         "content": {"application/json": {"schema": {
                             "type": "object",
-                            "required": ["name", "hourly_rate"],
+                            "required": ["name", "daily_rate"],
                             "properties": {
                                 "name": {"type": "string"},
-                                "hourly_rate": {"type": "number"},
+                                "daily_rate": {"type": "number"},
                                 "contact": {"type": "string"}
                             }
                         }}}
@@ -671,14 +671,14 @@ def openapi_spec():
             "/api/workers/{worker_id}": {
                 "patch": {
                     "operationId": "updateWorker",
-                    "summary": "Update worker hourly rate or contact info",
+                    "summary": "Update worker daily rate or contact info",
                     "parameters": [{"name": "worker_id", "in": "path", "required": True, "schema": {"type": "integer"}}],
                     "requestBody": {
                         "required": True,
                         "content": {"application/json": {"schema": {
                             "type": "object",
                             "properties": {
-                                "hourly_rate": {"type": "number"},
+                                "daily_rate": {"type": "number"},
                                 "contact": {"type": "string"},
                                 "active": {"type": "boolean"}
                             }
@@ -696,7 +696,7 @@ def openapi_spec():
             "/api/workers/{worker_id}/logs": {
                 "get": {
                     "operationId": "getWorkerLogs",
-                    "summary": "Get hours and pay for a worker over the last N days",
+                    "summary": "Get days worked and pay for a worker over the last N days",
                     "parameters": [
                         {"name": "worker_id", "in": "path", "required": True, "schema": {"type": "integer"}},
                         {"name": "days", "in": "query", "schema": {"type": "integer", "default": 7}}
@@ -725,22 +725,22 @@ def openapi_spec():
             "/api/field/work-log": {
                 "post": {
                     "operationId": "logWorkHours",
-                    "summary": "Log hours worked by a worker on a project",
+                    "summary": "Log days worked by a worker on a project",
                     "requestBody": {
                         "required": True,
                         "content": {"application/json": {"schema": {
                             "type": "object",
-                            "required": ["worker_name", "project_name", "hours_worked"],
+                            "required": ["worker_name", "project_name", "days_worked"],
                             "properties": {
                                 "worker_name": {"type": "string"},
                                 "project_name": {"type": "string"},
-                                "hours_worked": {"type": "number"},
+                                "days_worked": {"type": "number"},
                                 "date": {"type": "string", "description": "YYYY-MM-DD"},
                                 "note": {"type": "string"}
                             }
                         }}}
                     },
-                    "responses": {"200": {"description": "Hours logged"}}
+                    "responses": {"200": {"description": "Days logged"}}
                 }
             },
             "/api/field/expense": {

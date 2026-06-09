@@ -95,7 +95,7 @@ def workers():
         new_worker = Worker(
             name=form.  name.data,
             contact=form.contact.data,
-            hourly_rate=form.hourly_rate.data,
+            daily_rate=form.daily_rate.data,
             active=form.active.data
         )
         db.session.add(new_worker)
@@ -115,7 +115,7 @@ def edit_worker(worker_id):
     if form.validate_on_submit():
         worker.name = form.name.data
         worker.contact = form.contact.data
-        worker.hourly_rate = form.hourly_rate.data
+        worker.daily_rate = form.daily_rate.data
         worker.active = form.active.data
         db.session.commit()
         flash('Worker updated successfully.')
@@ -276,7 +276,7 @@ def work_logs():
             project_id=form.project_id.data,
             start_date=form.start_date.data,
             end_date=form.end_date.data,
-            hours_worked=form.hours_worked.data,
+            days_worked=form.days_worked.data,
             note=form.note.data
         )
         db.session.add(new_log)
@@ -322,7 +322,7 @@ def edit_work_log(log_id):
         log.project_id = form.project_id.data
         log.start_date = form.start_date.data
         log.end_date = form.end_date.data
-        log.hours_worked = form.hours_worked.data
+        log.days_worked = form.days_worked.data
         log.note = form.note.data
         db.session.commit()
         flash('Work log updated successfully')

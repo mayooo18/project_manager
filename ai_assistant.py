@@ -12,11 +12,11 @@ You help the owner log business data by understanding natural language and extra
 You have access to these tools:
 
 1. create_worker — Add a new worker
-   Required: name, hourly_rate
+   Required: name, daily_rate
    Optional: contact, active (default true)
 
-2. create_work_log — Log hours worked
-   Required: worker_name, project_name, hours_worked, start_date (YYYY-MM-DD)
+2. create_work_log — Log days worked
+   Required: worker_name, project_name, days_worked, start_date (YYYY-MM-DD)
    Optional: note
 
 3. add_expense — Record a project expense
@@ -49,11 +49,11 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "name": {"type": "string"},
-                    "hourly_rate": {"type": "number"},
+                    "daily_rate": {"type": "number"},
                     "contact": {"type": "string"},
                     "active": {"type": "boolean"}
                 },
-                "required": ["name", "hourly_rate"]
+                "required": ["name", "daily_rate"]
             }
         }
     },
@@ -61,17 +61,17 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "create_work_log",
-            "description": "Log hours worked by a worker on a project",
+            "description": "Log days worked by a worker on a project",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "worker_name": {"type": "string"},
                     "project_name": {"type": "string"},
-                    "hours_worked": {"type": "number"},
+                    "days_worked": {"type": "number"},
                     "start_date": {"type": "string", "description": "YYYY-MM-DD"},
                     "note": {"type": "string"}
                 },
-                "required": ["worker_name", "project_name", "hours_worked", "start_date"]
+                "required": ["worker_name", "project_name", "days_worked", "start_date"]
             }
         }
     },
@@ -142,8 +142,8 @@ TOOLS = [
 ]
 
 REQUIRED_FIELDS = {
-    "create_worker": ["name", "hourly_rate"],
-    "create_work_log": ["worker_name", "project_name", "hours_worked", "start_date"],
+    "create_worker": ["name", "daily_rate"],
+    "create_work_log": ["worker_name", "project_name", "days_worked", "start_date"],
     "add_expense": ["project_name", "amount", "category", "date"],
     "add_invoice_item": ["invoice_number", "description", "amount"],
     "query_project_profit": ["project_name"],

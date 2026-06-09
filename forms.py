@@ -8,7 +8,7 @@ from flask_wtf.file import FileAllowed, FileField
 class WorkerForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])
     contact = StringField('Contact', validators= [Length(max=100)])
-    hourly_rate = FloatField('Hourly Rate', validators= [DataRequired(), NumberRange(min=0)])
+    daily_rate = FloatField('Daily Rate', validators= [DataRequired(), NumberRange(min=0)])
     active = BooleanField('Active', default=True)
     submit= SubmitField('Submit')
 
@@ -39,7 +39,7 @@ class WorkLogForm(FlaskForm):
     project_id = SelectField('Project', coerce=int, validators=[DataRequired()])
     start_date = DateField('From', format='%Y-%m-%d', validators=[DataRequired()])
     end_date = DateField('To', format='%Y-%m-%d', validators=[DataRequired()])
-    hours_worked = FloatField('Hours Worked', validators=[DataRequired(),])
+    days_worked = FloatField('Days Worked', validators=[DataRequired(),])
     note = TextAreaField('Note (optional)')
     submit = SubmitField('Log Work')
 

@@ -8,7 +8,7 @@ class Worker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     contact = db.Column(db.String(100))
-    hourly_rate = db.Column(db.Float)
+    daily_rate = db.Column(db.Float)
     active = db.Column(db.Boolean, default=True)
     
     payments = db.relationship("Payment", back_populates="worker", cascade="all, delete-orphan")
@@ -84,7 +84,7 @@ class WorkLog(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
-    hours_worked = db.Column(db.Float)
+    days_worked = db.Column(db.Float)
     note = db.Column(db.Text)
 
     worker = db.relationship('Worker', back_populates='work_logs')
