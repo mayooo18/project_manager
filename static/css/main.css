@@ -266,6 +266,12 @@ table tr:hover {
     color: #34d399 !important;
 }
 
+.flash-message.flash-error {
+    background-color: #7f1d1d !important;
+    border-color: #ef4444 !important;
+    color: #fca5a5 !important;
+}
+
 /* ===== ACTION BUTTONS ===== */
 .action-buttons {
     display: flex !important;

@@ -12,30 +12,70 @@
     <nav class="shadow-md mb-8">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Logo" class="h-16 w-auto">
-            <div class="space-x-4">
-                <a href="{{ url_for('home') }}">Home</a>
-                <a href="{{ url_for('workers') }}">Workers</a>
-                <a href="{{ url_for('projects') }}">Projects</a>
-                <a href="{{ url_for('work_logs') }}">Logs</a>
-                <a href="{{ url_for('payments') }}">Payments</a>
-                <a href="{{ url_for('expenses') }}">Expenses</a>
-                <a href="{{ url_for('income') }}">Income</a>
-                <a href="{{ url_for('profitability') }}">Profit</a>
-                <a href="{{ url_for('document_form') }}">Documents</a>
-                <a href="{{ url_for('reminders.index') }}">Reminders</a>
+            {% set finance_endpoints = ['work_logs', 'payments', 'expenses', 'income', 'profitability'] %}
+            {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index'] %}
+            <div class="flex items-center gap-4 relative">
+                <a href="{{ url_for('home') }}" class="{{ 'nav-active' if request.endpoint == 'home' }}">Home</a>
+                <a href="{{ url_for('projects') }}" class="{{ 'nav-active' if request.endpoint == 'projects' }}">Projects</a>
+                <a href="{{ url_for('workers') }}" class="{{ 'nav-active' if request.endpoint == 'workers' }}">Workers</a>
+
+                <div class="relative nav-dropdown">
+                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in finance_endpoints }}" style="color:#ff6b35;">Finance ▾</button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('work_logs') }}" class="{{ 'nav-active' if request.endpoint == 'work_logs' }}">Logs</a>
+                        <a href="{{ url_for('payments') }}" class="{{ 'nav-active' if request.endpoint == 'payments' }}">Payments</a>
+                        <a href="{{ url_for('expenses') }}" class="{{ 'nav-active' if request.endpoint == 'expenses' }}">Expenses</a>
+                        <a href="{{ url_for('income') }}" class="{{ 'nav-active' if request.endpoint == 'income' }}">Income</a>
+                        <a href="{{ url_for('profitability') }}" class="{{ 'nav-active' if request.endpoint == 'profitability' }}">Profit</a>
+                    </div>
+                </div>
+
+                <div class="relative nav-dropdown">
+                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in tools_endpoints }}" style="color:#ff6b35;">Tools ▾</button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('document_form') }}" class="{{ 'nav-active' if request.endpoint == 'document_form' }}">Documents</a>
+                        <a href="{{ url_for('reminders.index') }}" class="{{ 'nav-active' if request.endpoint == 'reminders.index' }}">Reminders</a>
+                        <a href="{{ url_for('vehicles.index') }}" class="{{ 'nav-active' if request.endpoint == 'vehicles.index' }}">Vehicles</a>
+                    </div>
+                </div>
+
                 <a href="{{ url_for('logout') }}">Log out</a>
             </div>
         </div>
     </nav>
 
+    <style>
+        .nav-dropdown-btn { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
+        .nav-dropdown-menu {
+            display: none;
+            position: absolute; top: 100%; right: 0; margin-top: 0.5rem;
+            background: #1a1a1a; border: 1px solid #2d2d2d; border-radius: 0.5rem;
+            padding: 0.5rem 0; min-width: 140px; z-index: 50;
+        }
+        .nav-dropdown-menu a { display: block; padding: 0.4rem 1rem; }
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
+        .nav-active { font-weight: 700 !important; text-decoration: underline !important; }
+    </style>
+    <script>
+        document.querySelectorAll('.nav-dropdown-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                const dd = btn.closest('.nav-dropdown');
+                document.querySelectorAll('.nav-dropdown').forEach(d => { if (d !== dd) d.classList.remove('open'); });
+                dd.classList.toggle('open');
+                e.stopPropagation();
+            });
+        });
+        document.addEventListener('click', () => document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open')));
+    </script>
+
     <main class="max-w-5xl mx-auto px-4">
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="mb-4 p-3 rounded flash-message">
-                    {% for message in messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-3 rounded flash-message {{ 'flash-error' if category == 'error' else '' }}">
                         <p>{{ message }}</p>
-                    {% endfor %}
-                </div>
+                    </div>
+                {% endfor %}
             {% endif %}
         {% endwith %}
 

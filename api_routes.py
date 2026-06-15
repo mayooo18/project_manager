@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from functools import wraps
 from datetime import datetime, date, timedelta
 import os
+import hmac
 from extensions import db
 from models import Worker, Project, WorkLog, Expense, Income, ProjectFile, ProjectNote, Reminder
 
@@ -42,8 +43,9 @@ def find_project(name):
 def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        expected = os.environ.get('API_SECRET_KEY')
         key = request.headers.get('X-API-Key')
-        if key != os.environ.get('API_SECRET_KEY'):
+        if not expected or not key or not hmac.compare_digest(key, expected):
             return jsonify({'error': 'Unauthorized'}), 401
         return f(*args, **kwargs)
     return decorated

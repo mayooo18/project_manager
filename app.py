@@ -7,16 +7,20 @@ from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogF
 from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income
 from werkzeug.utils import secure_filename
 import os
+import uuid
 from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 import logging 
 from datetime import timedelta, datetime
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, DisconnectionError
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from document_forms import DocumentForm
 from ai_routes import ai_bp
 from api_routes import api_bp as field_api_bp
 from google_routes import google_bp
 from reminder_routes import reminder_bp
+from vehicle_routes import vehicle_bp
 import re
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -31,16 +35,40 @@ app.config.from_object("config.Config")
 
 db.init_app(app)
 csrf = CSRFProtect(app)
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per hour"])
 app.register_blueprint(ai_bp)
 app.register_blueprint(field_api_bp)
 app.register_blueprint(google_bp)
 app.register_blueprint(reminder_bp)
+app.register_blueprint(vehicle_bp)
 
 # API routes use API key auth — exempt from CSRF
 csrf.exempt(field_api_bp)
 csrf.exempt(google_bp)
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+ALLOWED_UPLOAD_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'heic', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt'}
+
+
+def save_uploaded_file(file_storage):
+    """Validate extension and save with a randomized filename. Returns the
+    stored filename, or None if the file type is not allowed."""
+    original = secure_filename(file_storage.filename)
+    ext = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        return None
+    filename = f"{uuid.uuid4().hex}_{original}"
+    file_storage.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    return filename
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return response
 
 
 from models import Worker , User
@@ -57,6 +85,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     form = LoginForm()
     if form.validate_on_submit():
@@ -184,14 +213,15 @@ def upload_file(project_id):
     form= FileUploadForm()
     if form.validate_on_submit():
         file = form.file.data
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        filename = save_uploaded_file(file)
+        if not filename:
+            flash('File type not allowed.', 'error')
+            return redirect(url_for('projects'))
 
         new_file = ProjectFile(
             project_id=project_id,
             filename=filename,
-            filepath=filepath,
+            filepath=os.path.join(app.config['UPLOAD_FOLDER'], filename),
             category=form.category.data,
             note=form.note.data if form.category.data == 'misc' else None
         )
@@ -223,6 +253,9 @@ def edit_project(project_id):
 @login_required
 def delete_project(project_id):
     project = Project.query.get_or_404(project_id)
+    for f in project.files:
+        if f.filepath and os.path.exists(f.filepath):
+            os.remove(f.filepath)
     db.session.delete(project)
     db.session.commit()
     flash('Project deleted successfully.')
@@ -232,6 +265,8 @@ def delete_project(project_id):
 @login_required
 def delete_file(file_id):
     file = ProjectFile.query.get_or_404(file_id)
+    if file.filepath and os.path.exists(file.filepath):
+        os.remove(file.filepath)
     db.session.delete(file)
     db.session.commit()
     flash("File deleted.")
@@ -357,10 +392,12 @@ def payments():
         filepath = None
         if form.receipt.data:
             receipt_file = form.receipt.data
-            filename = secure_filename(receipt_file.filename)
+            filename = save_uploaded_file(receipt_file)
+            if not filename:
+                flash('File type not allowed.', 'error')
+                return redirect(url_for('payments'))
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            receipt_file.save(filepath)
-        
+
         new_payment = Payment(
             worker_id=form.worker_id.data if form.worker_id.data != 0 else None,
             project_id=form.project_id.data if form.project_id.data != 0 else None,
@@ -436,11 +473,12 @@ def edit_payment(payment_id):
                     pass
             
             receipt_file = form.receipt.data
-            filename = secure_filename(receipt_file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            receipt_file.save(filepath)
+            filename = save_uploaded_file(receipt_file)
+            if not filename:
+                flash('File type not allowed.', 'error')
+                return redirect(url_for('payments'))
             payment.receipt_filename = filename
-            payment.receipt_filepath = filepath
+            payment.receipt_filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
         db.session.commit()
         flash('Payment updated successfully.')
@@ -477,11 +515,14 @@ def expenses():
 
     if form.validate_on_submit():
         filename = None
+        filepath = None
         if form.receipt.data:
             receipt_file = form.receipt.data
-            filename = secure_filename(receipt_file.filename)
+            filename = save_uploaded_file(receipt_file)
+            if not filename:
+                flash('File type not allowed.', 'error')
+                return redirect(url_for('expenses'))
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            receipt_file.save(filepath)
 
         new_expense = Expense(
             project_id=form.project_id.data,
@@ -540,9 +581,12 @@ def edit_expense(expense_id):
                 except FileNotFoundError:
                     pass
             receipt_file = form.receipt.data
-            filename = secure_filename(receipt_file.filename)
-            receipt_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            filename = save_uploaded_file(receipt_file)
+            if not filename:
+                flash('File type not allowed.', 'error')
+                return redirect(url_for('expenses'))
             expense.receipt_filename = filename
+            expense.receipt_filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
         db.session.commit()
         flash('Expense updated successfully')
@@ -648,13 +692,7 @@ def parse_scope_items(scope_text):
 def document_form():
     form = DocumentForm()
     
-    # Enhanced debugging for form submission
     if request.method == 'POST':
-        app.logger.info("=== FORM SUBMISSION DEBUG ===")
-        app.logger.info(f"Raw form data: {dict(request.form)}")
-        app.logger.info(f"CSRF token present: {bool(request.form.get('csrf_token'))}")
-        app.logger.info(f"Form validates: {form.validate_on_submit()}")
-        
         if not form.validate_on_submit():
             app.logger.error(f"Validation failed with errors: {form.errors}")
             # Flash each error to user
@@ -984,11 +1022,11 @@ def health_check():
             'database': 'connected'
         }, 200
     except Exception as e:
+        app.logger.error(f"Health check failed: {e}", exc_info=True)
         return {
             'status': 'unhealthy',
             'timestamp': datetime.utcnow().isoformat(),
-            'database': 'disconnected',
-            'error': str(e)
+            'database': 'disconnected'
         }, 503
 
 # Add error handlers for better monitoring

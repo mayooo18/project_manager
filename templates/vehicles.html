@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Vehicles{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-white">Vehicles</h1>
+    <a href="{{ url_for('vehicles.add') }}"
+      class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+      style="color: #fff !important;">
+      + Add Vehicle
+    </a>
+  </div>
+
+  {% if vehicles %}
+  <div class="flex flex-col gap-4">
+    {% for v in vehicles %}
+    <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
+      <div class="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <div class="flex items-center flex-wrap gap-2">
+            <p class="text-gray-100 font-semibold text-lg">{{ v.name }}</p>
+            <span class="text-xs font-normal text-orange-400 border border-orange-400/40 rounded px-1.5 py-0.5">{{ v.vehicle_type or 'Vehicle' }}</span>
+          </div>
+          <p class="text-gray-500 text-xs">
+            {% if v.year or v.make or v.model %}{{ v.year or '' }} {{ v.make or '' }} {{ v.model or '' }}{% endif %}
+            {% if v.vin %} &middot; VIN: {{ v.vin }}{% endif %}
+          </p>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <a href="{{ url_for('vehicles.edit', vehicle_id=v.id) }}"
+            class="text-sm transition-colors" style="color: #9ca3af;"
+            onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">Edit</a>
+          <form method="POST" action="{{ url_for('vehicles.delete', vehicle_id=v.id) }}"
+            onsubmit="return confirm('Delete {{ v.name }}? This cannot be undone.');">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+        <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2">
+          <p class="text-gray-500 text-xs mb-1">Plate</p>
+          <p class="text-gray-200">{{ v.plate_number or '—' }}</p>
+          {% if v.plate_expiration %}
+          <p class="text-xs mt-1 {{ 'text-red-400' if v.plate_expiration <= today + timedelta(days=7) else 'text-yellow-400' if v.plate_expiration <= today + timedelta(days=30) else 'text-gray-500' }}">
+            Expires {{ v.plate_expiration.strftime('%b %d, %Y') }}
+          </p>
+          {% endif %}
+        </div>
+
+        <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2">
+          <p class="text-gray-500 text-xs mb-1">Registration (Tags)</p>
+          {% if v.registration_expiration %}
+          <p class="text-xs {{ 'text-red-400' if v.registration_expiration <= today + timedelta(days=7) else 'text-yellow-400' if v.registration_expiration <= today + timedelta(days=30) else 'text-gray-300' }}">
+            Expires {{ v.registration_expiration.strftime('%b %d, %Y') }}
+          </p>
+          {% else %}
+          <p class="text-gray-200">—</p>
+          {% endif %}
+        </div>
+
+        <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2">
+          <p class="text-gray-500 text-xs mb-1">Insurance</p>
+          <p class="text-gray-200">{{ v.insurance_provider or '—' }}</p>
+          {% if v.insurance_expiration %}
+          <p class="text-xs mt-1 {{ 'text-red-400' if v.insurance_expiration <= today + timedelta(days=7) else 'text-yellow-400' if v.insurance_expiration <= today + timedelta(days=30) else 'text-gray-500' }}">
+            Expires {{ v.insurance_expiration.strftime('%b %d, %Y') }}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if v.notes %}
+      <p class="text-gray-500 text-xs mt-3">{{ v.notes }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center">
+    <p class="text-gray-400 text-sm">No vehicles yet.</p>
+    <p class="text-gray-600 text-xs mt-1">Add a vehicle to track tags, plates, and insurance expirations.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+</body>
+</html>
+{% endblock %}

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, FloatField, BooleanField, SubmitField
+from wtforms import StringField, FloatField, BooleanField, SubmitField, IntegerField
 from wtforms import TextAreaField, DateField, SelectField, FileField, DecimalField, TextAreaField, PasswordField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 from wtforms_sqlalchemy.fields import QuerySelectField
@@ -22,6 +22,22 @@ class ProjectForm(FlaskForm):
 
 class DeleteForm(FlaskForm):
     submit = SubmitField('Delete')
+
+class VehicleForm(FlaskForm):
+    name = StringField('Vehicle Name', validators=[DataRequired()])
+    vehicle_type = SelectField('Type', choices=[('Vehicle', 'Vehicle'), ('Trailer', 'Trailer'), ('Equipment', 'Equipment')])
+    make = StringField('Make', validators=[Optional()])
+    model = StringField('Model', validators=[Optional()])
+    year = IntegerField('Year', validators=[Optional(), NumberRange(min=1900, max=2100)])
+    vin = StringField('VIN', validators=[Optional(), Length(max=17)])
+    plate_number = StringField('Plate Number', validators=[Optional()])
+    plate_expiration = DateField('Plate Expiration', format='%Y-%m-%d', validators=[Optional()])
+    registration_expiration = DateField('Registration (Tags) Expiration', format='%Y-%m-%d', validators=[Optional()])
+    insurance_provider = StringField('Insurance Provider', validators=[Optional()])
+    insurance_policy_number = StringField('Insurance Policy Number', validators=[Optional()])
+    insurance_expiration = DateField('Insurance Expiration', format='%Y-%m-%d', validators=[Optional()])
+    notes = TextAreaField('Notes', validators=[Optional()])
+    submit = SubmitField('Save Vehicle')
     
 class FileUploadForm(FlaskForm):
     file = FileField('Upload File', validators=[DataRequired()])

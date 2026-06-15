@@ -1,5 +1,8 @@
 import os
-from flask import Blueprint, request, jsonify, redirect
+import hmac
+import secrets
+from flask import Blueprint, request, jsonify, redirect, session, current_app
+from flask_login import login_required
 from functools import wraps
 from datetime import datetime
 from google.oauth2.credentials import Credentials
@@ -53,8 +56,9 @@ def get_credentials():
 def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        expected = os.environ.get('API_SECRET_KEY')
         key = request.headers.get('X-API-Key')
-        if key != os.environ.get('API_SECRET_KEY'):
+        if not expected or not key or not hmac.compare_digest(key, expected):
             return jsonify({'error': 'Unauthorized'}), 401
         return f(*args, **kwargs)
     return decorated
@@ -62,24 +66,34 @@ def require_api_key(f):
 
 # ── OAuth Flow ─────────────────────────────────────────────────────────────
 @google_bp.route('/auth')
+@login_required
 def google_auth():
+    state = secrets.token_urlsafe(24)
+    session['google_oauth_state'] = state
     params = urlencode({
         'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
         'redirect_uri': REDIRECT_URI,
         'response_type': 'code',
         'scope': SCOPES,
         'access_type': 'offline',
-        'prompt': 'consent'
+        'prompt': 'consent',
+        'state': state
     })
     return redirect(f'https://accounts.google.com/o/oauth2/auth?{params}')
 
 
 @google_bp.route('/callback')
+@login_required
 def google_callback():
     try:
+        expected_state = session.pop('google_oauth_state', None)
+        state = request.args.get('state')
+        if not expected_state or not hmac.compare_digest(state or '', expected_state):
+            return '<h2>Error: Invalid OAuth state</h2>', 400
+
         code = request.args.get('code')
         if not code:
-            return '<h2>Error: No code returned from Google</h2>'
+            return '<h2>Error: No code returned from Google</h2>', 400
 
         # Exchange code for tokens directly — no PKCE
         token_resp = http_requests.post('https://oauth2.googleapis.com/token', data={
@@ -94,13 +108,13 @@ def google_callback():
         refresh_token = tokens.get('refresh_token', '')
 
         if not refresh_token:
-            return f"""
+            return """
             <html><body style="background:#111;color:#e5e7eb;font-family:sans-serif;padding:2rem;">
             <h2 style="color:#ef4444">⚠️ No refresh token returned</h2>
-            <pre style="background:#2d2d2d;padding:1rem;border-radius:0.5rem;color:#fbbf24">{tokens}</pre>
+            <p>Google did not return a refresh token. Try again — make sure you're prompted for consent.</p>
             <p><a href="/api/google/auth" style="color:#ff6b35">Try again</a></p>
             </body></html>
-            """
+            """, 400
 
         return f"""
         <html><body style="background:#111;color:#e5e7eb;font-family:sans-serif;padding:2rem;">
@@ -113,13 +127,14 @@ def google_callback():
         </body></html>
         """
     except Exception as e:
-        return f"""
+        current_app.logger.error(f"google_callback failed: {e}", exc_info=True)
+        return """
         <html><body style="background:#111;color:#e5e7eb;font-family:sans-serif;padding:2rem;">
         <h2 style="color:#ef4444">❌ Error</h2>
-        <pre style="background:#2d2d2d;padding:1rem;border-radius:0.5rem;color:#fbbf24">{str(e)}</pre>
+        <p>Something went wrong connecting to Google. Check server logs for details.</p>
         <p><a href="/api/google/auth" style="color:#ff6b35">Try again</a></p>
         </body></html>
-        """
+        """, 500
 
 
 # ── Google Drive ───────────────────────────────────────────────────────────
@@ -200,7 +215,8 @@ def create_folder():
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f"create_folder failed: {e}", exc_info=True)
+        return jsonify({'error': 'Internal error'}), 500
 
 
 # ── Google Docs ────────────────────────────────────────────────────────────
@@ -286,7 +302,8 @@ def append_doc():
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f"append_doc failed: {e}", exc_info=True)
+        return jsonify({'error': 'Internal error'}), 500
 
 
 # ── Google Calendar ────────────────────────────────────────────────────────
@@ -329,7 +346,8 @@ def create_calendar_event():
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f"create_calendar_event failed: {e}", exc_info=True)
+        return jsonify({'error': 'Internal error'}), 500
 
 
 # ── Gmail ──────────────────────────────────────────────────────────────────
@@ -362,4 +380,5 @@ def send_email():
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f"send_email failed: {e}", exc_info=True)
+        return jsonify({'error': 'Internal error'}), 500

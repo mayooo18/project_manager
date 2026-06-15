@@ -124,8 +124,33 @@ class Reminder(db.Model):
     due_date = db.Column(db.Date, nullable=True)
     is_done = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
+    vehicle_field = db.Column(db.String(50), nullable=True)
+    vehicle_offset_days = db.Column(db.Integer, nullable=True)
 
     user = db.relationship('User', backref=db.backref('reminders', cascade='all, delete-orphan'))
+
+
+class Vehicle(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    vehicle_type = db.Column(db.String(20), default='Vehicle')
+    make = db.Column(db.String(50))
+    model = db.Column(db.String(50))
+    year = db.Column(db.Integer)
+    vin = db.Column(db.String(17))
+    plate_number = db.Column(db.String(20))
+    plate_expiration = db.Column(db.Date)
+    registration_expiration = db.Column(db.Date)
+    insurance_provider = db.Column(db.String(100))
+    insurance_policy_number = db.Column(db.String(100))
+    insurance_expiration = db.Column(db.Date)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('vehicles', cascade='all, delete-orphan'))
+    reminders = db.relationship('Reminder', backref='vehicle', cascade='all, delete-orphan')
 
 
 class AIActionLog(db.Model):
