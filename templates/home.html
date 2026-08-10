@@ -1,163 +1,180 @@
 {% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<html>
-  <head>
-    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
-    <link
-      rel="stylesheet"
-      as="style"
-      onload="this.rel='stylesheet'"
-      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
-    />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color:#000; font-family: Inter, "Noto Sans", sans-serif; }
+    .kpi { background:#1a1a1a; border:1px solid #374151; border-radius:0.9rem; padding:1rem; }
+    .kpi:active { background:#222; }
+    .action { background:#262626; border:1px solid #374151; border-radius:0.9rem;
+              padding:1rem; display:flex; flex-direction:column; align-items:center;
+              gap:0.4rem; text-align:center; transition:background .15s; }
+    .action:hover, .action:active { background:#2d2d2d; border-color:#ff6b35; }
+    .panel { background:#1a1a1a; border:1px solid #374151; border-radius:0.9rem; }
+    /* Self-contained grids (don't rely on Tailwind's purged utilities) */
+    .kgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.75rem; }
+    .agrid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0.75rem; }
+    .twocol { display:grid; grid-template-columns:1fr; gap:1rem; }
+    @media (min-width:768px){ .agrid { grid-template-columns:repeat(6,minmax(0,1fr)); } }
+    @media (min-width:1024px){
+      .kgrid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+      .twocol { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body class="bg-black">
 
-    <title>Project Manager</title>
-    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+<div class="max-w-5xl mx-auto px-4 py-6">
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  </head>
-  <body>
-    <div class="relative flex size-full min-h-screen flex-col bg-black group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+  <!-- Greeting -->
+  <div class="mb-5">
+    <h1 class="text-white text-2xl sm:text-3xl font-bold leading-tight">Optimal Solutions</h1>
+    <p class="text-gray-500 text-sm">{{ today.strftime('%A, %B %d, %Y') }}</p>
+  </div>
 
-        <div class="layout-content-container flex flex-col max-w-[960px] flex-1 mx-auto">
-            <div class="flex flex-col bg-black p-4">
+  <!-- KPIs -->
+  <div class="kgrid mb-6">
+    <a href="{{ url_for('projects') }}" class="kpi no-underline">
+      <p class="text-gray-400 text-xs uppercase tracking-wide">Active Projects</p>
+      <p class="text-white text-3xl font-bold mt-1">{{ active_projects }}</p>
+      <p class="text-gray-600 text-xs mt-1">{{ project_count }} total</p>
+    </a>
+    <a href="{{ url_for('workers') }}" class="kpi no-underline">
+      <p class="text-gray-400 text-xs uppercase tracking-wide">Active Workers</p>
+      <p class="text-white text-3xl font-bold mt-1">{{ active_workers }}</p>
+      <p class="text-gray-600 text-xs mt-1">{{ worker_count }} total</p>
+    </a>
+    <a href="{{ url_for('income') }}" class="kpi no-underline">
+      <p class="text-gray-400 text-xs uppercase tracking-wide">Revenue</p>
+      <p class="text-[#ff6b35] text-3xl font-bold mt-1">${{ '{:,.0f}'.format(total_income) }}</p>
+      <p class="text-gray-600 text-xs mt-1">income to date</p>
+    </a>
+    <a href="{{ url_for('profitability') }}" class="kpi no-underline">
+      <p class="text-gray-400 text-xs uppercase tracking-wide">Net Profit</p>
+      <p class="text-3xl font-bold mt-1 {{ 'text-green-400' if net_profit >= 0 else 'text-red-400' }}">${{ '{:,.0f}'.format(net_profit) }}</p>
+      <p class="text-gray-600 text-xs mt-1">income − expenses − pay</p>
+    </a>
+    <a href="{{ url_for('quotes.index') }}" class="kpi no-underline">
+      <p class="text-gray-400 text-xs uppercase tracking-wide">Pending Quotes</p>
+      <p class="text-white text-3xl font-bold mt-1">{{ pending_quote_count }}</p>
+      <p class="text-gray-600 text-xs mt-1">${{ '{:,.0f}'.format(pending_quote_value) }} outstanding</p>
+    </a>
+    <a href="{{ url_for('quotes.customers') }}" class="kpi no-underline">
+      <p class="text-gray-400 text-xs uppercase tracking-wide">Customers</p>
+      <p class="text-white text-3xl font-bold mt-1">{{ customer_count }}</p>
+      <p class="text-gray-600 text-xs mt-1">on file</p>
+    </a>
+    <a href="{{ url_for('expenses') }}" class="kpi no-underline">
+      <p class="text-gray-400 text-xs uppercase tracking-wide">Expenses</p>
+      <p class="text-white text-3xl font-bold mt-1">${{ '{:,.0f}'.format(total_expenses) }}</p>
+      <p class="text-gray-600 text-xs mt-1">to date</p>
+    </a>
+    <a href="{{ url_for('reminders.index') }}" class="kpi no-underline">
+      <p class="text-gray-400 text-xs uppercase tracking-wide">Reminders</p>
+      <p class="text-white text-3xl font-bold mt-1">{{ upcoming_reminders|length }}</p>
+      <p class="text-gray-600 text-xs mt-1">due in 30 days</p>
+    </a>
+  </div>
 
-              <div class="flex flex-col bg-[#1a1a1a] rounded-xl p-6 border border-[#374151]">
-                <div class="flex flex-col">
-                  <p class="text-[#9ca3af] text-sm font-normal leading-normal">Project Manager</p>
-                </div>
-                <div class="flex flex-col gap-2">
+  <!-- Quick actions -->
+  <h2 class="text-gray-400 text-xs uppercase tracking-wide mb-2">Quick actions</h2>
+  <div class="agrid mb-6">
+    <a href="{{ url_for('quotes.new') }}" class="action no-underline" style="background:#ff6b35;border-color:#ff6b35;">
+      <span class="text-white text-xl">＋</span>
+      <span class="text-white text-xs font-semibold">New Quote</span>
+    </a>
+    <a href="{{ url_for('quotes.customers') }}" class="action no-underline">
+      <span class="text-[#ff6b35] text-xl">👤</span>
+      <span class="text-gray-200 text-xs">Customer</span>
+    </a>
+    <a href="{{ url_for('work_logs') }}" class="action no-underline">
+      <span class="text-[#ff6b35] text-xl">⏱</span>
+      <span class="text-gray-200 text-xs">Log Work</span>
+    </a>
+    <a href="{{ url_for('expenses') }}" class="action no-underline">
+      <span class="text-[#ff6b35] text-xl">🧾</span>
+      <span class="text-gray-200 text-xs">Expense</span>
+    </a>
+    <a href="{{ url_for('payments') }}" class="action no-underline">
+      <span class="text-[#ff6b35] text-xl">💵</span>
+      <span class="text-gray-200 text-xs">Payment</span>
+    </a>
+    <a href="{{ url_for('income') }}" class="action no-underline">
+      <span class="text-[#ff6b35] text-xl">＄</span>
+      <span class="text-gray-200 text-xs">Income</span>
+    </a>
+  </div>
 
+  <!-- Two-column: reminders + recent quotes -->
+  <div class="twocol">
 
-                    <a href="{{ url_for('workers') }}" class="no-underline">
-                        <div class="flex items-center gap-3 px-3 py-2 hover:bg-[#262626] rounded-md transition-colors">
-                          <div class="text-[#e5e7eb]" data-icon="Users" data-size="24px" data-weight="regular">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
-                        <path
-                          d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"
-                        ></path>
-                      </svg>
-                    </div>
-                    <p class="text-[#e5e7eb] text-sm font-medium leading-normal">Workers</p>
-                  </div>
-                </a>
-
-
-                <a href="{{ url_for('projects') }}" class="no-underline">
-                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-[#262626] rounded-md transition-colors">
-                    <div class="text-[#e5e7eb]" data-icon="Folder" data-size="24px" data-weight="fill">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
-                        <path
-                          d="M216,72H131.31L104,44.69A15.88,15.88,0,0,0,92.69,40H40A16,16,0,0,0,24,56V200.62A15.41,15.41,0,0,0,39.39,216h177.5A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72ZM40,56H92.69l16,16H40Z"
-                        ></path>
-                      </svg>
-                    </div>
-                    <p class="text-[#e5e7eb] text-sm font-medium leading-normal">Projects</p>
-                  </div>
-                </a>
-
-
-                <a href="{{ url_for('work_logs') }}" class="no-underline">
-                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-[#262626] rounded-md transition-colors">
-                    <div class="text-[#e5e7eb]" data-icon="Clock" data-size="24px" data-weight="regular">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
-                        <path
-                          d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"
-                        />
-                      </svg>
-                    </div>
-                    <p class="text-[#e5e7eb] text-sm font-medium leading-normal">Work Log</p>
-                  </div>
-                </a>
-                
-
-
-                <a href="{{ url_for('payments') }}" class="no-underline">
-                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-[#262626] rounded-md transition-colors">
-                    <div class="text-[#e5e7eb]" data-icon="CurrencyDollar" data-size="24px" data-weight="regular">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
-                        <path
-                          d="M152,120H136V56h8a32,32,0,0,1,32,32,8,8,0,0,0,16,0,48.05,48.05,0,0,0-48-48h-8V24a8,8,0,0,0-16,0V40h-8a48,48,0,0,0,0,96h8v64H104a32,32,0,0,1-32-32,8,8,0,0,0-16,0,48.05,48.05,0,0,0,48,48h16v16a8,8,0,0,0,16,0V216h16a48,48,0,0,0,0-96Zm-40,0a32,32,0,0,1,0-64h8v64Zm40,80H136V136h16a32,32,0,0,1,0,64Z"
-                        />
-                      </svg>
-                    </div>
-                    <p class="text-[#e5e7eb] text-sm font-medium leading-normal">Payment</p>
-                  </div>
-                </a>
-                
-
-
-                <a href="{{ url_for('expenses') }}" class="no-underline">
-                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-[#262626] rounded-md transition-colors">
-                    <div class="text-[#e5e7eb]" data-icon="Receipt" data-size="24px" data-weight="regular">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
-                        <path
-                          d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"
-                        ></path>
-                      </svg>
-                    </div>
-                    <p class="text-[#e5e7eb] text-sm font-medium leading-normal">Expenses</p>
-                  </div>
-                </a>
-                
-
-
-                <a href="{{ url_for('income') }}" class="no-underline">
-                  <div class="flex items-center gap-3 px-3 py-2 hover:bg-[#262626] rounded-md transition-colors">
-                    <div class="text-[#e5e7eb]" data-icon="CurrencyDollar" data-size="24px" data-weight="regular">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
-                        <path
-                          d="M152,120H136V56h8a32,32,0,0,1,32,32,8,8,0,0,0,16,0,48.05,48.05,0,0,0-48-48h-8V24a8,8,0,0,0-16,0V40h-8a48,48,0,0,0,0,96h8v64H104a32,32,0,0,1-32-32,8,8,0,0,0-16,0,48.05,48.05,0,0,0,48,48h16v16a8,8,0,0,0,16,0V216h16a48,48,0,0,0,0-96Zm-40,0a32,32,0,0,1,0-64h8v64Zm40,80H136V136h16a32,32,0,0,1,0,64Z"
-                        ></path>
-                      </svg>
-                    </div>
-                    <p class="text-[#e5e7eb] text-sm font-medium leading-normal">Income</p>
-                  </div>
-                </a>
-
-
-                  <a href="{{ url_for('profitability') }}" class="no-underline">
-                    <div class="flex items-center gap-3 px-3 py-2 hover:bg-[#262626] rounded-md transition-colors">
-                      <div class="text-[#e5e7eb]" data-icon="ChartBar" data-size="24px" data-weight="regular">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
-                          <path
-                            d="M224,200h-8V40a8,8,0,0,0-8-8H152a8,8,0,0,0-8,8V80H96a8,8,0,0,0-8,8v40H48a8,8,0,0,0-8,8v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16ZM160,48h40V200H160ZM104,96h40V200H104ZM56,144H88v56H56Z"
-                          ></path>
-                        </svg>
-                      </div>
-                      <p class="text-[#e5e7eb] text-sm font-medium leading-normal">Profitability</p>
-                    </div>
-                  </a>
-                  
-
-        
-            <h2 class="text-[#e5e7eb] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Quick Links</h2>
-<div class="flex flex-wrap gap-4 p-4">
-
-  <!-- Workers -->
-  <a href="{{ url_for('workers') }}" class="no-underline flex-1 min-w-[158px]">
-    <div class="flex flex-col gap-2 rounded-xl p-6 border border-[#374151] bg-[#262626] hover:bg-[#2d2d2d] transition-colors">
-      <p class="text-[#e5e7eb] text-base font-medium leading-normal">Workers</p>
-      <p class="text-[#ff6b35] tracking-light text-2xl font-bold leading-tight">{{ worker_count }}</p>
+    <!-- Reminders due -->
+    <div class="panel p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-white font-semibold">Due soon</h2>
+        <a href="{{ url_for('reminders.index') }}" class="text-[#ff6b35] text-xs hover:underline">View all</a>
+      </div>
+      {% if upcoming_reminders %}
+      <div class="flex flex-col gap-2">
+        {% for r in upcoming_reminders %}
+        {% set overdue = r.due_date < today %}
+        {% set soon = r.due_date <= today + timedelta(days=7) %}
+        <div class="flex items-center justify-between gap-3 bg-[#111] border border-[#2d2d2d] rounded-lg px-3 py-2">
+          <span class="text-gray-200 text-sm">{{ r.text }}</span>
+          <span class="text-xs whitespace-nowrap {{ 'text-red-400' if overdue else 'text-yellow-400' if soon else 'text-gray-500' }}">
+            {{ 'Overdue' if overdue else r.due_date.strftime('%b %d') }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-gray-600 text-sm">Nothing due in the next 30 days. 🎉</p>
+      {% endif %}
     </div>
-  </a>
 
-  <!-- Projects -->
-  <a href="{{ url_for('projects') }}" class="no-underline flex-1 min-w-[158px]">
-    <div class="flex flex-col gap-2 rounded-xl p-6 border border-[#374151] bg-[#262626] hover:bg-[#2d2d2d] transition-colors">
-      <p class="text-[#e5e7eb] text-base font-medium leading-normal">Projects</p>
-      <p class="text-[#ff6b35] tracking-light text-2xl font-bold leading-tight">{{ project_count }}</p>
+    <!-- Recent quotes -->
+    <div class="panel p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-white font-semibold">Recent quotes</h2>
+        <a href="{{ url_for('quotes.index') }}" class="text-[#ff6b35] text-xs hover:underline">View all</a>
+      </div>
+      {% set status_styles = {
+        'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
+        'approved':'text-green-300 border-green-500','declined':'text-red-300 border-red-500',
+        'converted':'text-orange-300 border-orange-500'} %}
+      {% if recent_quotes %}
+      <div class="flex flex-col gap-2">
+        {% for q in recent_quotes %}
+        <a href="{{ url_for('quotes.edit', quote_id=q.id) }}"
+           class="no-underline flex items-center justify-between gap-3 bg-[#111] border border-[#2d2d2d] rounded-lg px-3 py-2 hover:border-[#ff6b35]">
+          <span class="min-w-0">
+            <span class="text-gray-200 text-sm block truncate">{{ q.title }}</span>
+            <span class="text-gray-600 text-xs">{{ q.customer.name }}</span>
+          </span>
+          <span class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-gray-200 text-sm">${{ '{:,.0f}'.format(q.total or 0) }}</span>
+            <span class="text-[10px] border rounded px-1.5 py-0.5 uppercase {{ status_styles.get(q.status, 'text-gray-300 border-gray-500') }}">{{ q.status }}</span>
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-gray-600 text-sm">No quotes yet.
+        <a href="{{ url_for('quotes.new') }}" class="text-[#ff6b35] hover:underline">Create one →</a>
+      </p>
+      {% endif %}
     </div>
-  </a>
+
+  </div>
 
 </div>
 
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </body>
+</body>
 </html>
-
 {% endblock %}

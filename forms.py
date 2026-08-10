@@ -121,3 +121,12 @@ class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
+
+
+class CustomerForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(max=150)])
+    email = StringField('Email', validators=[Optional(), Length(max=150)])
+    phone = StringField('Phone', validators=[Optional(), Length(max=30)])
+    address = StringField('Address', validators=[Optional(), Length(max=250)])
+    notes = TextAreaField('Notes', validators=[Optional()])
+    submit = SubmitField('Save Customer')

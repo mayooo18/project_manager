@@ -1,5 +1,5 @@
 from extensions import db
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
@@ -165,3 +165,74 @@ class AIActionLog(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     confirmed_at = db.Column(db.DateTime, nullable=True)
     result_id = db.Column(db.Integer, nullable=True)
+
+
+# ── Customer-facing sales: Customers & Quotes (Phase 1) ──
+
+class Customer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(150))
+    phone = db.Column(db.String(30))
+    address = db.Column(db.String(250))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    quotes = db.relationship('Quote', back_populates='customer', cascade='all, delete-orphan')
+
+
+class Quote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    # Optional link to an internal project, so an approved quote can feed cost/profit tracking.
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
+
+    title = db.Column(db.String(200), nullable=False)
+    # draft → sent → approved / declined → converted (to invoice, Phase 2)
+    status = db.Column(db.String(20), default='draft', nullable=False)
+    notes = db.Column(db.Text)  # customer-facing notes shown on the PDF / approval page
+    total = db.Column(db.Float, default=0.0)
+    deposit = db.Column(db.Float)          # optional upfront deposit
+    po_number = db.Column(db.String(50))   # optional purchase-order number
+
+    # Secret token for the public approval link (/q/<token>) — no login required.
+    public_token = db.Column(db.String(64), unique=True, nullable=False)
+    public_token_expires_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.utcnow() + timedelta(days=30),
+        nullable=False,
+    )
+    public_token_revoked_at = db.Column(db.DateTime)
+
+    # E-signature capture
+    signature_name = db.Column(db.String(150))
+    signature_data = db.Column(db.Text)  # base64 data-URL of the drawn signature
+    signed_at = db.Column(db.DateTime)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    sent_at = db.Column(db.DateTime)
+
+    customer = db.relationship('Customer', back_populates='quotes')
+    project = db.relationship('Project', backref='quotes')
+    items = db.relationship('QuoteItem', back_populates='quote',
+                            cascade='all, delete-orphan', order_by='QuoteItem.id')
+
+    def recalculate_total(self):
+        self.total = sum((item.line_total or 0) for item in self.items)
+        return self.total
+
+
+class QuoteItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    quote_id = db.Column(db.Integer, db.ForeignKey('quote.id'), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    quantity = db.Column(db.Float, default=1.0)
+    unit_price = db.Column(db.Float, default=0.0)
+
+    quote = db.relationship('Quote', back_populates='items')
+
+    @property
+    def line_total(self):
+        return (self.quantity or 0) * (self.unit_price or 0)

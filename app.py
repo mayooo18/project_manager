@@ -2,7 +2,7 @@ from functools import wraps
 import time
 from flask import Flask, render_template, redirect, request, url_for, flash, session
 from flask_wtf.csrf import CSRFProtect, CSRFError
-from extensions import db  
+from extensions import db, limiter
 from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm, PaymentForm, PaymentFilterForm, ExpenseForm, IncomeForm, LoginForm
 from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income
 from werkzeug.utils import secure_filename
@@ -13,14 +13,13 @@ import logging
 from datetime import timedelta, datetime
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, DisconnectionError
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from document_forms import DocumentForm
 from ai_routes import ai_bp
 from api_routes import api_bp as field_api_bp
 from google_routes import google_bp
 from reminder_routes import reminder_bp
 from vehicle_routes import vehicle_bp
+from quote_routes import quote_bp
 import re
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -35,12 +34,13 @@ app.config.from_object("config.Config")
 
 db.init_app(app)
 csrf = CSRFProtect(app)
-limiter = Limiter(get_remote_address, app=app, default_limits=["200 per hour"])
+limiter.init_app(app)
 app.register_blueprint(ai_bp)
 app.register_blueprint(field_api_bp)
 app.register_blueprint(google_bp)
 app.register_blueprint(reminder_bp)
 app.register_blueprint(vehicle_bp)
+app.register_blueprint(quote_bp)
 
 # API routes use API key auth — exempt from CSRF
 csrf.exempt(field_api_bp)
@@ -68,6 +68,23 @@ def set_security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = (
+        'camera=(), microphone=(), geolocation=(), payment=()')
+    response.headers['Content-Security-Policy'] = '; '.join([
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com",
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
+        "font-src 'self' data: https://fonts.gstatic.com",
+        "img-src 'self' data: blob:",
+        "connect-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+    ])
+    if app.config.get('ENVIRONMENT') == 'production':
+        response.headers['Strict-Transport-Security'] = (
+            'max-age=31536000; includeSubDomains')
     return response
 
 
@@ -112,9 +129,58 @@ def logout():
 @app.route('/')
 @login_required
 def home():
+    from sqlalchemy import func
+    from datetime import date
+    from models import Customer, Quote, Reminder
+
     worker_count = Worker.query.count()
     project_count = Project.query.count()
-    return render_template("home.html", worker_count=worker_count, project_count=project_count)
+
+    # ── Dashboard metrics ──
+    active_projects = Project.query.filter_by(status='Active').count()
+    active_workers = Worker.query.filter_by(active=True).count()
+    customer_count = Customer.query.filter_by(user_id=current_user.id).count()
+
+    total_income = db.session.query(func.coalesce(func.sum(Income.amount), 0.0)).scalar() or 0.0
+    total_expenses = db.session.query(func.coalesce(func.sum(Expense.amount), 0.0)).scalar() or 0.0
+    total_payments = db.session.query(func.coalesce(func.sum(Payment.amount), 0.0)).scalar() or 0.0
+    net_profit = total_income - total_expenses - total_payments
+
+    pending_quotes = Quote.query.filter(
+        Quote.user_id == current_user.id,
+        Quote.status.in_(['draft', 'sent'])).all()
+    pending_quote_count = len(pending_quotes)
+    pending_quote_value = sum((q.total or 0) for q in pending_quotes)
+    recent_quotes = (Quote.query.filter_by(user_id=current_user.id)
+                     .order_by(Quote.created_at.desc()).limit(5).all())
+
+    today = date.today()
+    horizon = today + timedelta(days=30)
+    upcoming_reminders = (Reminder.query
+                          .filter(Reminder.user_id == current_user.id,
+                                  Reminder.is_done.is_(False),
+                                  Reminder.due_date.isnot(None),
+                                  Reminder.due_date <= horizon)
+                          .order_by(Reminder.due_date.asc())
+                          .limit(6).all())
+
+    return render_template(
+        "home.html",
+        worker_count=worker_count,
+        project_count=project_count,
+        active_projects=active_projects,
+        active_workers=active_workers,
+        customer_count=customer_count,
+        total_income=total_income,
+        total_expenses=total_expenses,
+        net_profit=net_profit,
+        pending_quote_count=pending_quote_count,
+        pending_quote_value=pending_quote_value,
+        recent_quotes=recent_quotes,
+        upcoming_reminders=upcoming_reminders,
+        today=today,
+        timedelta=timedelta,
+    )
 
 @app.route('/workers', methods=['GET', 'POST'])
 @login_required

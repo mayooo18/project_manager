@@ -14,10 +14,20 @@
             <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Logo" class="h-16 w-auto">
             {% set finance_endpoints = ['work_logs', 'payments', 'expenses', 'income', 'profitability'] %}
             {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index'] %}
-            <div class="flex items-center gap-4 relative">
+            {% set sales_endpoints = ['quotes.index', 'quotes.new', 'quotes.edit', 'quotes.customers'] %}
+            <button id="nav-toggle" type="button" aria-label="Toggle menu" onclick="toggleNav(event)">☰</button>
+            <div id="nav-links" class="flex items-center gap-4 relative">
                 <a href="{{ url_for('home') }}" class="{{ 'nav-active' if request.endpoint == 'home' }}">Home</a>
                 <a href="{{ url_for('projects') }}" class="{{ 'nav-active' if request.endpoint == 'projects' }}">Projects</a>
                 <a href="{{ url_for('workers') }}" class="{{ 'nav-active' if request.endpoint == 'workers' }}">Workers</a>
+
+                <div class="relative nav-dropdown">
+                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in sales_endpoints }}" style="color:#ff6b35;">Sales ▾</button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('quotes.index') }}" class="{{ 'nav-active' if request.endpoint in ['quotes.index', 'quotes.new', 'quotes.edit'] }}">Quotes</a>
+                        <a href="{{ url_for('quotes.customers') }}" class="{{ 'nav-active' if request.endpoint == 'quotes.customers' }}">Customers</a>
+                    </div>
+                </div>
 
                 <div class="relative nav-dropdown">
                     <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in finance_endpoints }}" style="color:#ff6b35;">Finance ▾</button>
@@ -55,6 +65,31 @@
         .nav-dropdown-menu a { display: block; padding: 0.4rem 1rem; }
         .nav-dropdown.open .nav-dropdown-menu { display: block; }
         .nav-active { font-weight: 700 !important; text-decoration: underline !important; }
+
+        /* Hamburger — hidden on desktop, shown on mobile */
+        #nav-toggle { display: none; background: none; border: none; color: #ff6b35;
+            font-size: 1.6rem; line-height: 1; cursor: pointer; padding: 0.25rem 0.5rem; }
+
+        @media (max-width: 767px) {
+            nav { position: relative; }
+            #nav-toggle { display: block; }
+            #nav-links {
+                display: none;
+                position: absolute; top: 100%; left: 0; right: 0;
+                flex-direction: column; align-items: flex-start;
+                background: #1a1a1a; border-top: 1px solid #2d2d2d;
+                padding: 1rem 1.25rem; gap: 1rem; z-index: 60;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            }
+            #nav-links.open { display: flex; }
+            #nav-links > a, .nav-dropdown { width: 100%; }
+            /* Sub-menus expand inline (not floating) on mobile */
+            .nav-dropdown-menu {
+                position: static; right: auto; margin-top: 0.35rem;
+                background: #111; border: none; min-width: auto;
+                padding: 0.25rem 0 0.25rem 0.75rem;
+            }
+        }
     </style>
     <script>
         document.querySelectorAll('.nav-dropdown-btn').forEach(btn => {
@@ -65,7 +100,17 @@
                 e.stopPropagation();
             });
         });
-        document.addEventListener('click', () => document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open')));
+        function toggleNav(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('nav-links').classList.toggle('open');
+        }
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
+            const nl = document.getElementById('nav-links');
+            if (nl && !nl.contains(e.target) && e.target.id !== 'nav-toggle') {
+                nl.classList.remove('open');
+            }
+        });
     </script>
 
     <main class="max-w-5xl mx-auto px-4">

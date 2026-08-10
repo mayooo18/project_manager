@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+    .fld { background:#0a0a0a; border:1px solid #2d2d2d; border-radius:0.5rem; color:#e5e7eb; padding:0.5rem 0.75rem; width:100%; }
+    .fld:focus { outline:none; border-color:#ff6b35; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <h1 class="text-2xl font-bold text-white mb-6">Customers</h1>
+
+  <!-- Add customer -->
+  <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4 mb-6">
+    <p class="text-gray-400 text-sm mb-3 uppercase tracking-wide">Add customer</p>
+    <form method="POST" action="{{ url_for('quotes.customers') }}">
+      {{ form.csrf_token }}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-gray-500 text-xs">Name *</label>
+          {{ form.name(class_='fld', placeholder='Customer name') }}
+        </div>
+        <div>
+          <label class="text-gray-500 text-xs">Email</label>
+          {{ form.email(class_='fld', placeholder='name@example.com') }}
+        </div>
+        <div>
+          <label class="text-gray-500 text-xs">Phone</label>
+          {{ form.phone(class_='fld', placeholder='(555) 555-5555') }}
+        </div>
+        <div>
+          <label class="text-gray-500 text-xs">Address</label>
+          {{ form.address(class_='fld', placeholder='Service address') }}
+        </div>
+      </div>
+      <div class="mt-3">
+        <label class="text-gray-500 text-xs">Notes</label>
+        {{ form.notes(class_='fld', rows='2') }}
+      </div>
+      <div class="mt-3">
+        <button type="submit"
+          class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-4 py-2 rounded-lg"
+          style="color:#fff !important;">Save Customer</button>
+      </div>
+    </form>
+  </div>
+
+  {% if customers %}
+  <div class="flex flex-col gap-3">
+    {% for c in customers %}
+    <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <p class="text-gray-100 font-semibold text-lg">{{ c.name }}</p>
+          <p class="text-gray-500 text-xs mt-1">
+            {{ c.email or '' }}{% if c.email and c.phone %} &middot; {% endif %}{{ c.phone or '' }}
+          </p>
+          {% if c.address %}<p class="text-gray-500 text-xs">{{ c.address }}</p>{% endif %}
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <span class="text-gray-500 text-xs">{{ c.quotes|length }} quote{{ '' if c.quotes|length == 1 else 's' }}</span>
+          <form method="POST" action="{{ url_for('quotes.delete_customer', customer_id=c.id) }}"
+                onsubmit="return confirm('Delete {{ c.name }} and their quotes? This cannot be undone.');">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center">
+    <p class="text-gray-400 text-sm">No customers yet.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+</body>
+</html>
+{% endblock %}

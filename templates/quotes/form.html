@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit Quote' if quote else 'New Quote' }}{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+    .fld { background:#0a0a0a; border:1px solid #2d2d2d; border-radius:0.5rem; color:#e5e7eb; padding:0.5rem 0.75rem; width:100%; }
+    .fld:focus { outline:none; border-color:#ff6b35; }
+    .sec { background:#111827; border:1px solid #374151; border-radius:0.75rem; padding:1.25rem; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-white">{{ 'Edit Quote' if quote else 'New Quote' }}</h1>
+    <a href="{{ url_for('quotes.index') }}" class="text-gray-400 hover:text-orange-400 text-sm">← All quotes</a>
+  </div>
+
+  <form method="POST"
+        action="{{ url_for('quotes.edit', quote_id=quote.id) if quote else url_for('quotes.new') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    <!-- 1. Customer & details -->
+    <div class="sec mb-5">
+      <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">1 · Customer &amp; details</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-gray-500 text-xs">Customer *</label>
+          <select name="customer_id" class="fld">
+            <option value="">— Select customer —</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}" {{ 'selected' if quote and quote.customer_id == c.id }}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+          <a href="{{ url_for('quotes.customers') }}" class="text-orange-400 text-xs hover:underline">+ Add a customer</a>
+        </div>
+        <div>
+          <label class="text-gray-500 text-xs">Link to project (optional)</label>
+          <select name="project_id" class="fld">
+            <option value="">— None —</option>
+            {% for p in projects %}
+            <option value="{{ p.id }}" {{ 'selected' if quote and quote.project_id == p.id }}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="mt-3">
+        <label class="text-gray-500 text-xs">Title *</label>
+        <input type="text" name="title" class="fld" placeholder="e.g. Backyard fence installation"
+               value="{{ quote.title if quote else '' }}"/>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+        <div>
+          <label class="text-gray-500 text-xs">Deposit (optional)</label>
+          <input type="number" step="any" name="deposit" class="fld" placeholder="e.g. 3000"
+                 value="{{ quote.deposit if quote and quote.deposit else '' }}"/>
+          <p class="text-gray-600 text-xs mt-1">Shown on the contract as the upfront deposit; balance is auto-calculated.</p>
+        </div>
+        <div>
+          <label class="text-gray-500 text-xs">P.O. # (optional)</label>
+          <input type="text" name="po_number" class="fld" placeholder="Purchase order #"
+                 value="{{ quote.po_number if quote and quote.po_number else '' }}"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Line items -->
+    <div class="sec mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-gray-400 text-xs uppercase tracking-wide">2 · Services / line items</p>
+        <button type="button" onclick="addRow()"
+          class="text-orange-400 text-sm hover:underline">+ Add item</button>
+      </div>
+
+      <div id="items"></div>
+
+      <div class="flex justify-end mt-3">
+        <div class="text-right">
+          <span class="text-gray-500 text-xs uppercase">Total</span>
+          <div class="text-2xl font-bold text-white">$<span id="grand-total">0.00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Notes -->
+    <div class="sec mb-5">
+      <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">3 · Notes (shown to customer)</p>
+      <textarea name="notes" rows="3" class="fld" placeholder="Anything the customer should know…">{{ quote.notes if quote else '' }}</textarea>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="submit"
+        class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-5 py-2.5 rounded-lg"
+        style="color:#fff !important;">Save Quote</button>
+
+      {% if quote %}
+      <a href="{{ url_for('quotes.pdf', quote_id=quote.id) }}" target="_blank"
+        class="border border-gray-600 text-gray-200 text-sm font-semibold px-5 py-2.5 rounded-lg hover:border-orange-400">Preview PDF</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if quote %}
+  <!-- Send / share -->
+  <div class="sec mt-6">
+    <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">Send to customer</p>
+    <p class="text-gray-500 text-sm mb-3">
+      Email the customer directly (with the PDF attached), or copy the approval link to send yourself.
+      Either way, they review and e-sign to approve — no account needed.
+    </p>
+
+    <!-- One-click email -->
+    <div class="mb-3">
+      {% if quote.customer.email %}
+      <form method="POST" action="{{ url_for('quotes.email', quote_id=quote.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit"
+          class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-5 py-2.5 rounded-lg"
+          style="color:#fff !important;">✉ Email to {{ quote.customer.email }}</button>
+        <span class="text-gray-600 text-xs ml-2">Sends the approval link + PDF via your Gmail.</span>
+      </form>
+      {% else %}
+      <p class="text-yellow-500/80 text-sm">
+        This customer has no email on file.
+        <a href="{{ url_for('quotes.customers') }}" class="underline hover:text-orange-400">Add one</a>
+        to enable one-click email.
+      </p>
+      {% endif %}
+    </div>
+
+    <!-- Manual link fallback -->
+    {% if public_link_active %}
+    <div class="flex flex-wrap items-center gap-2">
+      <input id="share-link" type="text" readonly class="fld flex-1 min-w-0"
+             value="{{ url_for('quotes.public_view', token=quote.public_token, _external=True) }}"/>
+      <button type="button" onclick="copyLink()"
+        class="border border-gray-600 text-gray-200 text-sm px-4 py-2 rounded-lg hover:border-orange-400">Copy</button>
+      <form method="POST" action="{{ url_for('quotes.send', quote_id=quote.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit"
+          class="border border-gray-600 text-gray-200 text-sm px-4 py-2 rounded-lg hover:border-orange-400">Mark as sent</button>
+      </form>
+    </div>
+    <div class="flex flex-wrap items-center gap-3 mt-2">
+      <span class="text-gray-600 text-xs">
+        Expires {{ quote.public_token_expires_at.strftime('%Y-%m-%d %H:%M') }} UTC
+      </span>
+      <form method="POST" action="{{ url_for('quotes.revoke_public_link', quote_id=quote.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="text-red-400 text-xs hover:underline">Revoke link</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="text-yellow-500/80 text-sm">The public approval link is expired or revoked.</span>
+      <form method="POST" action="{{ url_for('quotes.regenerate_public_link', quote_id=quote.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit"
+          class="border border-orange-400 text-orange-400 text-sm px-4 py-2 rounded-lg hover:bg-orange-400/10">Create new link</button>
+      </form>
+    </div>
+    {% endif %}
+    {% if quote.signed_at %}
+    <p class="text-green-400 text-sm mt-3">
+      ✓ Approved by {{ quote.signature_name }} on {{ quote.signed_at.strftime('%Y-%m-%d %H:%M') }}
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  const SUGGEST_URL = "{{ url_for('quotes.suggest') }}";
+  const CSRF = "{{ csrf_token() }}";
+
+  function money(n) { return (Math.round(n * 100) / 100).toFixed(2); }
+
+  function recalc() {
+    let total = 0;
+    document.querySelectorAll('.item-row').forEach(row => {
+      const qty = parseFloat(row.querySelector('.i-qty').value) || 0;
+      const price = parseFloat(row.querySelector('.i-price').value) || 0;
+      const line = qty * price;
+      row.querySelector('.i-line').textContent = money(line);
+      total += line;
+    });
+    document.getElementById('grand-total').textContent = money(total);
+  }
+
+  function rowTemplate(desc, qty, price) {
+    const wrap = document.createElement('div');
+    wrap.className = 'item-row bg-gray-950 border border-gray-800 rounded-lg p-3 mb-3';
+    wrap.innerHTML = `
+      <textarea name="item_description" rows="2" class="fld mb-2 i-desc"
+        placeholder="Describe the service…"></textarea>
+      <div class="flex flex-wrap items-end gap-2">
+        <div style="width:90px">
+          <label class="text-gray-500 text-xs">Qty</label>
+          <input type="number" step="any" name="item_quantity" class="fld i-qty" value="1"/>
+        </div>
+        <div style="width:130px">
+          <label class="text-gray-500 text-xs">Unit price</label>
+          <input type="number" step="any" name="item_price" class="fld i-price" value="0"/>
+        </div>
+        <div class="flex-1 text-right">
+          <label class="text-gray-500 text-xs block">Amount</label>
+          <span class="text-gray-100 font-semibold">$<span class="i-line">0.00</span></span>
+        </div>
+        <button type="button" class="i-ai text-orange-400 text-xs border border-orange-400/40 rounded px-2 py-1 hover:bg-orange-400/10">✦ Suggest with AI</button>
+        <button type="button" class="i-del text-gray-600 hover:text-red-400 text-sm px-2 py-1">✕</button>
+      </div>
+      <span class="i-ai-status text-xs text-gray-500"></span>
+    `;
+    wrap.querySelector('.i-desc').value = desc || '';
+    wrap.querySelector('.i-qty').value = (qty !== undefined && qty !== null) ? qty : 1;
+    wrap.querySelector('.i-price').value = (price !== undefined && price !== null) ? price : 0;
+
+    wrap.querySelectorAll('.i-qty, .i-price').forEach(el => el.addEventListener('input', recalc));
+    wrap.querySelector('.i-del').addEventListener('click', () => { wrap.remove(); recalc(); });
+    wrap.querySelector('.i-ai').addEventListener('click', () => aiSuggest(wrap));
+    return wrap;
+  }
+
+  function addRow(desc, qty, price) {
+    document.getElementById('items').appendChild(rowTemplate(desc, qty, price));
+    recalc();
+  }
+
+  async function aiSuggest(row) {
+    const status = row.querySelector('.i-ai-status');
+    const text = row.querySelector('.i-desc').value.trim();
+    if (!text) { status.textContent = 'Type a rough description first.'; return; }
+    status.textContent = 'Thinking…';
+    try {
+      const res = await fetch(SUGGEST_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ text })
+      });
+      const data = await res.json();
+      if (!res.ok) { status.textContent = data.error || 'AI failed.'; return; }
+      row.querySelector('.i-desc').value = data.description || text;
+      if (data.price) row.querySelector('.i-price').value = data.price;
+      status.textContent = 'Updated with AI suggestion.';
+      recalc();
+    } catch (e) {
+      status.textContent = 'AI request failed.';
+    }
+  }
+
+  function copyLink() {
+    const el = document.getElementById('share-link');
+    el.select();
+    navigator.clipboard.writeText(el.value);
+  }
+
+  // Seed existing items (edit) or one blank row (new).
+  {% if quote %}
+    {% for item in quote.items %}
+      addRow({{ item.description | tojson }}, {{ item.quantity or 1 }}, {{ item.unit_price or 0 }});
+    {% endfor %}
+    if (!document.querySelectorAll('.item-row').length) addRow();
+  {% else %}
+    addRow();
+  {% endif %}
+  recalc();
+</script>
+
+</body>
+</html>
+{% endblock %}

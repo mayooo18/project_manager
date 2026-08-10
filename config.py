@@ -6,6 +6,7 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.environ["SECRET_KEY"]
+    ENVIRONMENT = os.environ.get('ENVIRONMENT', 'development')
     
     DATABASE_URL = os.environ.get("DATABASE_URL")
     
@@ -55,7 +56,7 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
     
     # Session configuration to prevent issues
-    SESSION_COOKIE_SECURE = True if os.environ.get('ENVIRONMENT') == 'production' else False
+    SESSION_COOKIE_SECURE = ENVIRONMENT == 'production'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
 

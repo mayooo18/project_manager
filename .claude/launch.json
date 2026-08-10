@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "project_manager",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["run_local.py"],
+      "port": 5001
+    }
+  ]
+}
