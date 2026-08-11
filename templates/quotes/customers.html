@@ -68,9 +68,9 @@
           {% if c.address %}<p class="text-gray-500 text-xs">{{ c.address }}</p>{% endif %}
         </div>
         <div class="flex items-center gap-3 flex-shrink-0">
-          <span class="text-gray-500 text-xs">{{ c.quotes|length }} quote{{ '' if c.quotes|length == 1 else 's' }}</span>
+          <span class="text-gray-500 text-xs">{{ c.quotes|length }} proposal{{ '' if c.quotes|length == 1 else 's' }}</span>
           <form method="POST" action="{{ url_for('quotes.delete_customer', customer_id=c.id) }}"
-                onsubmit="return confirm('Delete {{ c.name }} and their quotes? This cannot be undone.');">
+                onsubmit="return confirm('Delete {{ c.name }} and their proposals? This cannot be undone.');">
             {{ delete_form.csrf_token }}
             <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
           </form>

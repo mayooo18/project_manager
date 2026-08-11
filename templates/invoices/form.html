@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}{{ 'Edit Proposal' if quote else 'New Proposal' }}{% endblock %}
+{% block title %}{{ 'Edit Invoice' if invoice else 'New Invoice' }}{% endblock %}
 
 {% block content %}
 <!DOCTYPE html>
@@ -20,12 +20,15 @@
 <div class="max-w-3xl mx-auto px-4 py-8">
 
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">{{ 'Edit Proposal' if quote else 'New Proposal' }}</h1>
-    <a href="{{ url_for('quotes.index') }}" class="text-gray-400 hover:text-orange-400 text-sm">← All proposals</a>
+    <h1 class="text-2xl font-bold text-white">
+      {{ 'Edit Invoice' if invoice else 'New Invoice' }}
+      {% if invoice and invoice.number %}<span class="text-gray-500 text-base font-normal">· {{ invoice.number }}</span>{% endif %}
+    </h1>
+    <a href="{{ url_for('invoices.index') }}" class="text-gray-400 hover:text-orange-400 text-sm">← All invoices</a>
   </div>
 
   <form method="POST"
-        action="{{ url_for('quotes.edit', quote_id=quote.id) if quote else url_for('quotes.new') }}">
+        action="{{ url_for('invoices.edit', invoice_id=invoice.id) if invoice else url_for('invoices.new') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
     <!-- 1. Customer & details -->
@@ -37,7 +40,7 @@
           <select name="customer_id" class="fld">
             <option value="">— Select customer —</option>
             {% for c in customers %}
-            <option value="{{ c.id }}" {{ 'selected' if quote and quote.customer_id == c.id }}>{{ c.name }}</option>
+            <option value="{{ c.id }}" {{ 'selected' if invoice and invoice.customer_id == c.id }}>{{ c.name }}</option>
             {% endfor %}
           </select>
           <a href="{{ url_for('quotes.customers') }}" class="text-orange-400 text-xs hover:underline">+ Add a customer</a>
@@ -47,27 +50,28 @@
           <select name="project_id" class="fld">
             <option value="">— None —</option>
             {% for p in projects %}
-            <option value="{{ p.id }}" {{ 'selected' if quote and quote.project_id == p.id }}>{{ p.name }}</option>
+            <option value="{{ p.id }}" {{ 'selected' if invoice and invoice.project_id == p.id }}>{{ p.name }}</option>
             {% endfor %}
           </select>
+          <p class="text-gray-600 text-xs mt-1">Link a project to record income there when paid.</p>
         </div>
       </div>
       <div class="mt-3">
         <label class="text-gray-500 text-xs">Title *</label>
         <input type="text" name="title" class="fld" placeholder="e.g. Backyard fence installation"
-               value="{{ quote.title if quote else '' }}"/>
+               value="{{ invoice.title if invoice else '' }}"/>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
         <div>
-          <label class="text-gray-500 text-xs">Deposit (optional)</label>
+          <label class="text-gray-500 text-xs">Deposit already collected (optional)</label>
           <input type="number" step="any" name="deposit" class="fld" placeholder="e.g. 3000"
-                 value="{{ quote.deposit if quote and quote.deposit else '' }}"/>
-          <p class="text-gray-600 text-xs mt-1">Shown on the contract as the upfront deposit; balance is auto-calculated.</p>
+                 value="{{ invoice.deposit if invoice and invoice.deposit else '' }}"/>
+          <p class="text-gray-600 text-xs mt-1">Subtracted from the total to show the balance due.</p>
         </div>
         <div>
           <label class="text-gray-500 text-xs">P.O. # (optional)</label>
           <input type="text" name="po_number" class="fld" placeholder="Purchase order #"
-                 value="{{ quote.po_number if quote and quote.po_number else '' }}"/>
+                 value="{{ invoice.po_number if invoice and invoice.po_number else '' }}"/>
         </div>
       </div>
     </div>
@@ -93,39 +97,87 @@
     <!-- 3. Notes -->
     <div class="sec mb-5">
       <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">3 · Notes (shown to customer)</p>
-      <textarea name="notes" rows="3" class="fld" placeholder="Anything the customer should know…">{{ quote.notes if quote else '' }}</textarea>
+      <textarea name="notes" rows="3" class="fld" placeholder="Anything the customer should know…">{{ invoice.notes if invoice else '' }}</textarea>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
       <button type="submit"
         class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-5 py-2.5 rounded-lg"
-        style="color:#fff !important;">Save Proposal</button>
+        style="color:#fff !important;">Save Invoice</button>
 
-      {% if quote %}
-      <a href="{{ url_for('quotes.pdf', quote_id=quote.id) }}" target="_blank"
+      {% if invoice %}
+      <a href="{{ url_for('invoices.pdf', invoice_id=invoice.id) }}" target="_blank"
         class="border border-gray-600 text-gray-200 text-sm font-semibold px-5 py-2.5 rounded-lg hover:border-orange-400">Preview PDF</a>
       {% endif %}
     </div>
   </form>
 
-  {% if quote %}
+  {% if invoice %}
+  <!-- Payment -->
+  <div class="sec mt-6">
+    <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">Payment</p>
+    {% if invoice.status == 'paid' %}
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p class="text-green-400 text-sm">
+        ✓ Paid {{ invoice.paid_at.strftime('%Y-%m-%d') if invoice.paid_at }}{% if invoice.payment_method %} via {{ invoice.payment_method }}{% endif %}
+        {% if invoice.income_id %}<span class="text-gray-500">· recorded as income on the linked project</span>{% endif %}
+      </p>
+      <form method="POST" action="{{ url_for('invoices.unpay', invoice_id=invoice.id) }}"
+            onsubmit="return confirm('Revert this payment?{% if invoice.income_id %} The auto-recorded income will also be removed.{% endif %}');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="text-gray-400 hover:text-red-400 text-sm">Revert payment</button>
+      </form>
+    </div>
+    {% else %}
+    <form method="POST" action="{{ url_for('invoices.mark_paid', invoice_id=invoice.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-gray-500 text-xs">Payment method</label>
+          <select name="payment_method" class="fld">
+            {% for m in payment_methods %}
+            <option value="{{ m }}">{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="text-gray-500 text-xs">Payment date</label>
+          <input type="date" name="paid_date" class="fld" value="{{ today }}"/>
+        </div>
+      </div>
+      {% if invoice.project_id %}
+      <label class="flex items-center gap-2 mt-3 text-sm text-gray-300">
+        <input type="checkbox" name="record_income" checked
+               class="rounded border-gray-600 bg-black text-orange-500"/>
+        Also record ${{ '%.2f'|format(invoice.total or 0) }} as income on
+        <span class="text-gray-100">{{ invoice.project.name }}</span>
+      </label>
+      {% else %}
+      <p class="text-gray-600 text-xs mt-2">Tip: link a project above to auto-record income when paid.</p>
+      {% endif %}
+      <button type="submit"
+        class="mt-4 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg">
+        Mark as paid
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
   <!-- Send / share -->
   <div class="sec mt-6">
     <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">Send to customer</p>
     <p class="text-gray-500 text-sm mb-3">
-      Email the customer directly (with the PDF attached), or copy the approval link to send yourself.
-      Either way, they review and e-sign to approve — no account needed.
+      Email the invoice (with the PDF attached), or copy a view link to send yourself.
     </p>
 
-    <!-- One-click email -->
     <div class="mb-3">
-      {% if quote.customer.email %}
-      <form method="POST" action="{{ url_for('quotes.email', quote_id=quote.id) }}">
+      {% if invoice.customer.email %}
+      <form method="POST" action="{{ url_for('invoices.email', invoice_id=invoice.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <button type="submit"
           class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-5 py-2.5 rounded-lg"
-          style="color:#fff !important;">✉ Email to {{ quote.customer.email }}</button>
-        <span class="text-gray-600 text-xs ml-2">Sends the approval link + PDF via your Gmail.</span>
+          style="color:#fff !important;">✉ Email to {{ invoice.customer.email }}</button>
+        <span class="text-gray-600 text-xs ml-2">Sends the view link + PDF via your Gmail.</span>
       </form>
       {% else %}
       <p class="text-yellow-500/80 text-sm">
@@ -136,42 +188,27 @@
       {% endif %}
     </div>
 
-    <!-- Manual link fallback -->
     {% if public_link_active %}
     <div class="flex flex-wrap items-center gap-2">
       <input id="share-link" type="text" readonly class="fld flex-1 min-w-0"
-             value="{{ url_for('quotes.public_view', token=quote.public_token, _external=True) }}"/>
+             value="{{ url_for('invoices.public_view', token=invoice.public_token, _external=True) }}"/>
       <button type="button" onclick="copyLink()"
         class="border border-gray-600 text-gray-200 text-sm px-4 py-2 rounded-lg hover:border-orange-400">Copy</button>
-      <form method="POST" action="{{ url_for('quotes.send', quote_id=quote.id) }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit"
-          class="border border-gray-600 text-gray-200 text-sm px-4 py-2 rounded-lg hover:border-orange-400">Mark as sent</button>
-      </form>
     </div>
     <div class="flex flex-wrap items-center gap-3 mt-2">
       <span class="text-gray-600 text-xs">
-        Expires {{ quote.public_token_expires_at.strftime('%Y-%m-%d %H:%M') }} UTC
+        Expires {{ invoice.public_token_expires_at.strftime('%Y-%m-%d %H:%M') }} UTC
       </span>
-      <form method="POST" action="{{ url_for('quotes.revoke_public_link', quote_id=quote.id) }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit" class="text-red-400 text-xs hover:underline">Revoke link</button>
-      </form>
     </div>
     {% else %}
     <div class="flex flex-wrap items-center gap-3">
-      <span class="text-yellow-500/80 text-sm">The public approval link is expired or revoked.</span>
-      <form method="POST" action="{{ url_for('quotes.regenerate_public_link', quote_id=quote.id) }}">
+      <span class="text-yellow-500/80 text-sm">No active view link yet.</span>
+      <form method="POST" action="{{ url_for('invoices.send', invoice_id=invoice.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <button type="submit"
-          class="border border-orange-400 text-orange-400 text-sm px-4 py-2 rounded-lg hover:bg-orange-400/10">Create new link</button>
+          class="border border-orange-400 text-orange-400 text-sm px-4 py-2 rounded-lg hover:bg-orange-400/10">Mark as sent &amp; create link</button>
       </form>
     </div>
-    {% endif %}
-    {% if quote.signed_at %}
-    <p class="text-green-400 text-sm mt-3">
-      ✓ Approved by {{ quote.signature_name }} on {{ quote.signed_at.strftime('%Y-%m-%d %H:%M') }}
-    </p>
     {% endif %}
   </div>
   {% endif %}
@@ -263,9 +300,8 @@
     navigator.clipboard.writeText(el.value);
   }
 
-  // Seed existing items (edit) or one blank row (new).
-  {% if quote %}
-    {% for item in quote.items %}
+  {% if invoice %}
+    {% for item in invoice.items %}
       addRow({{ item.description | tojson }}, {{ item.quantity or 1 }}, {{ item.unit_price or 0 }});
     {% endfor %}
     if (!document.querySelectorAll('.item-row').length) addRow();

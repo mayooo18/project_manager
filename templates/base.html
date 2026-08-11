@@ -14,7 +14,7 @@
             <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Logo" class="h-16 w-auto">
             {% set finance_endpoints = ['work_logs', 'payments', 'expenses', 'income', 'profitability'] %}
             {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index'] %}
-            {% set sales_endpoints = ['quotes.index', 'quotes.new', 'quotes.edit', 'quotes.customers'] %}
+            {% set sales_endpoints = ['quotes.index', 'quotes.new', 'quotes.edit', 'quotes.customers', 'invoices.index', 'invoices.new', 'invoices.edit'] %}
             <button id="nav-toggle" type="button" aria-label="Toggle menu" onclick="toggleNav(event)">☰</button>
             <div id="nav-links" class="flex items-center gap-4 relative">
                 <a href="{{ url_for('home') }}" class="{{ 'nav-active' if request.endpoint == 'home' }}">Home</a>
@@ -24,7 +24,8 @@
                 <div class="relative nav-dropdown">
                     <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in sales_endpoints }}" style="color:#ff6b35;">Sales ▾</button>
                     <div class="nav-dropdown-menu">
-                        <a href="{{ url_for('quotes.index') }}" class="{{ 'nav-active' if request.endpoint in ['quotes.index', 'quotes.new', 'quotes.edit'] }}">Quotes</a>
+                        <a href="{{ url_for('quotes.index') }}" class="{{ 'nav-active' if request.endpoint in ['quotes.index', 'quotes.new', 'quotes.edit'] }}">Proposals</a>
+                        <a href="{{ url_for('invoices.index') }}" class="{{ 'nav-active' if request.endpoint in ['invoices.index', 'invoices.new', 'invoices.edit'] }}">Invoices</a>
                         <a href="{{ url_for('quotes.customers') }}" class="{{ 'nav-active' if request.endpoint == 'quotes.customers' }}">Customers</a>
                     </div>
                 </div>

@@ -496,7 +496,7 @@ def _save_quote(quote):
         if not customer:
             flash('Please choose a customer.', 'error')
         elif not title:
-            flash('Please give the quote a title.', 'error')
+            flash('Please give the proposal a title.', 'error')
         else:
             if quote is None:
                 quote = Quote(user_id=current_user.id)
@@ -510,7 +510,7 @@ def _save_quote(quote):
             quote.po_number = po_number or None
             _apply_items(quote, _parse_items(request.form))
             db.session.commit()
-            flash('Quote saved.', 'success')
+            flash('Proposal saved.', 'success')
             return redirect(url_for('quotes.edit', quote_id=quote.id))
 
     customers = (Customer.query.filter_by(user_id=current_user.id)
@@ -527,7 +527,7 @@ def delete(quote_id):
     quote = _owned_quote_or_404(quote_id)
     db.session.delete(quote)
     db.session.commit()
-    flash('Quote deleted.', 'success')
+    flash('Proposal deleted.', 'success')
     return redirect(url_for('quotes.index'))
 
 
@@ -543,7 +543,7 @@ def send(quote_id):
         quote.sent_at = datetime.utcnow()
     db.session.commit()
     link = url_for('quotes.public_view', token=quote.public_token, _external=True)
-    flash(f'Quote marked as sent. Share this approval link with the customer: {link}',
+    flash(f'Proposal marked as sent. Share this approval link with the customer: {link}',
           'success')
     return redirect(url_for('quotes.edit', quote_id=quote.id))
 
@@ -653,7 +653,7 @@ def public_view(token):
 def public_approve(token):
     quote = _get_public_quote(token)
     if quote.status in ('approved', 'converted'):
-        flash('This quote has already been approved.', 'success')
+        flash('This proposal has already been approved.', 'success')
         return redirect(url_for('quotes.public_view', token=token))
 
     name = (request.form.get('signature_name') or '').strip()

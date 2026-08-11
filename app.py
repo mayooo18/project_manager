@@ -20,6 +20,7 @@ from google_routes import google_bp
 from reminder_routes import reminder_bp
 from vehicle_routes import vehicle_bp
 from quote_routes import quote_bp
+from invoice_routes import invoice_bp
 import re
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -41,6 +42,7 @@ app.register_blueprint(google_bp)
 app.register_blueprint(reminder_bp)
 app.register_blueprint(vehicle_bp)
 app.register_blueprint(quote_bp)
+app.register_blueprint(invoice_bp)
 
 # API routes use API key auth — exempt from CSRF
 csrf.exempt(field_api_bp)

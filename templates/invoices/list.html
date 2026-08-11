@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Invoices{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-white">Invoices</h1>
+    <a href="{{ url_for('invoices.new') }}"
+      class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+      style="color: #fff !important;">
+      + New Invoice
+    </a>
+  </div>
+
+  {% set status_styles = {
+    'draft': 'text-gray-300 border-gray-500',
+    'sent': 'text-blue-300 border-blue-500',
+    'paid': 'text-green-300 border-green-500',
+    'void': 'text-red-300 border-red-500'
+  } %}
+
+  {% if invoices %}
+  <div class="flex flex-col gap-3">
+    {% for inv in invoices %}
+    <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <div class="flex items-center flex-wrap gap-2">
+            <a href="{{ url_for('invoices.edit', invoice_id=inv.id) }}"
+               class="text-gray-100 font-semibold text-lg hover:text-orange-400">{{ inv.title }}</a>
+            <span class="text-xs border rounded px-1.5 py-0.5 uppercase {{ status_styles.get(inv.status, 'text-gray-300 border-gray-500') }}">{{ inv.status }}</span>
+          </div>
+          <p class="text-gray-500 text-xs mt-1">
+            {{ inv.number or '#' ~ inv.id }} &middot; {{ inv.customer.name }}
+            {% if inv.created_at %} &middot; {{ inv.created_at.strftime('%Y-%m-%d') }}{% endif %}
+            {% if inv.project %} &middot; Project: {{ inv.project.name }}{% endif %}
+            {% if inv.status == 'paid' and inv.paid_at %} &middot; Paid {{ inv.paid_at.strftime('%Y-%m-%d') }}{% if inv.payment_method %} · {{ inv.payment_method }}{% endif %}{% endif %}
+          </p>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <span class="text-gray-100 font-semibold">${{ '%.2f'|format(inv.total or 0) }}</span>
+          <a href="{{ url_for('invoices.edit', invoice_id=inv.id) }}"
+             class="text-sm" style="color:#9ca3af;"
+             onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">Edit</a>
+          <a href="{{ url_for('invoices.pdf', invoice_id=inv.id) }}" target="_blank"
+             class="text-sm" style="color:#9ca3af;"
+             onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">PDF</a>
+          <form method="POST" action="{{ url_for('invoices.delete', invoice_id=inv.id) }}"
+                onsubmit="return confirm('Delete this invoice? This cannot be undone.');">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center">
+    <p class="text-gray-400 text-sm">No invoices yet.</p>
+    <p class="text-gray-600 text-xs mt-1">Create one directly, or convert an approved proposal into an invoice.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+</body>
+</html>
+{% endblock %}

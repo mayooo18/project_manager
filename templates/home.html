@@ -61,7 +61,7 @@
       <p class="text-gray-600 text-xs mt-1">income − expenses − pay</p>
     </a>
     <a href="{{ url_for('quotes.index') }}" class="kpi no-underline">
-      <p class="text-gray-400 text-xs uppercase tracking-wide">Pending Quotes</p>
+      <p class="text-gray-400 text-xs uppercase tracking-wide">Pending Proposals</p>
       <p class="text-white text-3xl font-bold mt-1">{{ pending_quote_count }}</p>
       <p class="text-gray-600 text-xs mt-1">${{ '{:,.0f}'.format(pending_quote_value) }} outstanding</p>
     </a>
@@ -87,7 +87,7 @@
   <div class="agrid mb-6">
     <a href="{{ url_for('quotes.new') }}" class="action no-underline" style="background:#ff6b35;border-color:#ff6b35;">
       <span class="text-white text-xl">＋</span>
-      <span class="text-white text-xs font-semibold">New Quote</span>
+      <span class="text-white text-xs font-semibold">New Proposal</span>
     </a>
     <a href="{{ url_for('quotes.customers') }}" class="action no-underline">
       <span class="text-[#ff6b35] text-xl">👤</span>
@@ -141,7 +141,7 @@
     <!-- Recent quotes -->
     <div class="panel p-4">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-white font-semibold">Recent quotes</h2>
+        <h2 class="text-white font-semibold">Recent proposals</h2>
         <a href="{{ url_for('quotes.index') }}" class="text-[#ff6b35] text-xs hover:underline">View all</a>
       </div>
       {% set status_styles = {
@@ -165,7 +165,7 @@
         {% endfor %}
       </div>
       {% else %}
-      <p class="text-gray-600 text-sm">No quotes yet.
+      <p class="text-gray-600 text-sm">No proposals yet.
         <a href="{{ url_for('quotes.new') }}" class="text-[#ff6b35] hover:underline">Create one →</a>
       </p>
       {% endif %}

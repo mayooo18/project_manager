@@ -1,0 +1,45 @@
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+  <p style="font-size:15px;">Hi {{ invoice.customer.name }},</p>
+
+  <p style="font-size:15px;line-height:1.5;">
+    Please find invoice <strong>{{ invoice.number or invoice.id }}</strong> from
+    <strong>{{ company.name }}</strong> below. The full details are attached as a PDF,
+    and you can view it online anytime.
+  </p>
+
+  <table style="width:100%;border-collapse:collapse;margin:18px 0;font-size:14px;">
+    <tr>
+      <td style="padding:6px 0;color:#666;">For</td>
+      <td style="padding:6px 0;text-align:right;"><strong>{{ invoice.title }}</strong></td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;color:#666;border-top:1px solid #eee;">Total</td>
+      <td style="padding:6px 0;text-align:right;border-top:1px solid #eee;">${{ '%.2f'|format(invoice.total or 0) }}</td>
+    </tr>
+    {% if invoice.deposit %}
+    <tr>
+      <td style="padding:6px 0;color:#666;">Deposit collected</td>
+      <td style="padding:6px 0;text-align:right;">−${{ '%.2f'|format(invoice.deposit) }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td style="padding:6px 0;color:#666;border-top:1px solid #eee;"><strong>Balance due</strong></td>
+      <td style="padding:6px 0;text-align:right;border-top:1px solid #eee;"><strong>${{ '%.2f'|format(invoice.balance_due) }}</strong></td>
+    </tr>
+  </table>
+
+  <p style="text-align:center;margin:26px 0;">
+    <a href="{{ link }}"
+       style="background:#ff6b35;color:#fff;text-decoration:none;font-weight:bold;
+              padding:14px 28px;border-radius:8px;display:inline-block;font-size:15px;">
+      View invoice online
+    </a>
+  </p>
+
+  <p style="font-size:13px;color:#666;line-height:1.5;">
+    Or paste this link into your browser:<br>
+    <a href="{{ link }}" style="color:#ff6b35;">{{ link }}</a>
+  </p>
+
+  <p style="font-size:14px;margin-top:24px;">Thank you,<br>{{ company.name }}<br>{{ company.phone }}</p>
+</div>

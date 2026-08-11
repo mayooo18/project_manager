@@ -236,3 +236,72 @@ class QuoteItem(db.Model):
     @property
     def line_total(self):
         return (self.quantity or 0) * (self.unit_price or 0)
+
+
+# ── Customer-facing sales: Invoices (Phase 2) ──
+
+class Invoice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    # Optional links back to the internal project and the source quote.
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
+    quote_id = db.Column(db.Integer, db.ForeignKey('quote.id'), nullable=True)
+
+    number = db.Column(db.String(50))       # human-friendly invoice number, e.g. INV-0007
+    title = db.Column(db.String(200), nullable=False)
+    # draft → sent → paid  (void = cancelled)
+    status = db.Column(db.String(20), default='draft', nullable=False)
+    notes = db.Column(db.Text)              # customer-facing notes shown on the PDF
+    total = db.Column(db.Float, default=0.0)
+    deposit = db.Column(db.Float)           # deposit already collected (reduces balance due)
+    po_number = db.Column(db.String(50))
+
+    # Payment record
+    paid_at = db.Column(db.DateTime)
+    payment_method = db.Column(db.String(50))   # Cash / Zelle / Check / Bank transfer / Card / Other
+    # If marking paid also recorded income on the linked project, we keep the id
+    # so the action can be undone without leaving an orphan Income row.
+    income_id = db.Column(db.Integer, db.ForeignKey('income.id'), nullable=True)
+
+    # Public, tokenized view link (/i/<token>) — mirrors the quote approval link.
+    public_token = db.Column(db.String(64), unique=True, nullable=False)
+    public_token_expires_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.utcnow() + timedelta(days=30),
+        nullable=False,
+    )
+    public_token_revoked_at = db.Column(db.DateTime)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    sent_at = db.Column(db.DateTime)
+
+    customer = db.relationship('Customer', backref='invoices')
+    project = db.relationship('Project', backref='invoices')
+    quote = db.relationship('Quote', backref='invoices')
+    items = db.relationship('InvoiceItem', back_populates='invoice',
+                            cascade='all, delete-orphan', order_by='InvoiceItem.id')
+
+    def recalculate_total(self):
+        self.total = sum((item.line_total or 0) for item in self.items)
+        return self.total
+
+    @property
+    def balance_due(self):
+        if self.status == 'paid':
+            return 0.0
+        return (self.total or 0) - (self.deposit or 0)
+
+
+class InvoiceItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    quantity = db.Column(db.Float, default=1.0)
+    unit_price = db.Column(db.Float, default=0.0)
+
+    invoice = db.relationship('Invoice', back_populates='items')
+
+    @property
+    def line_total(self):
+        return (self.quantity or 0) * (self.unit_price or 0)
