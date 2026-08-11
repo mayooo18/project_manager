@@ -16,6 +16,7 @@ line-item parsing) without modifying Phase 1.
 """
 
 import base64
+import re
 from datetime import datetime, timedelta
 from io import BytesIO
 
@@ -91,9 +92,17 @@ def _apply_items(invoice, item_dicts):
 
 
 def _next_number():
-    """Sequential per-user invoice number, e.g. INV-0007."""
-    count = Invoice.query.filter_by(user_id=current_user.id).count()
-    return f"INV-{count + 1:04d}"
+    """Next per-user invoice number, e.g. INV-0007.
+
+    Derived from the highest existing number rather than a count, so deleting
+    an invoice never lets a new one reuse a still-live number.
+    """
+    best = 0
+    for inv in Invoice.query.filter_by(user_id=current_user.id).all():
+        match = re.search(r'(\d+)$', inv.number or '')
+        if match:
+            best = max(best, int(match.group(1)))
+    return f"INV-{best + 1:04d}"
 
 
 def _float_or_none(raw):

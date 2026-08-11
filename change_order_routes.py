@@ -1,6 +1,7 @@
 """Phase 4: priced, customer-approved amendments to contracts."""
 
 import base64
+import re
 import secrets
 from datetime import datetime, timedelta
 from email.mime.application import MIMEApplication
@@ -87,7 +88,15 @@ def _apply_items(change_order, item_dicts):
 
 
 def _change_order_number(contract):
-    return f"{contract.number or f'CON-{contract.id:04d}'}-CO{len(contract.change_orders) + 1}"
+    base = contract.number or f'CON-{contract.id:04d}'
+    # Highest existing CO sequence on this contract (the trailing number after
+    # "-CO"), so deleting a draft CO can't collide with a surviving one.
+    best = 0
+    for co in contract.change_orders:
+        match = re.search(r'-CO(\d+)$', co.number or '')
+        if match:
+            best = max(best, int(match.group(1)))
+    return f"{base}-CO{best + 1}"
 
 
 def _totals_for_pdf(change_order):
@@ -437,7 +446,15 @@ def public_approve(token):
         select(Contract).where(Contract.id == change_order.contract_id)
         .with_for_update()).scalar_one()
     before = contract.contract_total or 0.0
-    contract.contract_total = before + (change_order.total or 0.0)
+    projected = before + (change_order.total or 0.0)
+    # A deduction/credit must not pull the contract below what's already paid.
+    if projected < (contract.paid_to_date or 0.0):
+        flash('This change order cannot be approved because it would reduce the '
+              'contract below the amount already paid. Please contact the '
+              'contractor.', 'error')
+        return redirect(url_for(
+            'change_orders.public_view', token=change_order.public_token))
+    contract.contract_total = projected
     change_order.contract_total_before = before
     change_order.contract_total_after = contract.contract_total
     change_order.signature_name = name

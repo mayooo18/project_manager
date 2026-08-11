@@ -14,13 +14,16 @@ Self-contained Blueprint. Adds:
 Builds on Phases 1-2 without modifying them.
 """
 
+import re
 from datetime import datetime
 from io import BytesIO
 
 from flask import (
     Blueprint, render_template, redirect, url_for, flash, request, send_file,
+    abort,
 )
 from flask_login import login_required, current_user
+from sqlalchemy import select
 
 from extensions import db
 from models import Contract, ContractDraw, Customer, Quote, Project, Invoice, InvoiceItem
@@ -38,9 +41,24 @@ def _owned_contract_or_404(contract_id):
         id=contract_id, user_id=current_user.id).first_or_404()
 
 
+def _max_trailing_int(numbers):
+    """Highest trailing integer across a list of number strings (0 if none).
+
+    Using the max of existing numbers (rather than a count) means deleting a
+    record never lets a later one reuse a still-live number.
+    """
+    best = 0
+    for n in numbers or []:
+        match = re.search(r'(\d+)$', n or '')
+        if match:
+            best = max(best, int(match.group(1)))
+    return best
+
+
 def _next_contract_number():
-    count = Contract.query.filter_by(user_id=current_user.id).count()
-    return f"CON-{count + 1:04d}"
+    numbers = [c.number for c in
+               Contract.query.filter_by(user_id=current_user.id).all()]
+    return f"CON-{_max_trailing_int(numbers) + 1:04d}"
 
 
 def _float(raw, default=0.0):
@@ -319,6 +337,9 @@ def from_quote(quote_id):
             contract.draws.append(ContractDraw(
                 sequence=seq, description='Balance on completion',
                 amount=balance, status='pending'))
+    # The proposal has now been actioned into a contract — take it off the
+    # pending list (mirrors how converting to an invoice marks it converted).
+    quote.status = 'converted'
     db.session.commit()
     flash('Contract created from proposal. Set up the draw schedule below.', 'success')
     return redirect(url_for('contracts.edit', contract_id=contract.id))
@@ -330,6 +351,17 @@ def from_quote(quote_id):
 @login_required
 def delete(contract_id):
     contract = _owned_contract_or_404(contract_id)
+    # Guard: billed draws leave invoices pointing at this contract, and change
+    # orders are legal records with a NOT-NULL contract_id — deleting the
+    # contract out from under either would error or orphan data. Require the
+    # user to clear those first.
+    if any(d.is_billed for d in contract.draws):
+        flash('This contract has billed draws (invoices reference it). '
+              'Delete or void those invoices first.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
+    if contract.change_orders:
+        flash('This contract has change orders. Delete those first.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
     db.session.delete(contract)
     db.session.commit()
     flash('Contract deleted.', 'success')
@@ -342,7 +374,16 @@ def delete(contract_id):
 @login_required
 def bill_draw(contract_id, draw_id):
     contract = _owned_contract_or_404(contract_id)
-    draw = ContractDraw.query.filter_by(id=draw_id, contract_id=contract.id).first_or_404()
+    # Lock the draw row so two concurrent "Bill" clicks can't both create an
+    # invoice for the same milestone.
+    draw = db.session.execute(
+        select(ContractDraw)
+        .where(ContractDraw.id == draw_id,
+               ContractDraw.contract_id == contract.id)
+        .with_for_update()
+    ).scalar_one_or_none()
+    if draw is None:
+        abort(404)
 
     if draw.is_billed:
         flash('That draw has already been billed.', 'error')
