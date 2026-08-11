@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit Contract' if contract else 'New Contract' }}{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+    .fld { background:#0a0a0a; border:1px solid #2d2d2d; border-radius:0.5rem; color:#e5e7eb; padding:0.5rem 0.75rem; width:100%; }
+    .fld:focus { outline:none; border-color:#ff6b35; }
+    .sec { background:#111827; border:1px solid #374151; border-radius:0.75rem; padding:1.25rem; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-white">
+      {{ 'Edit Contract' if contract else 'New Contract' }}
+      {% if contract and contract.number %}<span class="text-gray-500 text-base font-normal">· {{ contract.number }}</span>{% endif %}
+    </h1>
+    <a href="{{ url_for('contracts.index') }}" class="text-gray-400 hover:text-orange-400 text-sm">← All contracts</a>
+  </div>
+
+  <form method="POST"
+        action="{{ url_for('contracts.edit', contract_id=contract.id) if contract else url_for('contracts.new') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    <!-- 1. Details -->
+    <div class="sec mb-5">
+      <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">1 · Contract details</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-gray-500 text-xs">Customer *</label>
+          <select name="customer_id" class="fld">
+            <option value="">— Select customer —</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}" {{ 'selected' if contract and contract.customer_id == c.id }}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="text-gray-500 text-xs">Link to project (optional)</label>
+          <select name="project_id" class="fld">
+            <option value="">— None —</option>
+            {% for p in projects %}
+            <option value="{{ p.id }}" {{ 'selected' if contract and contract.project_id == p.id }}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="mt-3">
+        <label class="text-gray-500 text-xs">Title *</label>
+        <input type="text" name="title" class="fld" placeholder="e.g. 1804 Reichert Ave — full rehab"
+               value="{{ contract.title if contract else '' }}"/>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+        <div>
+          <label class="text-gray-500 text-xs">Contract total *</label>
+          <input type="number" step="any" name="contract_total" id="contract_total" class="fld"
+                 placeholder="e.g. 42000" oninput="checkSchedule()"
+                 value="{{ contract.contract_total if contract and contract.contract_total else '' }}"/>
+        </div>
+        <div>
+          <label class="text-gray-500 text-xs">Retainage % (optional)</label>
+          <input type="number" step="any" name="retainage_percent" class="fld" placeholder="e.g. 10"
+                 value="{{ contract.retainage_percent if contract and contract.retainage_percent else '' }}"/>
+          <p class="text-gray-600 text-xs mt-1">% held back until final completion (informational).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Draw schedule -->
+    <div class="sec mb-5">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-gray-400 text-xs uppercase tracking-wide">2 · Draw schedule</p>
+        <button type="button" onclick="addDrawRow()" class="text-orange-400 text-sm hover:underline">+ Add draw</button>
+      </div>
+      <p class="text-gray-600 text-xs mb-3">
+        Break the contract into milestones you'll bill one at a time.
+        {% if contract %}Already-billed draws are locked in the Progress billing panel below.{% endif %}
+      </p>
+
+      <div class="flex flex-wrap gap-2 mb-3">
+        <span class="text-gray-500 text-xs self-center">Presets:</span>
+        <button type="button" onclick="preset('deposit_final')" class="text-xs border border-gray-600 text-gray-300 rounded px-2 py-1 hover:border-orange-400">Deposit 30% + Final 70%</button>
+        <button type="button" onclick="preset('four')" class="text-xs border border-gray-600 text-gray-300 rounded px-2 py-1 hover:border-orange-400">4-phase (25% each)</button>
+        <button type="button" onclick="preset('clear')" class="text-xs border border-gray-600 text-gray-300 rounded px-2 py-1 hover:border-red-400">Clear</button>
+      </div>
+
+      <div id="draws"></div>
+
+      <div class="flex justify-between items-center mt-3 text-sm">
+        <span id="schedule-check" class="text-gray-500"></span>
+        <div class="text-right">
+          <span class="text-gray-500 text-xs uppercase">Scheduled</span>
+          <div class="text-xl font-bold text-white">$<span id="scheduled-total">0.00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Notes -->
+    <div class="sec mb-5">
+      <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">3 · Notes</p>
+      <textarea name="notes" rows="2" class="fld" placeholder="Scope summary, terms, exclusions…">{{ contract.notes if contract else '' }}</textarea>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="submit"
+        class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-5 py-2.5 rounded-lg"
+        style="color:#fff !important;">Save Contract</button>
+      {% if contract %}
+      <a href="{{ url_for('contracts.pdf', contract_id=contract.id) }}" target="_blank"
+        class="border border-gray-600 text-gray-200 text-sm font-semibold px-5 py-2.5 rounded-lg hover:border-orange-400">Preview PDF</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if contract %}
+  <!-- Progress billing -->
+  <div class="sec mt-6">
+    <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">Progress billing</p>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div class="bg-gray-950 border border-gray-800 rounded-lg p-3">
+        <p class="text-gray-500 text-xs">Contract</p>
+        <p class="text-white font-bold">${{ '%.0f'|format(contract.contract_total or 0) }}</p>
+      </div>
+      <div class="bg-gray-950 border border-gray-800 rounded-lg p-3">
+        <p class="text-gray-500 text-xs">Billed</p>
+        <p class="text-white font-bold">${{ '%.0f'|format(contract.billed_to_date) }}</p>
+      </div>
+      <div class="bg-gray-950 border border-gray-800 rounded-lg p-3">
+        <p class="text-gray-500 text-xs">Paid</p>
+        <p class="text-green-400 font-bold">${{ '%.0f'|format(contract.paid_to_date) }}</p>
+      </div>
+      <div class="bg-gray-950 border border-gray-800 rounded-lg p-3">
+        <p class="text-gray-500 text-xs">Remaining</p>
+        <p class="text-white font-bold">${{ '%.0f'|format(contract.remaining_to_bill) }}</p>
+      </div>
+    </div>
+
+    {% if contract.draws %}
+    <div class="flex flex-col gap-2">
+      {% for d in contract.draws %}
+      <div class="flex items-center justify-between gap-3 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2">
+        <div class="min-w-0">
+          <p class="text-gray-100 text-sm truncate">{{ loop.index }}. {{ d.description }}</p>
+          <p class="text-gray-500 text-xs">${{ '%.2f'|format(d.amount or 0) }}</p>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          {% if d.is_paid %}
+          <span class="text-green-400 text-xs border border-green-600 rounded px-2 py-0.5">PAID</span>
+          <a href="{{ url_for('invoices.edit', invoice_id=d.invoice_id) }}" class="text-gray-400 text-xs hover:text-orange-400">{{ d.invoice.number }}</a>
+          {% elif d.is_billed %}
+          <span class="text-blue-300 text-xs border border-blue-500 rounded px-2 py-0.5">INVOICED</span>
+          <a href="{{ url_for('invoices.edit', invoice_id=d.invoice_id) }}" class="text-gray-400 text-xs hover:text-orange-400">{{ d.invoice.number }}</a>
+          {% else %}
+          <form method="POST" action="{{ url_for('contracts.bill_draw', contract_id=contract.id, draw_id=d.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit"
+              class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Bill this draw</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="text-gray-600 text-xs mt-3">Billing a draw creates an invoice for that amount — send it, mark it paid, and (if a project is linked) it posts income automatically.</p>
+    {% else %}
+    <p class="text-gray-500 text-sm">Add draws above and save to start billing.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  function money(n) { return (Math.round(n * 100) / 100).toFixed(2); }
+
+  function recalc() {
+    let total = 0;
+    document.querySelectorAll('.draw-row').forEach(row => {
+      total += parseFloat(row.querySelector('.d-amt').value) || 0;
+    });
+    document.getElementById('scheduled-total').textContent = money(total);
+    checkSchedule(total);
+  }
+
+  function checkSchedule(total) {
+    if (total === undefined) {
+      total = 0;
+      document.querySelectorAll('.draw-row').forEach(row => {
+        total += parseFloat(row.querySelector('.d-amt').value) || 0;
+      });
+    }
+    const ct = parseFloat(document.getElementById('contract_total').value) || 0;
+    const el = document.getElementById('schedule-check');
+    const billed = {{ contract.billed_to_date if contract else 0 }};
+    const diff = Math.round((ct - billed - total) * 100) / 100;
+    if (!ct) { el.textContent = ''; el.className = 'text-gray-500'; return; }
+    if (Math.abs(diff) < 0.01) {
+      el.textContent = '✓ Draws match the contract total.';
+      el.className = 'text-green-400';
+    } else if (diff > 0) {
+      el.textContent = '$' + money(diff) + ' of the contract is not yet scheduled.';
+      el.className = 'text-yellow-500/90';
+    } else {
+      el.textContent = 'Draws exceed the contract by $' + money(-diff) + '.';
+      el.className = 'text-red-400';
+    }
+  }
+
+  function drawTemplate(desc, amount) {
+    const wrap = document.createElement('div');
+    wrap.className = 'draw-row flex items-center gap-2 mb-2';
+    wrap.innerHTML = `
+      <input type="text" name="draw_description" class="fld d-desc" placeholder="Milestone (e.g. Rough-in complete)"/>
+      <div style="width:140px">
+        <input type="number" step="any" name="draw_amount" class="fld d-amt" placeholder="Amount"/>
+      </div>
+      <button type="button" class="d-del text-gray-600 hover:text-red-400 text-sm px-2">✕</button>
+    `;
+    wrap.querySelector('.d-desc').value = desc || '';
+    wrap.querySelector('.d-amt').value = (amount !== undefined && amount !== null) ? amount : '';
+    wrap.querySelector('.d-amt').addEventListener('input', recalc);
+    wrap.querySelector('.d-del').addEventListener('click', () => { wrap.remove(); recalc(); });
+    return wrap;
+  }
+
+  function addDrawRow(desc, amount) {
+    document.getElementById('draws').appendChild(drawTemplate(desc, amount));
+    recalc();
+  }
+
+  function preset(kind) {
+    document.getElementById('draws').innerHTML = '';
+    const ct = parseFloat(document.getElementById('contract_total').value) || 0;
+    if (kind === 'deposit_final') {
+      addDrawRow('Deposit', money(ct * 0.30));
+      addDrawRow('Final on completion', money(ct * 0.70));
+    } else if (kind === 'four') {
+      addDrawRow('Deposit', money(ct * 0.25));
+      addDrawRow('Rough-in complete', money(ct * 0.25));
+      addDrawRow('Drywall / substantial completion', money(ct * 0.25));
+      addDrawRow('Final on completion', money(ct * 0.25));
+    }
+    recalc();
+  }
+
+  // Seed editable rows from the contract's un-billed draws.
+  {% if contract %}
+    {% for d in contract.draws if not d.is_billed %}
+      addDrawRow({{ d.description | tojson }}, {{ d.amount or 0 }});
+    {% endfor %}
+    if (!document.querySelectorAll('.draw-row').length) addDrawRow();
+  {% else %}
+    addDrawRow();
+  {% endif %}
+  recalc();
+</script>
+
+</body>
+</html>
+{% endblock %}

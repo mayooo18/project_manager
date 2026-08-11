@@ -247,6 +247,8 @@ class Invoice(db.Model):
     # Optional links back to the internal project and the source quote.
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
     quote_id = db.Column(db.Integer, db.ForeignKey('quote.id'), nullable=True)
+    # Set when this invoice bills a milestone of a contract's draw schedule (Phase 3).
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True)
 
     number = db.Column(db.String(50))       # human-friendly invoice number, e.g. INV-0007
     title = db.Column(db.String(200), nullable=False)
@@ -305,3 +307,74 @@ class InvoiceItem(db.Model):
     @property
     def line_total(self):
         return (self.quantity or 0) * (self.unit_price or 0)
+
+
+# ── Contracts + draw schedule / progress billing (Phase 3) ──
+
+class Contract(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
+    quote_id = db.Column(db.Integer, db.ForeignKey('quote.id'), nullable=True)
+
+    number = db.Column(db.String(50))        # e.g. CON-0003
+    title = db.Column(db.String(200), nullable=False)
+    contract_total = db.Column(db.Float, default=0.0)
+    retainage_percent = db.Column(db.Float)  # optional % held back (informational)
+    # draft → active (work under way) → completed
+    status = db.Column(db.String(20), default='draft', nullable=False)
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    customer = db.relationship('Customer', backref='contracts')
+    project = db.relationship('Project', backref='contracts')
+    quote = db.relationship('Quote', backref='contracts')
+    draws = db.relationship('ContractDraw', back_populates='contract',
+                            cascade='all, delete-orphan',
+                            order_by='ContractDraw.sequence')
+
+    @property
+    def scheduled_total(self):
+        return sum((d.amount or 0) for d in self.draws)
+
+    @property
+    def billed_to_date(self):
+        return sum((d.amount or 0) for d in self.draws if d.invoice_id is not None)
+
+    @property
+    def paid_to_date(self):
+        return sum((d.amount or 0) for d in self.draws if d.is_paid)
+
+    @property
+    def remaining_to_bill(self):
+        return (self.contract_total or 0) - self.billed_to_date
+
+    @property
+    def retainage_amount(self):
+        if not self.retainage_percent:
+            return 0.0
+        return (self.contract_total or 0) * (self.retainage_percent / 100.0)
+
+
+class ContractDraw(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=False)
+    sequence = db.Column(db.Integer, default=0)
+    description = db.Column(db.String(200), nullable=False)  # e.g. "Deposit", "Rough-in complete"
+    amount = db.Column(db.Float, default=0.0)
+    # pending → invoiced → paid (paid is derived from the linked invoice)
+    status = db.Column(db.String(20), default='pending', nullable=False)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=True)
+
+    contract = db.relationship('Contract', back_populates='draws')
+    invoice = db.relationship('Invoice', backref='contract_draw')
+
+    @property
+    def is_billed(self):
+        return self.invoice_id is not None
+
+    @property
+    def is_paid(self):
+        return self.invoice is not None and self.invoice.status == 'paid'

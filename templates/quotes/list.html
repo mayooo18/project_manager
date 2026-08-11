@@ -58,6 +58,12 @@
           <a href="{{ url_for('quotes.pdf', quote_id=q.id) }}" target="_blank"
              class="text-sm" style="color:#9ca3af;"
              onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">PDF</a>
+          <form method="POST" action="{{ url_for('contracts.from_quote', quote_id=q.id) }}">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="text-sm" style="color:#9ca3af;"
+              onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'"
+              title="Create a contract with a draw schedule from this proposal">→ Contract</button>
+          </form>
           {% if q.status == 'converted' %}
           <span class="text-orange-400/70 text-sm" title="Already converted to an invoice">Invoiced</span>
           {% else %}
@@ -65,7 +71,7 @@
             {{ delete_form.csrf_token }}
             <button type="submit" class="text-sm" style="color:#9ca3af;"
               onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'"
-              title="Create an invoice from this proposal">→ Invoice</button>
+              title="Create a single invoice from this proposal">→ Invoice</button>
           </form>
           {% endif %}
           <form method="POST" action="{{ url_for('quotes.delete', quote_id=q.id) }}"
