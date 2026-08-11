@@ -1,0 +1,17 @@
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+  <p style="font-size:15px;">Hi {{ change_order.customer.name }},</p>
+  <p style="font-size:15px;line-height:1.5;">
+    Please review change order <strong>{{ change_order.number }}</strong> for
+    <strong>{{ change_order.contract.title }}</strong>. The details are attached as a PDF.
+    Use the secure link below to review and sign the amendment.
+  </p>
+  <table style="width:100%;border-collapse:collapse;margin:18px 0;font-size:14px;">
+    <tr><td style="padding:6px 0;color:#666;">Change</td><td style="padding:6px 0;text-align:right;"><strong>{{ change_order.title }}</strong></td></tr>
+    <tr><td style="padding:6px 0;color:#666;border-top:1px solid #eee;">{{ 'Deduction / credit' if change_order.total < 0 else 'Amount' }}</td><td style="padding:6px 0;text-align:right;border-top:1px solid #eee;"><strong>{{ '-' if change_order.total < 0 }}${{ '%.2f'|format(change_order.total|abs) }}</strong></td></tr>
+    {% set new_total = change_order.contract_total_after if change_order.applied_at else (change_order.contract.contract_total or 0) + (change_order.total or 0) %}
+    <tr><td style="padding:6px 0;color:#666;border-top:1px solid #eee;">New contract total</td><td style="padding:6px 0;text-align:right;border-top:1px solid #eee;"><strong>${{ '%.2f'|format(new_total or 0) }}</strong></td></tr>
+  </table>
+  <p style="text-align:center;margin:26px 0;"><a href="{{ link }}" style="background:#ff6b35;color:#fff;text-decoration:none;font-weight:bold;padding:14px 28px;border-radius:8px;display:inline-block;font-size:15px;">Review &amp; sign change order</a></p>
+  <p style="font-size:13px;color:#666;line-height:1.5;">Or paste this link into your browser:<br><a href="{{ link }}" style="color:#ff6b35;">{{ link }}</a></p>
+  <p style="font-size:14px;margin-top:24px;">Thank you,<br>{{ company.name }}<br>{{ company.phone }}</p>
+</div>

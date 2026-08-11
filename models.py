@@ -378,3 +378,64 @@ class ContractDraw(db.Model):
     @property
     def is_paid(self):
         return self.invoice is not None and self.invoice.status == 'paid'
+
+
+# ── Change Orders (Phase 4) ──
+
+class ChangeOrder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+
+    number = db.Column(db.String(50))
+    title = db.Column(db.String(200), nullable=False)
+    reason = db.Column(db.Text)
+    status = db.Column(db.String(20), default='draft', nullable=False)
+    total = db.Column(db.Float, default=0.0)
+    notes = db.Column(db.Text)
+    add_as_draw = db.Column(db.Boolean, default=True)
+
+    # Snapshots prove exactly how an approved amendment changed the contract.
+    applied_at = db.Column(db.DateTime)
+    contract_total_before = db.Column(db.Float)
+    contract_total_after = db.Column(db.Float)
+
+    public_token = db.Column(db.String(64), unique=True, nullable=False)
+    public_token_expires_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.utcnow() + timedelta(days=30),
+        nullable=False,
+    )
+    public_token_revoked_at = db.Column(db.DateTime)
+
+    signature_name = db.Column(db.String(150))
+    signature_data = db.Column(db.Text)
+    signed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    sent_at = db.Column(db.DateTime)
+
+    contract = db.relationship('Contract', backref='change_orders')
+    customer = db.relationship('Customer')
+    items = db.relationship(
+        'ChangeOrderItem', back_populates='change_order',
+        cascade='all, delete-orphan', order_by='ChangeOrderItem.id')
+
+    def recalculate_total(self):
+        self.total = sum((item.line_total or 0) for item in self.items)
+        return self.total
+
+
+class ChangeOrderItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    change_order_id = db.Column(
+        db.Integer, db.ForeignKey('change_order.id'), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    quantity = db.Column(db.Float, default=1.0)
+    unit_price = db.Column(db.Float, default=0.0)
+
+    change_order = db.relationship('ChangeOrder', back_populates='items')
+
+    @property
+    def line_total(self):
+        return (self.quantity or 0) * (self.unit_price or 0)

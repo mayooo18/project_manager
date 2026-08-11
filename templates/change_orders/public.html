@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Change Order · {{ change_order.number }}</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <style>
+    body { background:#0b0f19; font-family:Inter,"Noto Sans",sans-serif; }
+    .card { background:#111827; border:1px solid #374151; border-radius:.9rem; }
+    .fld { background:#0a0a0a; border:1px solid #2d2d2d; border-radius:.5rem; color:#e5e7eb; padding:.6rem .75rem; width:100%; }
+    #sigpad { background:#0a0a0a; border:1px dashed #4b5563; border-radius:.5rem; touch-action:none; width:100%; height:180px; display:block; }
+  </style>
+</head>
+<body class="text-gray-200">
+<div class="max-w-2xl mx-auto px-4 py-10">
+  {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}
+  <div class="mb-4 p-3 rounded-lg text-sm {{ 'bg-green-900/40 text-green-200' if category == 'success' else 'bg-red-900/40 text-red-200' }}">{{ message }}</div>
+  {% endfor %}{% endwith %}
+
+  <div class="card p-6 mb-5">
+    <p class="text-orange-400 text-xs uppercase tracking-widest">Change order {{ change_order.number }}</p>
+    <h1 class="text-2xl font-bold text-white mt-1">{{ change_order.title }}</h1>
+    <p class="text-gray-500 text-sm">For {{ change_order.customer.name }} · Contract {{ change_order.contract.number }}</p>
+    {% if change_order.reason %}<p class="text-gray-300 text-sm mt-4 whitespace-pre-line">{{ change_order.reason }}</p>{% endif %}
+    <div class="mt-5 divide-y divide-gray-800">
+      {% for item in change_order.items %}
+      <div class="flex justify-between gap-4 py-3">
+        <div><p class="text-gray-100">{{ item.description }}</p><p class="text-gray-500 text-xs">{{ '%g'|format(item.quantity or 1) }} × ${{ '%.2f'|format(item.unit_price or 0) }}</p></div>
+        <div class="font-medium whitespace-nowrap {{ 'text-red-400' if item.line_total < 0 else 'text-gray-100' }}">{{ '-' if item.line_total < 0 }}${{ '%.2f'|format(item.line_total|abs) }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="flex justify-between border-t border-gray-700 pt-4 mt-2">
+      <span class="text-gray-400 text-xs uppercase">{{ 'Deduction / credit' if change_order.total < 0 else 'Change order total' }}</span>
+      <span class="text-2xl font-bold {{ 'text-red-400' if change_order.total < 0 else 'text-white' }}">{{ '-' if change_order.total < 0 }}${{ '%.2f'|format(change_order.total|abs) }}</span>
+    </div>
+    {% set before = change_order.contract_total_before if change_order.applied_at else change_order.contract.contract_total %}
+    {% set after = change_order.contract_total_after if change_order.applied_at else (change_order.contract.contract_total or 0) + (change_order.total or 0) %}
+    <p class="text-gray-500 text-sm mt-3">Contract total: ${{ '%.2f'|format(before or 0) }} → <span class="text-gray-200">${{ '%.2f'|format(after or 0) }}</span></p>
+    {% if change_order.notes %}<p class="text-gray-300 text-sm whitespace-pre-line mt-4">{{ change_order.notes }}</p>{% endif %}
+    <a href="{{ url_for('change_orders.public_pdf', token=change_order.public_token) }}" target="_blank" class="inline-block text-orange-400 text-sm mt-5 hover:underline">↓ Download PDF</a>
+  </div>
+
+  {% if change_order.applied_at %}
+  <div class="card p-6 text-center">
+    <p class="text-green-400 text-lg font-semibold">✓ Approved</p>
+    <p class="text-gray-400 text-sm mt-1">Signed by {{ change_order.signature_name }} on {{ change_order.signed_at.strftime('%B %d, %Y at %H:%M') }}</p>
+    <img src="{{ change_order.signature_data }}" alt="Signature" class="mx-auto mt-4 bg-white rounded-lg p-2" style="max-height:120px"/>
+  </div>
+  {% else %}
+  <div class="card p-6">
+    <p class="text-white font-semibold">Approve this change order</p>
+    <p class="text-gray-500 text-sm mb-4">Signing authorizes this amendment to the contract.</p>
+    <form method="POST" action="{{ url_for('change_orders.public_approve', token=change_order.public_token) }}" onsubmit="return prepareSignature();">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <label class="text-gray-500 text-xs">Your full name *</label>
+      <input type="text" name="signature_name" maxlength="150" class="fld mb-4" required/>
+      <div class="flex justify-between mb-1"><label class="text-gray-500 text-xs">Sign below *</label><button type="button" id="sig-clear" class="text-gray-500 text-xs">Clear</button></div>
+      <canvas id="sigpad"></canvas>
+      <input type="hidden" name="signature_data" id="signature_data"/>
+      <button type="submit" class="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg">Sign to approve</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+<script src="{{ url_for('static', filename='js/signature.js') }}"></script>
+</body>
+</html>

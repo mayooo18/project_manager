@@ -176,6 +176,51 @@
     <p class="text-gray-500 text-sm">Add draws above and save to start billing.</p>
     {% endif %}
   </div>
+
+  <!-- Change orders -->
+  <div class="sec mt-6">
+    <div class="flex items-center justify-between gap-3 mb-3">
+      <div>
+        <p class="text-gray-400 text-xs uppercase tracking-wide">Change orders</p>
+        <p class="text-gray-600 text-xs mt-1">Only approved change orders affect the contract total.</p>
+      </div>
+      <a href="{{ url_for('change_orders.new', contract_id=contract.id) }}"
+         class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">+ New change order</a>
+    </div>
+
+    {% if contract.change_orders %}
+    <div class="flex flex-col gap-2">
+      {% for co in contract.change_orders %}
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-950 border border-gray-800 rounded-lg px-3 py-3">
+        <div class="min-w-0">
+          <p class="text-gray-100 text-sm truncate">{{ co.number }} · {{ co.title }}</p>
+          <p class="text-xs {{ 'text-red-400' if co.total < 0 else 'text-gray-500' }}">
+            {{ '-' if co.total < 0 }}${{ '%.2f'|format(co.total|abs) }}
+          </p>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <span class="text-[10px] uppercase border rounded px-2 py-0.5
+            {{ 'text-green-300 border-green-500' if co.status == 'approved' else 'text-blue-300 border-blue-500' if co.status == 'sent' else 'text-gray-300 border-gray-600' }}">{{ co.status }}</span>
+          <a href="{{ url_for('change_orders.edit', change_order_id=co.id) }}" class="text-orange-400 text-xs hover:underline">Edit</a>
+          <a href="{{ url_for('change_orders.pdf', change_order_id=co.id) }}" target="_blank" class="text-gray-400 text-xs hover:text-orange-400">PDF</a>
+          {% if co.sent_at and not co.public_token_revoked_at %}
+          <a href="{{ url_for('change_orders.public_view', token=co.public_token) }}" target="_blank" class="text-gray-400 text-xs hover:text-orange-400">Public</a>
+          {% endif %}
+          {% if not co.applied_at %}
+          <form method="POST" action="{{ url_for('change_orders.delete', change_order_id=co.id) }}"
+                onsubmit="return confirm('Delete this change order?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="text-red-400 text-xs hover:underline">Delete</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-500 text-sm">No change orders for this contract.</p>
+    {% endif %}
+  </div>
   {% endif %}
 
 </div>
