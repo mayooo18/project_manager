@@ -127,6 +127,10 @@ class Reminder(db.Model):
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
     vehicle_field = db.Column(db.String(50), nullable=True)
     vehicle_offset_days = db.Column(db.Integer, nullable=True)
+    # Same auto-reminder mechanism, reused for subcontractor license/insurance expirations.
+    subcontractor_id = db.Column(db.Integer, db.ForeignKey('subcontractor.id'), nullable=True)
+    subcontractor_field = db.Column(db.String(50), nullable=True)
+    subcontractor_offset_days = db.Column(db.Integer, nullable=True)
 
     user = db.relationship('User', backref=db.backref('reminders', cascade='all, delete-orphan'))
 
@@ -151,6 +155,27 @@ class Vehicle(db.Model):
 
     user = db.relationship('User', backref=db.backref('vehicles', cascade='all, delete-orphan'))
     reminders = db.relationship('Reminder', backref='vehicle', cascade='all, delete-orphan')
+
+
+class Subcontractor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(150), nullable=False)   # company or person
+    trade = db.Column(db.String(80))                   # Electrical, Plumbing, HVAC, Framing...
+    contact_name = db.Column(db.String(120))
+    phone = db.Column(db.String(30))
+    email = db.Column(db.String(150))
+    license_number = db.Column(db.String(80))
+    license_expiration = db.Column(db.Date)
+    insurance_carrier = db.Column(db.String(120))
+    insurance_policy_number = db.Column(db.String(80))
+    insurance_expiration = db.Column(db.Date)
+    w9_on_file = db.Column(db.Boolean, default=False)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('subcontractors', cascade='all, delete-orphan'))
+    reminders = db.relationship('Reminder', backref='subcontractor', cascade='all, delete-orphan')
 
 
 class AIActionLog(db.Model):

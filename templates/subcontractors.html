@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Subcontractors{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-white">Subcontractors</h1>
+    <a href="{{ url_for('subcontractors.add') }}"
+      class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+      style="color: #fff !important;">
+      + Add Subcontractor
+    </a>
+  </div>
+
+  {% if subcontractors %}
+  <div class="flex flex-col gap-4">
+    {% for s in subcontractors %}
+    <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
+      <div class="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <div class="flex items-center flex-wrap gap-2">
+            <p class="text-gray-100 font-semibold text-lg">{{ s.name }}</p>
+            {% if s.trade %}<span class="text-xs font-normal text-orange-400 border border-orange-400/40 rounded px-1.5 py-0.5">{{ s.trade }}</span>{% endif %}
+            {% if s.w9_on_file %}<span class="text-xs font-normal text-green-400 border border-green-400/40 rounded px-1.5 py-0.5">W-9 ✓</span>
+            {% else %}<span class="text-xs font-normal text-gray-500 border border-gray-600 rounded px-1.5 py-0.5">No W-9</span>{% endif %}
+          </div>
+          <p class="text-gray-500 text-xs mt-1">
+            {% if s.contact_name %}{{ s.contact_name }}{% endif %}
+            {% if s.phone %} &middot; {{ s.phone }}{% endif %}
+            {% if s.email %} &middot; {{ s.email }}{% endif %}
+          </p>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <a href="{{ url_for('subcontractors.edit', sub_id=s.id) }}"
+            class="text-sm transition-colors" style="color: #9ca3af;"
+            onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">Edit</a>
+          <form method="POST" action="{{ url_for('subcontractors.delete', sub_id=s.id) }}"
+            onsubmit="return confirm('Delete {{ s.name }}? This cannot be undone.');">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+        <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2">
+          <p class="text-gray-500 text-xs mb-1">License</p>
+          <p class="text-gray-200">{{ s.license_number or '—' }}</p>
+          {% if s.license_expiration %}
+          <p class="text-xs mt-1 {{ 'text-red-400' if s.license_expiration <= today + timedelta(days=7) else 'text-yellow-400' if s.license_expiration <= today + timedelta(days=30) else 'text-gray-500' }}">
+            Expires {{ s.license_expiration.strftime('%b %d, %Y') }}
+          </p>
+          {% endif %}
+        </div>
+
+        <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2">
+          <p class="text-gray-500 text-xs mb-1">Insurance (COI)</p>
+          <p class="text-gray-200">{{ s.insurance_carrier or '—' }}</p>
+          {% if s.insurance_expiration %}
+          <p class="text-xs mt-1 {{ 'text-red-400' if s.insurance_expiration <= today + timedelta(days=7) else 'text-yellow-400' if s.insurance_expiration <= today + timedelta(days=30) else 'text-gray-500' }}">
+            Expires {{ s.insurance_expiration.strftime('%b %d, %Y') }}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if s.notes %}
+      <p class="text-gray-500 text-xs mt-3">{{ s.notes }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center">
+    <p class="text-gray-400 text-sm">No subcontractors yet.</p>
+    <p class="text-gray-600 text-xs mt-1">Add a sub to track their trade, license, and insurance (COI) expirations — reminders are created automatically.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+</body>
+</html>
+{% endblock %}

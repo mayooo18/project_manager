@@ -123,6 +123,22 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
+class SubcontractorForm(FlaskForm):
+    name = StringField('Name / Company', validators=[DataRequired(), Length(max=150)])
+    trade = StringField('Trade', validators=[Optional(), Length(max=80)])
+    contact_name = StringField('Contact Name', validators=[Optional(), Length(max=120)])
+    phone = StringField('Phone', validators=[Optional(), Length(max=30)])
+    email = StringField('Email', validators=[Optional(), Length(max=150)])
+    license_number = StringField('License #', validators=[Optional(), Length(max=80)])
+    license_expiration = DateField('License Expiration', format='%Y-%m-%d', validators=[Optional()])
+    insurance_carrier = StringField('Insurance Carrier', validators=[Optional(), Length(max=120)])
+    insurance_policy_number = StringField('Insurance Policy #', validators=[Optional(), Length(max=80)])
+    insurance_expiration = DateField('Insurance Expiration', format='%Y-%m-%d', validators=[Optional()])
+    w9_on_file = BooleanField('W-9 on file', default=False)
+    notes = TextAreaField('Notes', validators=[Optional()])
+    submit = SubmitField('Save Subcontractor')
+
+
 class CustomerForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=150)])
     email = StringField('Email', validators=[Optional(), Length(max=150)])
