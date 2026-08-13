@@ -25,6 +25,7 @@ from contract_routes import contract_bp
 from change_order_routes import change_order_bp
 from subcontractor_routes import subcontractor_bp
 from license_routes import license_bp
+from permit_routes import permit_bp
 import re
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -51,6 +52,7 @@ app.register_blueprint(contract_bp)
 app.register_blueprint(change_order_bp)
 app.register_blueprint(subcontractor_bp)
 app.register_blueprint(license_bp)
+app.register_blueprint(permit_bp)
 
 # API routes use API key auth — exempt from CSRF
 csrf.exempt(field_api_bp)

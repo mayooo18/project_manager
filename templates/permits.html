@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Permits{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-white">Permits &amp; Inspections</h1>
+      <p class="text-gray-500 text-xs mt-1">Track permits per project and the inspections under each. Reminders are created automatically.</p>
+    </div>
+    <a href="{{ url_for('permits.add') }}"
+      class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+      style="color: #fff !important;">
+      + Add Permit
+    </a>
+  </div>
+
+  {% set status_styles = {
+    'Applied': 'text-blue-300 border-blue-500',
+    'Issued': 'text-green-300 border-green-500',
+    'Expired': 'text-red-300 border-red-500',
+    'Finaled': 'text-orange-300 border-orange-500',
+    'Closed': 'text-gray-300 border-gray-500'
+  } %}
+
+  {% if permits %}
+  <div class="flex flex-col gap-3">
+    {% for p in permits %}
+    <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <div class="flex items-center flex-wrap gap-2">
+            <a href="{{ url_for('permits.edit', permit_id=p.id) }}"
+               class="text-gray-100 font-semibold text-lg hover:text-orange-400">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>
+            <span class="text-xs border rounded px-1.5 py-0.5 uppercase {{ status_styles.get(p.status, 'text-gray-300 border-gray-500') }}">{{ p.status }}</span>
+          </div>
+          <p class="text-gray-500 text-xs mt-1">
+            {% if p.project %}{{ p.project.name }}{% else %}No project{% endif %}
+            {% if p.issuing_authority %} &middot; {{ p.issuing_authority }}{% endif %}
+            {% if p.inspections %} &middot; {{ p.inspections|length }} inspection{{ '' if p.inspections|length == 1 else 's' }}{% endif %}
+          </p>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          {% if p.expiration_date %}
+          <span class="text-xs {{ 'text-red-400' if p.expiration_date <= today + timedelta(days=7) else 'text-yellow-400' if p.expiration_date <= today + timedelta(days=30) else 'text-gray-500' }}">
+            Exp {{ p.expiration_date.strftime('%b %d, %Y') }}
+          </span>
+          {% endif %}
+          <a href="{{ url_for('permits.edit', permit_id=p.id) }}"
+            class="text-sm transition-colors" style="color: #9ca3af;"
+            onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">Edit</a>
+          <form method="POST" action="{{ url_for('permits.delete', permit_id=p.id) }}"
+            onsubmit="return confirm('Delete this permit and its inspections? This cannot be undone.');">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center">
+    <p class="text-gray-400 text-sm">No permits yet.</p>
+    <p class="text-gray-600 text-xs mt-1">Add a permit to track its number, dates, and inspections — with automatic expiration and inspection reminders.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+</body>
+</html>
+{% endblock %}

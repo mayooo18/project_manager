@@ -135,6 +135,13 @@ class Reminder(db.Model):
     license_id = db.Column(db.Integer, db.ForeignKey('license.id'), nullable=True)
     license_field = db.Column(db.String(50), nullable=True)
     license_offset_days = db.Column(db.Integer, nullable=True)
+    # Permit expiration + inspection scheduled-date reminders (Phase 6c).
+    permit_id = db.Column(db.Integer, db.ForeignKey('permit.id'), nullable=True)
+    permit_field = db.Column(db.String(50), nullable=True)
+    permit_offset_days = db.Column(db.Integer, nullable=True)
+    inspection_id = db.Column(db.Integer, db.ForeignKey('inspection.id'), nullable=True)
+    inspection_field = db.Column(db.String(50), nullable=True)
+    inspection_offset_days = db.Column(db.Integer, nullable=True)
 
     user = db.relationship('User', backref=db.backref('reminders', cascade='all, delete-orphan'))
 
@@ -197,6 +204,43 @@ class License(db.Model):
 
     user = db.relationship('User', backref=db.backref('licenses', cascade='all, delete-orphan'))
     reminders = db.relationship('Reminder', backref='license', cascade='all, delete-orphan')
+
+
+class Permit(db.Model):
+    """A building/trade permit pulled for a project (Phase 6c)."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
+    permit_type = db.Column(db.String(80))      # Building / Electrical / Plumbing / Mechanical (HVAC)...
+    permit_number = db.Column(db.String(80))
+    issuing_authority = db.Column(db.String(120))  # city / county / village
+    status = db.Column(db.String(30), default='Applied')  # Applied / Issued / Expired / Finaled / Closed
+    applied_date = db.Column(db.Date)
+    issued_date = db.Column(db.Date)
+    expiration_date = db.Column(db.Date)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('permits', cascade='all, delete-orphan'))
+    project = db.relationship('Project', backref='permits')
+    inspections = db.relationship('Inspection', back_populates='permit',
+                                  cascade='all, delete-orphan',
+                                  order_by='Inspection.scheduled_date')
+    reminders = db.relationship('Reminder', backref='permit', cascade='all, delete-orphan')
+
+
+class Inspection(db.Model):
+    """An inspection under a permit (Phase 6c)."""
+    id = db.Column(db.Integer, primary_key=True)
+    permit_id = db.Column(db.Integer, db.ForeignKey('permit.id'), nullable=False)
+    inspection_type = db.Column(db.String(80), nullable=False)  # Footing / Framing / Rough Electrical / Final...
+    scheduled_date = db.Column(db.Date)
+    status = db.Column(db.String(30), default='Scheduled')  # Scheduled / Passed / Failed / Cancelled
+    result_notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    permit = db.relationship('Permit', back_populates='inspections')
+    reminders = db.relationship('Reminder', backref='inspection', cascade='all, delete-orphan')
 
 
 class AIActionLog(db.Model):

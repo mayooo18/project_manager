@@ -123,6 +123,38 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
+class PermitForm(FlaskForm):
+    project_id = SelectField('Project', coerce=int, validators=[Optional()])
+    permit_type = StringField('Permit Type', validators=[Optional(), Length(max=80)])
+    permit_number = StringField('Permit #', validators=[Optional(), Length(max=80)])
+    issuing_authority = StringField('Issuing Authority', validators=[Optional(), Length(max=120)])
+    status = SelectField('Status', choices=[
+        ('Applied', 'Applied'),
+        ('Issued', 'Issued'),
+        ('Expired', 'Expired'),
+        ('Finaled', 'Finaled'),
+        ('Closed', 'Closed'),
+    ], default='Applied')
+    applied_date = DateField('Applied', format='%Y-%m-%d', validators=[Optional()])
+    issued_date = DateField('Issued', format='%Y-%m-%d', validators=[Optional()])
+    expiration_date = DateField('Expiration', format='%Y-%m-%d', validators=[Optional()])
+    notes = TextAreaField('Notes', validators=[Optional()])
+    submit = SubmitField('Save Permit')
+
+
+class InspectionForm(FlaskForm):
+    inspection_type = StringField('Inspection', validators=[DataRequired(), Length(max=80)])
+    scheduled_date = DateField('Scheduled', format='%Y-%m-%d', validators=[Optional()])
+    status = SelectField('Status', choices=[
+        ('Scheduled', 'Scheduled'),
+        ('Passed', 'Passed'),
+        ('Failed', 'Failed'),
+        ('Cancelled', 'Cancelled'),
+    ], default='Scheduled')
+    result_notes = TextAreaField('Result / Notes', validators=[Optional()])
+    submit = SubmitField('Add Inspection')
+
+
 class LicenseForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=150)])
     credential_type = SelectField('Type', choices=[
