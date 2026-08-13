@@ -87,21 +87,23 @@
     <div class="flex flex-col gap-2 mb-4">
       {% for insp in permit.inspections %}
       {% set st = {'Scheduled':'text-blue-300','Passed':'text-green-300','Failed':'text-red-300','Cancelled':'text-gray-400'} %}
-      <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 flex items-center justify-between gap-3">
+      <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
         <div class="min-w-0">
           <p class="text-gray-200 text-sm">{{ insp.inspection_type }}
             {% if insp.scheduled_date %}<span class="text-gray-500 text-xs">· {{ insp.scheduled_date.strftime('%b %d, %Y') }}</span>{% endif %}
           </p>
-          {% if insp.result_notes %}<p class="text-gray-500 text-xs">{{ insp.result_notes }}</p>{% endif %}
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <form method="POST" action="{{ url_for('permits.update_inspection', inspection_id=insp.id) }}" class="flex items-center gap-1">
             {{ form.csrf_token }}
+            <input type="text" name="result_notes" value="{{ insp.result_notes or '' }}" placeholder="Result / notes"
+                   class="fld py-1 text-xs" style="width:11rem;"/>
             <select name="status" class="fld py-1 text-xs {{ st.get(insp.status, 'text-gray-300') }}" onchange="this.form.submit()">
               {% for s in ['Scheduled','Passed','Failed','Cancelled'] %}
               <option value="{{ s }}" {{ 'selected' if insp.status == s }}>{{ s }}</option>
               {% endfor %}
             </select>
+            <button type="submit" class="text-xs text-gray-300 hover:text-orange-400 border border-gray-700 rounded px-2 py-1">Save</button>
           </form>
           <form method="POST" action="{{ url_for('permits.delete_inspection', inspection_id=insp.id) }}"
             onsubmit="return confirm('Delete this inspection?');">

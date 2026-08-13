@@ -172,7 +172,10 @@ def update_inspection(inspection_id):
     status = (request.form.get('status') or '').strip()
     if status in ('Scheduled', 'Passed', 'Failed', 'Cancelled'):
         inspection.status = status
-    inspection.result_notes = (request.form.get('result_notes') or '').strip() or None
+    # Only update the note when the field is actually submitted, so a
+    # status-only change never wipes an existing result note.
+    if 'result_notes' in request.form:
+        inspection.result_notes = (request.form.get('result_notes') or '').strip() or None
     sync_reminders_for_inspection(inspection)
     db.session.commit()
     flash('Inspection updated.', 'success')
