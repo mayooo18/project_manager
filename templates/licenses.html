@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Licenses{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-white">Licenses &amp; Renewals</h1>
+      <p class="text-gray-500 text-xs mt-1">Your company's licenses, bonds &amp; insurance. Renewal reminders are created automatically.</p>
+    </div>
+    <a href="{{ url_for('licenses.add') }}"
+      class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+      style="color: #fff !important;">
+      + Add License
+    </a>
+  </div>
+
+  {% if licenses %}
+  <div class="flex flex-col gap-3">
+    {% for l in licenses %}
+    <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <div class="flex items-center flex-wrap gap-2">
+            <p class="text-gray-100 font-semibold text-lg">{{ l.name }}</p>
+            <span class="text-xs font-normal text-orange-400 border border-orange-400/40 rounded px-1.5 py-0.5">{{ l.credential_type or 'License' }}</span>
+          </div>
+          <p class="text-gray-500 text-xs mt-1">
+            {% if l.number %}#{{ l.number }}{% endif %}
+            {% if l.issuer %} &middot; {{ l.issuer }}{% endif %}
+            {% if l.issued_date %} &middot; Issued {{ l.issued_date.strftime('%b %d, %Y') }}{% endif %}
+          </p>
+          {% if l.notes %}<p class="text-gray-500 text-xs mt-2">{{ l.notes }}</p>{% endif %}
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <div class="text-right">
+            {% if l.expiration_date %}
+            <p class="text-xs {{ 'text-red-400' if l.expiration_date <= today + timedelta(days=14) else 'text-yellow-400' if l.expiration_date <= today + timedelta(days=60) else 'text-gray-400' }}">
+              {% if l.expiration_date < today %}Expired{% else %}Renews{% endif %} {{ l.expiration_date.strftime('%b %d, %Y') }}
+            </p>
+            {% else %}
+            <p class="text-xs text-gray-600">No renewal date</p>
+            {% endif %}
+          </div>
+          <a href="{{ url_for('licenses.edit', license_id=l.id) }}"
+            class="text-sm transition-colors" style="color: #9ca3af;"
+            onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">Edit</a>
+          <form method="POST" action="{{ url_for('licenses.delete', license_id=l.id) }}"
+            onsubmit="return confirm('Delete {{ l.name }}? This cannot be undone.');">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center">
+    <p class="text-gray-400 text-sm">No licenses yet.</p>
+    <p class="text-gray-600 text-xs mt-1">Add your electrical/HVAC/GC licenses, bonds, and insurance to get automatic renewal reminders.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+</body>
+</html>
+{% endblock %}

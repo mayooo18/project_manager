@@ -131,6 +131,10 @@ class Reminder(db.Model):
     subcontractor_id = db.Column(db.Integer, db.ForeignKey('subcontractor.id'), nullable=True)
     subcontractor_field = db.Column(db.String(50), nullable=True)
     subcontractor_offset_days = db.Column(db.Integer, nullable=True)
+    # Same auto-reminder mechanism, reused for the company's own license/credential renewals.
+    license_id = db.Column(db.Integer, db.ForeignKey('license.id'), nullable=True)
+    license_field = db.Column(db.String(50), nullable=True)
+    license_offset_days = db.Column(db.Integer, nullable=True)
 
     user = db.relationship('User', backref=db.backref('reminders', cascade='all, delete-orphan'))
 
@@ -176,6 +180,23 @@ class Subcontractor(db.Model):
 
     user = db.relationship('User', backref=db.backref('subcontractors', cascade='all, delete-orphan'))
     reminders = db.relationship('Reminder', backref='subcontractor', cascade='all, delete-orphan')
+
+
+class License(db.Model):
+    """The company's own credentials (electrical/HVAC/GC licenses, bonds, insurance)."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(150), nullable=False)   # e.g. "IL Electrical Contractor License"
+    credential_type = db.Column(db.String(40), default='License')  # License / Insurance / Bond / Certification
+    number = db.Column(db.String(80))
+    issuer = db.Column(db.String(120))                 # state, municipality, carrier, surety
+    issued_date = db.Column(db.Date)
+    expiration_date = db.Column(db.Date)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('licenses', cascade='all, delete-orphan'))
+    reminders = db.relationship('Reminder', backref='license', cascade='all, delete-orphan')
 
 
 class AIActionLog(db.Model):

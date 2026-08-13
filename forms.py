@@ -123,6 +123,22 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
+class LicenseForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(max=150)])
+    credential_type = SelectField('Type', choices=[
+        ('License', 'License'),
+        ('Insurance', 'Insurance'),
+        ('Bond', 'Bond'),
+        ('Certification', 'Certification'),
+    ], default='License')
+    number = StringField('Number', validators=[Optional(), Length(max=80)])
+    issuer = StringField('Issuer', validators=[Optional(), Length(max=120)])
+    issued_date = DateField('Issued', format='%Y-%m-%d', validators=[Optional()])
+    expiration_date = DateField('Expiration / Renewal', format='%Y-%m-%d', validators=[Optional()])
+    notes = TextAreaField('Notes', validators=[Optional()])
+    submit = SubmitField('Save License')
+
+
 class SubcontractorForm(FlaskForm):
     name = StringField('Name / Company', validators=[DataRequired(), Length(max=150)])
     trade = StringField('Trade', validators=[Optional(), Length(max=80)])
