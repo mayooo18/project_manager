@@ -243,6 +243,30 @@ class Inspection(db.Model):
     reminders = db.relationship('Reminder', backref='inspection', cascade='all, delete-orphan')
 
 
+class GcDocument(db.Model):
+    """Lien waivers + certificates of completion (Phase 6d). PDF-generated records."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # conditional_progress / unconditional_progress / conditional_final /
+    # unconditional_final / completion
+    doc_kind = db.Column(db.String(40), nullable=False, default='conditional_progress')
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=True)
+
+    owner_name = db.Column(db.String(150))
+    property_address = db.Column(db.String(250))
+    amount = db.Column(db.Float)               # payment amount (waivers)
+    through_date = db.Column(db.Date)          # "through" date (progress) or completion date
+    check_number = db.Column(db.String(60))
+    exceptions = db.Column(db.Text)            # disputed/excluded amounts
+    notes = db.Column(db.Text)                 # scope of work for completion certs
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('gc_documents', cascade='all, delete-orphan'))
+    project = db.relationship('Project', backref='gc_documents')
+    customer = db.relationship('Customer', backref='gc_documents')
+
+
 class AIActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

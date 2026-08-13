@@ -123,6 +123,26 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
+class GcDocumentForm(FlaskForm):
+    doc_kind = SelectField('Document Type', choices=[
+        ('conditional_progress', 'Conditional Waiver — Progress Payment'),
+        ('unconditional_progress', 'Unconditional Waiver — Progress Payment'),
+        ('conditional_final', 'Conditional Waiver — Final Payment'),
+        ('unconditional_final', 'Unconditional Waiver — Final Payment'),
+        ('completion', 'Certificate of Completion'),
+    ], default='conditional_progress')
+    project_id = SelectField('Project', coerce=int, validators=[Optional()])
+    customer_id = SelectField('Customer', coerce=int, validators=[Optional()])
+    owner_name = StringField('Owner Name', validators=[Optional(), Length(max=150)])
+    property_address = StringField('Property Address', validators=[Optional(), Length(max=250)])
+    amount = FloatField('Amount', validators=[Optional()])
+    through_date = DateField('Through / Completion Date', format='%Y-%m-%d', validators=[Optional()])
+    check_number = StringField('Check #', validators=[Optional(), Length(max=60)])
+    exceptions = TextAreaField('Exceptions / Disputed Amounts', validators=[Optional()])
+    notes = TextAreaField('Scope / Notes', validators=[Optional()])
+    submit = SubmitField('Save Document')
+
+
 class PermitForm(FlaskForm):
     project_id = SelectField('Project', coerce=int, validators=[Optional()])
     permit_type = StringField('Permit Type', validators=[Optional(), Length(max=80)])

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Waivers & Certificates{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+  </style>
+</head>
+<body class="bg-black">
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-white">Waivers &amp; Certificates</h1>
+      <p class="text-gray-500 text-xs mt-1">Lien waivers and completion certificates, generated as PDFs off your letterhead.</p>
+    </div>
+    <a href="{{ url_for('waivers.new') }}"
+      class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+      style="color: #fff !important;">
+      + New Document
+    </a>
+  </div>
+
+  {% if documents %}
+  <div class="flex flex-col gap-3">
+    {% for d in documents %}
+    <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <a href="{{ url_for('waivers.edit', doc_id=d.id) }}"
+             class="text-gray-100 font-semibold hover:text-orange-400">{{ doc_labels.get(d.doc_kind, 'Document') }}</a>
+          <p class="text-gray-500 text-xs mt-1">
+            {% if d.owner_name %}{{ d.owner_name }}{% endif %}
+            {% if d.property_address %} &middot; {{ d.property_address }}{% endif %}
+            {% if d.amount %} &middot; ${{ '%.2f'|format(d.amount) }}{% endif %}
+            {% if d.through_date %} &middot; {{ d.through_date.strftime('%b %d, %Y') }}{% endif %}
+          </p>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <a href="{{ url_for('waivers.pdf', doc_id=d.id) }}" target="_blank"
+             class="text-sm" style="color:#9ca3af;"
+             onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">PDF</a>
+          <a href="{{ url_for('waivers.edit', doc_id=d.id) }}"
+             class="text-sm" style="color:#9ca3af;"
+             onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">Edit</a>
+          <form method="POST" action="{{ url_for('waivers.delete', doc_id=d.id) }}"
+            onsubmit="return confirm('Delete this document? This cannot be undone.');">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center">
+    <p class="text-gray-400 text-sm">No documents yet.</p>
+    <p class="text-gray-600 text-xs mt-1">Create a lien waiver (conditional/unconditional, progress/final) or a certificate of completion.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+</body>
+</html>
+{% endblock %}

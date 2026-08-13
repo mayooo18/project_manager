@@ -13,7 +13,7 @@
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Logo" class="h-16 w-auto">
             {% set finance_endpoints = ['work_logs', 'payments', 'expenses', 'income', 'profitability'] %}
-            {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index', 'subcontractors.index', 'subcontractors.add', 'subcontractors.edit', 'licenses.index', 'licenses.add', 'licenses.edit', 'permits.index', 'permits.add', 'permits.edit'] %}
+            {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index', 'subcontractors.index', 'subcontractors.add', 'subcontractors.edit', 'licenses.index', 'licenses.add', 'licenses.edit', 'permits.index', 'permits.add', 'permits.edit', 'waivers.index', 'waivers.new', 'waivers.edit'] %}
             {% set sales_endpoints = ['quotes.index', 'quotes.new', 'quotes.edit', 'quotes.customers', 'invoices.index', 'invoices.new', 'invoices.edit', 'contracts.index', 'contracts.new', 'contracts.edit'] %}
             <button id="nav-toggle" type="button" aria-label="Toggle menu" onclick="toggleNav(event)">☰</button>
             <div id="nav-links" class="flex items-center gap-4 relative">
@@ -50,6 +50,7 @@
                         <a href="{{ url_for('vehicles.index') }}" class="{{ 'nav-active' if request.endpoint == 'vehicles.index' }}">Vehicles</a>
                         <a href="{{ url_for('licenses.index') }}" class="{{ 'nav-active' if request.endpoint in ['licenses.index', 'licenses.add', 'licenses.edit'] }}">Licenses</a>
                         <a href="{{ url_for('permits.index') }}" class="{{ 'nav-active' if request.endpoint in ['permits.index', 'permits.add', 'permits.edit'] }}">Permits</a>
+                        <a href="{{ url_for('waivers.index') }}" class="{{ 'nav-active' if request.endpoint in ['waivers.index', 'waivers.new', 'waivers.edit'] }}">Waivers &amp; Certs</a>
                         <a href="{{ url_for('subcontractors.index') }}" class="{{ 'nav-active' if request.endpoint in ['subcontractors.index', 'subcontractors.add', 'subcontractors.edit'] }}">Subcontractors</a>
                     </div>
                 </div>
