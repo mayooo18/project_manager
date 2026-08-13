@@ -13,12 +13,12 @@ class WorkerForm(FlaskForm):
     submit= SubmitField('Submit')
 
 class ProjectForm(FlaskForm):
-    name = StringField('Project Name', validators=[DataRequired()])
+    name = StringField('Job Name', validators=[DataRequired()])
     description = TextAreaField('Description')
     address = StringField('Address')
     start_date = DateField('Start Date', format='%Y-%m-%d')
     status = SelectField('Status', choices=[('Active', 'Active'), ('Completed', 'Completed'), ('On Hold', 'On Hold')])
-    submit = SubmitField('Add Project')
+    submit = SubmitField('Add Job')
 
 class DeleteForm(FlaskForm):
     submit = SubmitField('Delete')
@@ -52,7 +52,7 @@ class FileUploadForm(FlaskForm):
 
 class WorkLogForm(FlaskForm):
     worker_id = SelectField('Worker', coerce=int, validators=[DataRequired()])
-    project_id = SelectField('Project', coerce=int, validators=[DataRequired()])
+    project_id = SelectField('Job', coerce=int, validators=[DataRequired()])
     start_date = DateField('From', format='%Y-%m-%d', validators=[DataRequired()])
     end_date = DateField('To', format='%Y-%m-%d', validators=[DataRequired()])
     days_worked = FloatField('Days Worked', validators=[DataRequired(),])
@@ -61,14 +61,14 @@ class WorkLogForm(FlaskForm):
 
 class WorkLogFilterForm(FlaskForm):
     worker_id = SelectField('Worker', coerce=int)
-    project_id = SelectField('Project', coerce=int)
+    project_id = SelectField('Job', coerce=int)
     start_date = DateField('From', format='%Y-%m-%d', validators=[], default=None)
     end_date = DateField('To', format='%Y-%m-%d', validators=[], default=None)
     submit = SubmitField('Filter')
 
 class PaymentForm(FlaskForm):
     worker_id = SelectField('Worker (optional)', coerce=int, choices=[], validators=[Optional()])
-    project_id = SelectField('Project (optional)', coerce=int, choices=[], validators=[Optional()])
+    project_id = SelectField('Job (optional)', coerce=int, choices=[], validators=[Optional()])
     amount = FloatField('Amount', validators=[DataRequired()])
     payment_date = DateField('Payment Date', format='%Y-%m-%d', validators=[DataRequired()])
     method = StringField('Method', validators=[Optional()])
@@ -86,7 +86,7 @@ class PaymentFilterForm(FlaskForm):
     submit = SubmitField('Filter')
 
 class ExpenseForm(FlaskForm):
-    project_id = SelectField('Project', coerce=int, validators=[DataRequired()])
+    project_id = SelectField('Job', coerce=int, validators=[DataRequired()])
     description = StringField('Description', validators=[Optional()])
     amount= FloatField('Amount' , validators=[Optional()])
     category = SelectField('Category', choices=[
@@ -101,14 +101,14 @@ class ExpenseForm(FlaskForm):
     submit = SubmitField('Add Expense')
 
 class FilterForm(FlaskForm):
-    project_id = SelectField('Project', coerce=int)
+    project_id = SelectField('Job', coerce=int)
     worker_id = SelectField('Worker', coerce=int)
     start_date = DateField('From', format='%Y-%m-%d')
     end_date = DateField('To', format='%Y-%m-%d')
     submit = SubmitField('Filter')
     
 class IncomeForm(FlaskForm):
-    project_id = SelectField('Project', coerce=int, validators=[DataRequired()])
+    project_id = SelectField('Job', coerce=int, validators=[DataRequired()])
     amount = FloatField('Amount', validators=[DataRequired()])
     source = StringField('Source', validators=[Optional()])
     date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
@@ -131,7 +131,7 @@ class GcDocumentForm(FlaskForm):
         ('unconditional_final', 'Unconditional Waiver — Final Payment'),
         ('completion', 'Certificate of Completion'),
     ], default='conditional_progress')
-    project_id = SelectField('Project', coerce=int, validators=[Optional()])
+    project_id = SelectField('Job', coerce=int, validators=[Optional()])
     customer_id = SelectField('Customer', coerce=int, validators=[Optional()])
     owner_name = StringField('Owner Name', validators=[Optional(), Length(max=150)])
     property_address = StringField('Property Address', validators=[Optional(), Length(max=250)])
@@ -144,7 +144,7 @@ class GcDocumentForm(FlaskForm):
 
 
 class PermitForm(FlaskForm):
-    project_id = SelectField('Project', coerce=int, validators=[Optional()])
+    project_id = SelectField('Job', coerce=int, validators=[Optional()])
     permit_type = StringField('Permit Type', validators=[Optional(), Length(max=80)])
     permit_number = StringField('Permit #', validators=[Optional(), Length(max=80)])
     issuing_authority = StringField('Issuing Authority', validators=[Optional(), Length(max=120)])

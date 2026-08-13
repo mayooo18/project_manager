@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
+    .card { background:#111827; border:1px solid #374151; border-radius:0.75rem; }
+    .kpi { background:#0b0f17; border:1px solid #1f2937; border-radius:0.6rem; padding:0.75rem 0.9rem; }
+    .sec-title { color:#fff; font-weight:600; font-size:1rem; }
+    .pill { font-size:0.7rem; border-radius:0.3rem; padding:0.05rem 0.4rem; text-transform:uppercase; border:1px solid; }
+    .btn { font-size:0.8rem; font-weight:600; padding:0.35rem 0.7rem; border-radius:0.5rem;
+           border:1px solid #374151; color:#e5e7eb; }
+    .btn:hover { border-color:#f97316; color:#ff8c5a; }
+    .row { display:flex; align-items:center; justify-content:space-between; gap:0.75rem;
+           padding:0.5rem 0; border-top:1px solid #1f2937; }
+    a.lk { color:#e5e7eb; } a.lk:hover { color:#ff8c5a; }
+    .muted { color:#6b7280; font-size:0.75rem; }
+  </style>
+</head>
+<body class="bg-black">
+
+{% set status_styles = {
+  'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
+  'approved':'text-green-300 border-green-500','declined':'text-red-300 border-red-500',
+  'converted':'text-orange-300 border-orange-500','paid':'text-green-300 border-green-500',
+  'void':'text-gray-400 border-gray-600','Applied':'text-blue-300 border-blue-500',
+  'Issued':'text-green-300 border-green-500','Expired':'text-red-300 border-red-500',
+  'Finaled':'text-orange-300 border-orange-500','Closed':'text-gray-300 border-gray-500'
+} %}
+
+<div class="max-w-5xl mx-auto px-4 py-8">
+
+  <!-- Header -->
+  <a href="{{ url_for('projects') }}" class="muted hover:text-orange-400">← All jobs</a>
+  <div class="flex items-start justify-between gap-4 mt-2 mb-6">
+    <div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <h1 class="text-3xl font-bold text-white">{{ project.name }}</h1>
+        <span class="pill {{ 'text-green-300 border-green-500' if project.status=='Active' else 'text-blue-300 border-blue-500' if project.status=='Completed' else 'text-yellow-300 border-yellow-500' }}">{{ project.status }}</span>
+      </div>
+      <p class="text-gray-500 text-sm mt-1">
+        {{ project.address or 'No address' }}
+        {% if project.start_date %} · Started {{ project.start_date.strftime('%b %d, %Y') }}{% endif %}
+      </p>
+    </div>
+    <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn">Edit job</a>
+  </div>
+
+  <!-- Money snapshot -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+    <div class="kpi"><p class="muted">Contract</p><p class="text-white text-xl font-bold">${{ '{:,.0f}'.format(contract_total) }}</p></div>
+    <div class="kpi"><p class="muted">Billed</p><p class="text-white text-xl font-bold">${{ '{:,.0f}'.format(billed_total) }}</p></div>
+    <div class="kpi"><p class="muted">Paid</p><p class="text-white text-xl font-bold">${{ '{:,.0f}'.format(paid_total) }}</p></div>
+    <div class="kpi"><p class="muted">Profit</p><p class="text-xl font-bold {{ 'text-green-400' if profit >= 0 else 'text-red-400' }}">${{ '{:,.0f}'.format(profit) }}</p></div>
+    <div class="kpi"><p class="muted">Income</p><p class="text-gray-200 text-lg font-semibold">${{ '{:,.0f}'.format(income_total) }}</p></div>
+    <div class="kpi"><p class="muted">Expenses</p><p class="text-gray-200 text-lg font-semibold">${{ '{:,.0f}'.format(expenses_total) }}</p></div>
+    <div class="kpi"><p class="muted">Labor</p><p class="text-gray-200 text-lg font-semibold">${{ '{:,.0f}'.format(labor_total) }}</p></div>
+    <div class="kpi"><p class="muted">Work logs</p><p class="text-gray-200 text-lg font-semibold">{{ work_logs|length }}</p></div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+    <!-- Sales & Billing -->
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <p class="sec-title">Sales &amp; Billing</p>
+        <div class="flex gap-2">
+          <a href="{{ url_for('quotes.new') }}" class="btn">+ Proposal</a>
+          <a href="{{ url_for('contracts.new') }}" class="btn">+ Contract</a>
+          <a href="{{ url_for('invoices.new') }}" class="btn">+ Invoice</a>
+        </div>
+      </div>
+
+      <p class="muted mt-2">Proposals ({{ proposals|length }})</p>
+      {% for q in proposals %}
+      <div class="row"><a class="lk text-sm" href="{{ url_for('quotes.edit', quote_id=q.id) }}">{{ q.title }}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(q.status,'text-gray-300 border-gray-500') }}">{{ q.status }}</span><span class="text-gray-200 text-sm">${{ '%.0f'|format(q.total or 0) }}</span></span></div>
+      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+
+      <p class="muted mt-3">Contracts ({{ contracts|length }})</p>
+      {% for c in contracts %}
+      <div class="row"><a class="lk text-sm" href="{{ url_for('contracts.edit', contract_id=c.id) }}">{{ c.number or ('Contract #' ~ c.id) }}</a>
+        <span class="text-gray-400 text-xs">${{ '%.0f'|format(c.billed_to_date) }} billed / ${{ '%.0f'|format(c.contract_total or 0) }}</span></div>
+      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+
+      {% if change_orders %}
+      <p class="muted mt-3">Change Orders ({{ change_orders|length }})</p>
+      {% for co in change_orders %}
+      <div class="row"><a class="lk text-sm" href="{{ url_for('change_orders.edit', change_order_id=co.id) }}">{{ co.number }} · {{ co.title }}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(co.status,'text-gray-300 border-gray-500') }}">{{ co.status }}</span><span class="text-gray-200 text-sm">${{ '%.0f'|format(co.total or 0) }}</span></span></div>
+      {% endfor %}
+      {% endif %}
+
+      <p class="muted mt-3">Invoices ({{ invoices|length }})</p>
+      {% for inv in invoices %}
+      <div class="row"><a class="lk text-sm" href="{{ url_for('invoices.edit', invoice_id=inv.id) }}">{{ inv.number or ('Invoice #' ~ inv.id) }}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(inv.status,'text-gray-300 border-gray-500') }}">{{ inv.status }}</span><span class="text-gray-200 text-sm">${{ '%.0f'|format(inv.total or 0) }}</span></span></div>
+      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+    </div>
+
+    <!-- Field & Compliance -->
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <p class="sec-title">Field &amp; Compliance</p>
+        <div class="flex gap-2">
+          <a href="{{ url_for('permits.add') }}" class="btn">+ Permit</a>
+          <a href="{{ url_for('waivers.new') }}" class="btn">+ Waiver</a>
+        </div>
+      </div>
+
+      <p class="muted mt-2">Permits ({{ permits|length }})</p>
+      {% for p in permits %}
+      <div class="row"><a class="lk text-sm" href="{{ url_for('permits.edit', permit_id=p.id) }}">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(p.status,'text-gray-300 border-gray-500') }}">{{ p.status }}</span><span class="text-gray-400 text-xs">{{ p.inspections|length }} insp</span></span></div>
+      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+
+      <p class="muted mt-3">Waivers &amp; Certificates ({{ documents|length }})</p>
+      {% for d in documents %}
+      <div class="row"><a class="lk text-sm" href="{{ url_for('waivers.edit', doc_id=d.id) }}">{{ d.doc_kind.replace('_',' ')|title }}</a>
+        <a class="text-orange-400 text-xs hover:underline" href="{{ url_for('waivers.pdf', doc_id=d.id) }}" target="_blank">PDF</a></div>
+      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+
+      <p class="muted mt-3">Files ({{ files|length }})</p>
+      {% for f in files %}
+      <div class="row"><a class="lk text-sm truncate" href="{{ url_for('static', filename='uploads/' ~ f.filename) }}" target="_blank">{{ f.filename }}</a>
+        <span class="text-gray-500 text-xs">{{ f.category or '' }}</span></div>
+      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+    </div>
+
+  </div>
+
+  <p class="muted mt-6">Tip: use the <b>Money</b> and <b>Finance</b> menus to log expenses, income, and labor against this job — they roll up into the profit above.</p>
+
+</div>
+
+</body>
+</html>
+{% endblock %}

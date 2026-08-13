@@ -287,6 +287,40 @@ def projects():
     return render_template('projects.html', project_form=project_form, file_form=file_form, projects=filtered_projects, selected_category = selected_category)
 
 
+@app.route('/projects/<int:project_id>')
+@login_required
+def project_detail(project_id):
+    """Job hub — everything linked to one job in a single view."""
+    project = Project.query.get_or_404(project_id)
+
+    # Money (matches the dashboard: income − expenses − labor pay)
+    expenses_total = sum(e.amount or 0 for e in project.expenses)
+    income_total = sum(i.amount or 0 for i in project.incomes)
+    labor_total = sum(p.amount or 0 for p in project.payments)
+    profit = income_total - expenses_total - labor_total
+
+    contracts = sorted(project.contracts, key=lambda c: c.id, reverse=True)
+    invoices = sorted(project.invoices, key=lambda i: i.id, reverse=True)
+    proposals = sorted(project.quotes, key=lambda q: q.id, reverse=True)
+    change_orders = [co for c in contracts for co in c.change_orders]
+    permits = sorted(project.permits, key=lambda p: p.id, reverse=True)
+    documents = sorted(project.gc_documents, key=lambda d: d.id, reverse=True)
+
+    contract_total = sum(c.contract_total or 0 for c in contracts)
+    billed_total = sum(c.billed_to_date for c in contracts)
+    paid_total = sum(inv.total or 0 for inv in invoices if inv.status == 'paid')
+
+    return render_template(
+        'project_detail.html', project=project,
+        expenses_total=expenses_total, income_total=income_total,
+        labor_total=labor_total, profit=profit,
+        contracts=contracts, invoices=invoices, proposals=proposals,
+        change_orders=change_orders, permits=permits, documents=documents,
+        work_logs=list(project.work_logs), files=list(project.files),
+        contract_total=contract_total, billed_total=billed_total, paid_total=paid_total,
+    )
+
+
 @app.route('/upload_file/<int:project_id>', methods=['POST'])
 @login_required
 def upload_file(project_id):
