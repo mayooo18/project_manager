@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Payroll{% endblock %}
+
+{% block content %}
+<style>
+  .pr-wrap { max-width: 980px; margin: 0 auto; padding: 8px 0 32px; }
+  .pr-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+  .pr-title { font-size:1.6rem; font-weight:800; color:#fff; }
+  .pr-sub { font-size:.85rem; color:#9ca3af; margin-top:2px; }
+  .pr-actions { display:flex; align-items:center; gap:8px; }
+  .pr-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+  .pr-tile { background:#111827; border:1px solid #374151; border-radius:12px; padding:16px; }
+  .pr-tile .lbl { font-size:.72rem; color:#9ca3af; text-transform:uppercase; letter-spacing:.04em; }
+  .pr-tile .amt { font-size:1.75rem; font-weight:800; margin-top:2px; }
+  .pill { display:inline-block; font-size:.68rem; padding:1px 8px; border-radius:999px; margin-left:6px; }
+  .pill-week { background:#064e3b; color:#6ee7b7; }
+  .pill-pend { background:#4a3410; color:#fbbf24; }
+  .pr-btn { padding:6px 12px; border:1px solid #374151; border-radius:8px; color:#e5e7eb;
+            font-size:.82rem; text-decoration:none; background:none; cursor:pointer; }
+  .pr-btn:hover { border-color:#ff6b35; color:#ff8c5a; }
+  .pr-print { background:#ff6b35; border-color:#ff6b35; color:#fff; }
+  .pr-note { font-size:.75rem; color:#6b7280; margin-top:12px; }
+  .c-firm { color:#4ade80; }
+  .c-pend { color:#fbbf24; }
+  .c-gross { color:#ffffff; font-weight:700; }
+  .c-mute { color:#6b7280; }
+  @media print { .no-print { display:none !important; } }
+  @media (max-width:640px) { .pr-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="pr-wrap">
+
+  <div class="pr-head">
+    <div>
+      <div class="pr-title">Weekly Payroll</div>
+      <div class="pr-sub">
+        {{ monday.strftime('%b %d') }} – {{ sunday.strftime('%b %d, %Y') }}
+        {% if is_current_week %}<span class="pill pill-week">This week</span>{% endif %}
+      </div>
+    </div>
+    <div class="pr-actions no-print">
+      <a href="{{ url_for('payroll.index', start=prev_start) }}" class="pr-btn">‹ Prev</a>
+      {% if not is_current_week %}
+      <a href="{{ url_for('payroll.index') }}" class="pr-btn">This week</a>
+      {% endif %}
+      <a href="{{ url_for('payroll.index', start=next_start) }}" class="pr-btn">Next ›</a>
+      <button onclick="window.print()" class="pr-btn pr-print">Print</button>
+    </div>
+  </div>
+
+  <div class="pr-grid">
+    <div class="pr-tile">
+      <div class="lbl">Total owed</div>
+      <div class="amt c-gross">${{ '%.2f' % totals.gross }}</div>
+    </div>
+    <div class="pr-tile">
+      <div class="lbl">Approved (firm)</div>
+      <div class="amt c-firm">${{ '%.2f' % totals.firm }}</div>
+    </div>
+    <div class="pr-tile">
+      <div class="lbl">Pending approval</div>
+      <div class="amt c-pend">${{ '%.2f' % totals.pending }}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Worker</th>
+        <th>Clock hours</th>
+        <th>Log days</th>
+        <th>Approved $</th>
+        <th>Pending $</th>
+        <th>Gross pay</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in payroll %}
+      <tr>
+        <td><span style="color:#f3f4f6;font-weight:600;">{{ r.worker.name }}</span></td>
+        <td>
+          {{ '%.2f' % (r.appr_hours + r.pend_hours) }} h
+          {% if r.pend_hours %}<span class="pill pill-pend">{{ '%.2f' % r.pend_hours }} pending</span>{% endif %}
+        </td>
+        <td>{% if r.log_days %}{{ '%g' % r.log_days }}{% else %}<span class="c-mute">–</span>{% endif %}</td>
+        <td><span class="c-firm">${{ '%.2f' % r.firm_pay }}</span></td>
+        <td>{% if r.pending_pay %}<span class="c-pend">${{ '%.2f' % r.pending_pay }}</span>{% else %}<span class="c-mute">–</span>{% endif %}</td>
+        <td><span class="c-gross">${{ '%.2f' % r.gross }}</span></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;"><span class="c-mute">No labor recorded this week.</span></td></tr>
+      {% endfor %}
+    </tbody>
+    {% if payroll %}
+    <tfoot>
+      <tr>
+        <td><span style="color:#f3f4f6;font-weight:700;">Total</span></td>
+        <td><span style="color:#f3f4f6;font-weight:600;">{{ '%.2f' % totals.hours }} h</span></td>
+        <td><span style="color:#f3f4f6;font-weight:600;">{% if totals.days %}{{ '%g' % totals.days }}{% else %}–{% endif %}</span></td>
+        <td><span class="c-firm" style="font-weight:700;">${{ '%.2f' % totals.firm }}</span></td>
+        <td><span class="c-pend" style="font-weight:700;">${{ '%.2f' % totals.pending }}</span></td>
+        <td><span class="c-gross" style="font-size:1.05rem;">${{ '%.2f' % totals.gross }}</span></td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+
+  <p class="pr-note">
+    Clock hours come from the crew Time Clock (hours × daily rate ÷ 8). Log days come from manually
+    entered Work Logs. <b style="color:#9ca3af;">Pending</b> = clock time not yet approved on the Time Clock page.
+  </p>
+
+</div>
+{% endblock %}
