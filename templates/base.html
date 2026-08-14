@@ -12,33 +12,44 @@
     <nav class="shadow-md mb-8">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Logo" class="h-16 w-auto">
-            {% set finance_endpoints = ['work_logs', 'payments', 'expenses', 'income', 'profitability'] %}
-            {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index', 'subcontractors.index', 'subcontractors.add', 'subcontractors.edit', 'licenses.index', 'licenses.add', 'licenses.edit', 'permits.index', 'permits.add', 'permits.edit', 'waivers.index', 'waivers.new', 'waivers.edit'] %}
+            {% set money_endpoints = ['workers', 'work_logs', 'payments', 'expenses', 'income', 'profitability'] %}
+            {% set compliance_endpoints = ['permits.index', 'permits.add', 'permits.edit', 'licenses.index', 'licenses.add', 'licenses.edit', 'subcontractors.index', 'subcontractors.add', 'subcontractors.edit', 'waivers.index', 'waivers.new', 'waivers.edit'] %}
+            {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index'] %}
             {% set sales_endpoints = ['quotes.index', 'quotes.new', 'quotes.edit', 'quotes.customers', 'invoices.index', 'invoices.new', 'invoices.edit', 'contracts.index', 'contracts.new', 'contracts.edit'] %}
             <button id="nav-toggle" type="button" aria-label="Toggle menu" onclick="toggleNav(event)">☰</button>
             <div id="nav-links" class="flex items-center gap-4 relative">
                 <a href="{{ url_for('home') }}" class="{{ 'nav-active' if request.endpoint == 'home' }}">Home</a>
                 <a href="{{ url_for('projects') }}" class="{{ 'nav-active' if request.endpoint in ['projects', 'project_detail'] }}">Jobs</a>
-                <a href="{{ url_for('workers') }}" class="{{ 'nav-active' if request.endpoint == 'workers' }}">Workers</a>
 
                 <div class="relative nav-dropdown">
                     <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in sales_endpoints }}" style="color:#ff6b35;">Sales ▾</button>
                     <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('quotes.customers') }}" class="{{ 'nav-active' if request.endpoint == 'quotes.customers' }}">Customers</a>
                         <a href="{{ url_for('quotes.index') }}" class="{{ 'nav-active' if request.endpoint in ['quotes.index', 'quotes.new', 'quotes.edit'] }}">Proposals</a>
                         <a href="{{ url_for('contracts.index') }}" class="{{ 'nav-active' if request.endpoint in ['contracts.index', 'contracts.new', 'contracts.edit'] }}">Contracts</a>
                         <a href="{{ url_for('invoices.index') }}" class="{{ 'nav-active' if request.endpoint in ['invoices.index', 'invoices.new', 'invoices.edit'] }}">Invoices</a>
-                        <a href="{{ url_for('quotes.customers') }}" class="{{ 'nav-active' if request.endpoint == 'quotes.customers' }}">Customers</a>
                     </div>
                 </div>
 
                 <div class="relative nav-dropdown">
-                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in finance_endpoints }}" style="color:#ff6b35;">Finance ▾</button>
+                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in money_endpoints }}" style="color:#ff6b35;">Money ▾</button>
                     <div class="nav-dropdown-menu">
-                        <a href="{{ url_for('work_logs') }}" class="{{ 'nav-active' if request.endpoint == 'work_logs' }}">Logs</a>
+                        <a href="{{ url_for('workers') }}" class="{{ 'nav-active' if request.endpoint == 'workers' }}">Workers</a>
+                        <a href="{{ url_for('work_logs') }}" class="{{ 'nav-active' if request.endpoint == 'work_logs' }}">Work Logs</a>
                         <a href="{{ url_for('payments') }}" class="{{ 'nav-active' if request.endpoint == 'payments' }}">Payments</a>
                         <a href="{{ url_for('expenses') }}" class="{{ 'nav-active' if request.endpoint == 'expenses' }}">Expenses</a>
                         <a href="{{ url_for('income') }}" class="{{ 'nav-active' if request.endpoint == 'income' }}">Income</a>
                         <a href="{{ url_for('profitability') }}" class="{{ 'nav-active' if request.endpoint == 'profitability' }}">Profit</a>
+                    </div>
+                </div>
+
+                <div class="relative nav-dropdown">
+                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in compliance_endpoints }}" style="color:#ff6b35;">Compliance ▾</button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('permits.index') }}" class="{{ 'nav-active' if request.endpoint in ['permits.index', 'permits.add', 'permits.edit'] }}">Permits</a>
+                        <a href="{{ url_for('licenses.index') }}" class="{{ 'nav-active' if request.endpoint in ['licenses.index', 'licenses.add', 'licenses.edit'] }}">Licenses</a>
+                        <a href="{{ url_for('subcontractors.index') }}" class="{{ 'nav-active' if request.endpoint in ['subcontractors.index', 'subcontractors.add', 'subcontractors.edit'] }}">Subcontractors</a>
+                        <a href="{{ url_for('waivers.index') }}" class="{{ 'nav-active' if request.endpoint in ['waivers.index', 'waivers.new', 'waivers.edit'] }}">Waivers &amp; Certs</a>
                     </div>
                 </div>
 
@@ -48,10 +59,6 @@
                         <a href="{{ url_for('document_form') }}" class="{{ 'nav-active' if request.endpoint == 'document_form' }}">Documents</a>
                         <a href="{{ url_for('reminders.index') }}" class="{{ 'nav-active' if request.endpoint == 'reminders.index' }}">Reminders</a>
                         <a href="{{ url_for('vehicles.index') }}" class="{{ 'nav-active' if request.endpoint == 'vehicles.index' }}">Vehicles</a>
-                        <a href="{{ url_for('licenses.index') }}" class="{{ 'nav-active' if request.endpoint in ['licenses.index', 'licenses.add', 'licenses.edit'] }}">Licenses</a>
-                        <a href="{{ url_for('permits.index') }}" class="{{ 'nav-active' if request.endpoint in ['permits.index', 'permits.add', 'permits.edit'] }}">Permits</a>
-                        <a href="{{ url_for('waivers.index') }}" class="{{ 'nav-active' if request.endpoint in ['waivers.index', 'waivers.new', 'waivers.edit'] }}">Waivers &amp; Certs</a>
-                        <a href="{{ url_for('subcontractors.index') }}" class="{{ 'nav-active' if request.endpoint in ['subcontractors.index', 'subcontractors.add', 'subcontractors.edit'] }}">Subcontractors</a>
                     </div>
                 </div>
 
