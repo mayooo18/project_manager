@@ -10,6 +10,9 @@ class WorkerForm(FlaskForm):
     contact = StringField('Contact', validators= [Length(max=100)])
     daily_rate = FloatField('Daily Rate', validators= [DataRequired(), NumberRange(min=0)])
     active = BooleanField('Active', default=True)
+    phone = StringField('Phone (for crew login)', validators=[Optional(), Length(max=30)])
+    pin = StringField('PIN (4–6 digits — set or reset; leave blank to keep)',
+                      validators=[Optional(), Length(min=4, max=6)])
     submit= SubmitField('Submit')
 
 class ProjectForm(FlaskForm):

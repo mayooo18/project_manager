@@ -10,11 +10,24 @@ class Worker(db.Model):
     contact = db.Column(db.String(100))
     daily_rate = db.Column(db.Float)
     active = db.Column(db.Boolean, default=True)
-    
+    # Crew portal login (Phase 8): phone (digits only) + hashed PIN.
+    phone = db.Column(db.String(30))
+    pin_hash = db.Column(db.String(255))
+
     payments = db.relationship("Payment", back_populates="worker", cascade="all, delete-orphan")
 
 
     work_logs = db.relationship('WorkLog', back_populates='worker', cascade='all, delete-orphan')
+
+    def set_pin(self, pin):
+        self.pin_hash = generate_password_hash(str(pin))
+
+    def check_pin(self, pin):
+        return bool(self.pin_hash) and check_password_hash(self.pin_hash, str(pin))
+
+    @staticmethod
+    def normalize_phone(raw):
+        return ''.join(ch for ch in (raw or '') if ch.isdigit())
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
