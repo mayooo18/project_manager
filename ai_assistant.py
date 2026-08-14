@@ -33,6 +33,20 @@ You have access to these tools:
    Required: text
    Optional: due_date (YYYY-MM-DD)
 
+7. create_customer — Add a new customer (client)
+   Required: name
+   Optional: email, phone, address
+
+8. draft_proposal — Create a draft proposal (quote) for a customer
+   Required: customer_name, title
+   Optional: description, amount
+
+9. query_invoice_status — Look up an invoice's status and amount
+   Required: invoice_number (e.g. INV-0007)
+
+10. query_job_summary — Contract, billed, paid, and profit for a job/project
+   Required: project_name
+
 Rules:
 - NEVER invent or guess worker names, project names, or amounts not stated by the user
 - If a required field is missing or unclear, set clarification_needed to a specific question
@@ -138,6 +152,68 @@ TOOLS = [
                 "required": ["text"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_customer",
+            "description": "Add a new customer (client)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "email": {"type": "string"},
+                    "phone": {"type": "string"},
+                    "address": {"type": "string"}
+                },
+                "required": ["name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "draft_proposal",
+            "description": "Create a draft proposal (quote) for an existing customer",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "customer_name": {"type": "string"},
+                    "title": {"type": "string"},
+                    "description": {"type": "string", "description": "optional first line item"},
+                    "amount": {"type": "number", "description": "optional price for the line item"}
+                },
+                "required": ["customer_name", "title"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_invoice_status",
+            "description": "Look up an invoice's status and amount by its number",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "invoice_number": {"type": "string", "description": "e.g. INV-0007"}
+                },
+                "required": ["invoice_number"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_job_summary",
+            "description": "Contract, billed, paid, and profit for a job/project",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "project_name": {"type": "string"}
+                },
+                "required": ["project_name"]
+            }
+        }
     }
 ]
 
@@ -148,6 +224,10 @@ REQUIRED_FIELDS = {
     "add_invoice_item": ["invoice_number", "description", "amount"],
     "query_project_profit": ["project_name"],
     "set_reminder": ["text"],
+    "create_customer": ["name"],
+    "draft_proposal": ["customer_name", "title"],
+    "query_invoice_status": ["invoice_number"],
+    "query_job_summary": ["project_name"],
 }
 
 
@@ -188,7 +268,7 @@ def process_message(message, conversation_history=None):
 
 
 def validate_action(tool, data, db_session):
-    from models import Worker, Project
+    from models import Worker, Project, Customer
 
     errors = []
     suggestions = []
@@ -218,6 +298,15 @@ def validate_action(tool, data, db_session):
         if not exact:
             errors.append(f"Project '{data['project_name']}' not found.")
             suggestions = fuzzy_match_project(data["project_name"], project_names)
+
+    # Check customer exists for tools that reference one
+    if "customer_name" in data:
+        customers = db_session.query(Customer).all()
+        customer_names = [c.name for c in customers]
+        exact = next((c for c in customers if c.name.lower() == data["customer_name"].lower()), None)
+        if not exact:
+            errors.append(f"Customer '{data['customer_name']}' not found.")
+            suggestions = fuzzy_match_project(data["customer_name"], customer_names)
 
     return {
         "valid": len(errors) == 0,

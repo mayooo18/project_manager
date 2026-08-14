@@ -1,8 +1,12 @@
 from flask import Blueprint, request, jsonify, render_template
 from flask_login import login_required, current_user
 from extensions import db
-from models import AIActionLog, Worker, Project, WorkLog, Expense, Reminder
+from models import (
+    AIActionLog, Worker, Project, WorkLog, Expense, Reminder,
+    Customer, Invoice, Quote, QuoteItem,
+)
 from ai_assistant import process_message, validate_action
+from quote_routes import _new_token
 import json
 from datetime import datetime
 
@@ -137,6 +141,77 @@ def confirm():
                 'message': f"{project.name}: Income ${total_income:,.2f} | Expenses ${total_expenses:,.2f} | Profit ${profit:,.2f}",
                 'result_id': None
             })
+
+        elif tool == 'create_customer':
+            record = Customer(
+                user_id=current_user.id,
+                name=data['name'],
+                email=data.get('email'),
+                phone=data.get('phone'),
+                address=data.get('address'),
+            )
+            db.session.add(record)
+            db.session.flush()
+            result_id = record.id
+
+        elif tool == 'draft_proposal':
+            customer = Customer.query.filter(
+                Customer.user_id == current_user.id,
+                Customer.name.ilike(data['customer_name'])
+            ).first_or_404()
+            quote = Quote(
+                user_id=current_user.id,
+                customer_id=customer.id,
+                title=data['title'],
+                status='draft',
+                public_token=_new_token(),
+            )
+            db.session.add(quote)
+            if data.get('description') or data.get('amount'):
+                quote.items.append(QuoteItem(
+                    description=data.get('description') or data['title'],
+                    quantity=1,
+                    unit_price=data.get('amount') or 0,
+                ))
+                quote.recalculate_total()
+            db.session.flush()
+            result_id = quote.id
+
+        elif tool == 'query_invoice_status':
+            inv = Invoice.query.filter(
+                Invoice.user_id == current_user.id,
+                Invoice.number.ilike(data['invoice_number'])
+            ).first()
+            log.status = 'confirmed'
+            log.confirmed_at = datetime.utcnow()
+            db.session.commit()
+            if not inv:
+                return jsonify({'success': True, 'result_id': None,
+                                'message': f"No invoice found matching '{data['invoice_number']}'."})
+            extra = ''
+            if inv.status == 'paid' and inv.paid_at:
+                extra = f" · paid {inv.paid_at.strftime('%Y-%m-%d')}" + (
+                    f" via {inv.payment_method}" if inv.payment_method else '')
+            return jsonify({'success': True, 'result_id': None,
+                            'message': f"{inv.number}: {inv.title} — ${inv.total:,.2f} — {inv.status.upper()}{extra}"})
+
+        elif tool == 'query_job_summary':
+            project = Project.query.filter(
+                Project.name.ilike(data['project_name'])
+            ).first_or_404()
+            contracts = list(project.contracts)
+            contract_total = sum(c.contract_total or 0 for c in contracts)
+            billed = sum(c.billed_to_date for c in contracts)
+            paid = sum(i.total or 0 for i in project.invoices if i.status == 'paid')
+            profit = (sum(i.amount or 0 for i in project.incomes)
+                      - sum(e.amount or 0 for e in project.expenses)
+                      - sum(p.amount or 0 for p in project.payments))
+            log.status = 'confirmed'
+            log.confirmed_at = datetime.utcnow()
+            db.session.commit()
+            return jsonify({'success': True, 'result_id': None,
+                            'message': f"{project.name} [{project.status}]: Contract ${contract_total:,.0f} · "
+                                       f"Billed ${billed:,.0f} · Paid ${paid:,.0f} · Profit ${profit:,.0f}"})
 
         log.status = 'confirmed'
         log.confirmed_at = datetime.utcnow()
