@@ -4,6 +4,7 @@ from wtforms import TextAreaField, DateField, SelectField, FileField, DecimalFie
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 from wtforms_sqlalchemy.fields import QuerySelectField
 from flask_wtf.file import FileAllowed, FileField
+from models import EXPENSE_CATEGORIES
 
 class WorkerForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])
@@ -96,12 +97,7 @@ class ExpenseForm(FlaskForm):
     project_id = SelectField('Job', coerce=int, validators=[DataRequired()])
     description = StringField('Description', validators=[Optional()])
     amount= FloatField('Amount' , validators=[Optional()])
-    category = SelectField('Category', choices=[
-        ('materials', 'Materials'),
-        ('labor', 'Labor'),
-        ('equipment', 'Equipment'),
-        ('misc', 'Miscellaneous')
-    ], validators=[DataRequired()])
+    category = SelectField('Category', choices=EXPENSE_CATEGORIES, validators=[DataRequired()])
     date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
     note = TextAreaField('Note')
     receipt = FileField('Receipt', validators=[FileAllowed(['jpg', 'png', 'pdf'], 'Images and PDFs only')])

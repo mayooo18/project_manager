@@ -78,6 +78,21 @@
     <div class="kpi"><p class="muted">Work logs</p><p class="text-gray-200 text-lg font-semibold">{{ work_logs|length }}</p></div>
   </div>
 
+  {% if expense_categories %}
+  <div class="card p-5 mb-6">
+    <p class="sec-title mb-3">Expenses by category</p>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      {% for label, amount in expense_categories %}
+      <div class="kpi">
+        <p class="muted">{{ label }}</p>
+        <p class="text-gray-200 text-lg font-semibold">${{ '{:,.0f}'.format(amount) }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="muted mt-3 text-xs">Labor isn't shown here — it's tracked separately under the Labor total above (crew time clock + work logs).</p>
+  </div>
+  {% endif %}
+
   <!-- Client portal -->
   {% set portal_active = project.portal_token and not project.portal_token_revoked_at %}
   <div class="card p-5 mb-4">

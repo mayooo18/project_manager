@@ -4,6 +4,41 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
+# Expense categories — single source of truth for the form dropdown and the
+# per-job / total breakdowns. 'labor' is intentionally excluded: labor cost
+# flows through Payments (crew time clock + work logs), so tracking it as an
+# expense too would double-count it against a job.
+EXPENSE_CATEGORIES = [
+    ('materials', 'Materials'),
+    ('fuel', 'Fuel / Gas'),
+    ('meals', 'Meals / Food'),
+    ('equipment', 'Equipment'),
+    ('misc', 'Miscellaneous'),
+]
+EXPENSE_CATEGORY_LABELS = dict(EXPENSE_CATEGORIES)
+
+
+def summarize_expense_categories(expenses):
+    """Roll a list of Expense rows up by category.
+
+    Returns (rows, grand_total) where rows is [(label, total), ...] ordered by
+    EXPENSE_CATEGORIES, with any legacy/unknown categories (e.g. old 'labor'
+    rows) appended after. Categories with no spend are omitted.
+    """
+    totals = {}
+    for e in expenses:
+        totals[e.category] = totals.get(e.category, 0.0) + (e.amount or 0)
+    rows = []
+    for key, label in EXPENSE_CATEGORIES:
+        if totals.get(key):
+            rows.append((label, round(totals[key], 2)))
+    for key, amt in totals.items():
+        if key not in EXPENSE_CATEGORY_LABELS and amt:
+            rows.append(((key or 'uncategorized').title(), round(amt, 2)))
+    grand = round(sum(a for _, a in rows), 2)
+    return rows, grand
+
+
 class Worker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))

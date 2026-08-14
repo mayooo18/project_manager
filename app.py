@@ -4,7 +4,7 @@ from flask import Flask, render_template, redirect, request, url_for, flash, ses
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from extensions import db, limiter
 from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm, PaymentForm, PaymentFilterForm, ExpenseForm, IncomeForm, LoginForm
-from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income, Customer, Location, find_or_create_location
+from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income, Customer, Location, find_or_create_location, summarize_expense_categories
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -477,6 +477,7 @@ def project_detail(project_id):
 
     # Money (matches the dashboard: income − expenses − labor pay)
     expenses_total = sum(e.amount or 0 for e in project.expenses)
+    expense_categories, _ = summarize_expense_categories(project.expenses)
     income_total = sum(i.amount or 0 for i in project.incomes)
     labor_total = sum(p.amount or 0 for p in project.payments)
     profit = income_total - expenses_total - labor_total
@@ -497,7 +498,8 @@ def project_detail(project_id):
 
     return render_template(
         'project_detail.html', project=project,
-        expenses_total=expenses_total, income_total=income_total,
+        expenses_total=expenses_total, expense_categories=expense_categories,
+        income_total=income_total,
         labor_total=labor_total, profit=profit,
         contracts=contracts, invoices=invoices, proposals=proposals,
         change_orders=change_orders, permits=permits, documents=documents,
@@ -1078,7 +1080,9 @@ def expenses():
         return redirect(url_for('expenses'))
 
     all_expenses = Expense.query.order_by(Expense.date.desc()).all()
-    return render_template('expenses.html', form=form, expenses=all_expenses)
+    category_summary, category_total = summarize_expense_categories(all_expenses)
+    return render_template('expenses.html', form=form, expenses=all_expenses,
+                           category_summary=category_summary, category_total=category_total)
 
 @app.route('/expenses/delete/<int:expense_id>', methods=['POST'])
 @login_required
