@@ -24,6 +24,29 @@
       {% endfor %}
     {% endwith %}
 
+    <div class="rounded-xl border p-5 mb-5 {{ 'border-green-700 bg-green-900/20' if open_punch else 'border-gray-800 bg-gray-900/50' }}">
+      {% if open_punch %}
+      <p class="text-green-300 text-sm">Clocked in</p>
+      <p class="text-white text-lg font-semibold">{{ open_punch.project.name if open_punch.project else 'Job' }}</p>
+      <p class="text-gray-500 text-xs mt-1">Since {{ open_punch.clock_in.strftime('%b %d, %I:%M %p') }} · {{ open_punch.hours }} h so far</p>
+      <form method="POST" action="{{ url_for('crew.clock_out') }}" class="mt-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-lg font-semibold">Clock out</button>
+      </form>
+      {% elif my_jobs %}
+      <p class="text-gray-400 text-xs uppercase tracking-widest mb-2">Clock in</p>
+      <form method="POST" action="{{ url_for('crew.clock_in') }}" class="space-y-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="project_id" class="w-full text-lg px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 text-white">
+          {% for p in my_jobs %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+        </select>
+        <button class="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-lg font-semibold">Clock in</button>
+      </form>
+      {% else %}
+      <p class="text-gray-500 text-sm text-center">No jobs assigned yet — ask your foreman to add you.</p>
+      {% endif %}
+    </div>
+
     <p class="text-gray-400 text-xs uppercase tracking-widest mb-2">Your tasks</p>
     {% if tasks %}
     <div class="space-y-3">

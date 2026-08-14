@@ -323,6 +323,30 @@ class Task(db.Model):
     worker = db.relationship('Worker', backref=db.backref('tasks', cascade='all, delete-orphan'))
 
 
+class TimePunch(db.Model):
+    """A worker's clock-in/out on a job (Phase 8 §3). One open punch at a time."""
+    id = db.Column(db.Integer, primary_key=True)
+    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
+    clock_in = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    clock_out = db.Column(db.DateTime)
+    approved = db.Column(db.Boolean, default=False)
+    note = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    worker = db.relationship('Worker', backref=db.backref('time_punches', cascade='all, delete-orphan'))
+    project = db.relationship('Project', backref=db.backref('time_punches', cascade='all, delete-orphan'))
+
+    @property
+    def is_open(self):
+        return self.clock_out is None
+
+    @property
+    def hours(self):
+        end = self.clock_out or datetime.utcnow()
+        return round((end - self.clock_in).total_seconds() / 3600.0, 2)
+
+
 class AIActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

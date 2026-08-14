@@ -468,6 +468,62 @@ def delete_task(task_id):
     return redirect(url_for('project_detail', project_id=project_id))
 
 
+@app.route('/timeclock')
+@login_required
+def timeclock():
+    from models import TimePunch
+    open_punches = (TimePunch.query.filter_by(clock_out=None)
+                    .order_by(TimePunch.clock_in.desc()).all())
+    recent = (TimePunch.query.filter(TimePunch.clock_out.isnot(None))
+              .order_by(TimePunch.clock_in.desc()).limit(50).all())
+    return render_template('timeclock.html', open_punches=open_punches, recent=recent)
+
+
+@app.route('/timeclock/<int:punch_id>/approve', methods=['POST'])
+@login_required
+def approve_punch(punch_id):
+    from models import TimePunch
+    p = TimePunch.query.get_or_404(punch_id)
+    p.approved = not p.approved
+    db.session.commit()
+    flash('Punch approved.' if p.approved else 'Approval removed.')
+    return redirect(url_for('timeclock'))
+
+
+@app.route('/timeclock/<int:punch_id>/edit', methods=['POST'])
+@login_required
+def edit_punch(punch_id):
+    from models import TimePunch
+    p = TimePunch.query.get_or_404(punch_id)
+    ci = (request.form.get('clock_in') or '').strip()
+    co = (request.form.get('clock_out') or '').strip()
+    if ci:
+        try:
+            p.clock_in = datetime.strptime(ci, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            pass
+    p.clock_out = None
+    if co:
+        try:
+            p.clock_out = datetime.strptime(co, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            pass
+    db.session.commit()
+    flash('Punch corrected.')
+    return redirect(url_for('timeclock'))
+
+
+@app.route('/timeclock/<int:punch_id>/delete', methods=['POST'])
+@login_required
+def delete_punch(punch_id):
+    from models import TimePunch
+    p = TimePunch.query.get_or_404(punch_id)
+    db.session.delete(p)
+    db.session.commit()
+    flash('Punch deleted.')
+    return redirect(url_for('timeclock'))
+
+
 def _archive_job_documents(project):
     """Save the job's current proposal/contract/invoice/waiver PDFs into its
     Files (static/uploads) so all paperwork lives with the job. Skips ones

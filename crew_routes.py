@@ -66,13 +66,63 @@ def login():
     return render_template('crew_login.html')
 
 
+def _open_punch(worker):
+    from models import TimePunch
+    return TimePunch.query.filter_by(worker_id=worker.id, clock_out=None).first()
+
+
+def _my_jobs(worker):
+    seen, jobs = set(), []
+    for t in worker.tasks:
+        p = t.project
+        if p and p.id not in seen and p.status != 'Completed':
+            seen.add(p.id)
+            jobs.append(p)
+    return jobs
+
+
 @crew_bp.route('/home')
 @crew_login_required
 def home():
     from datetime import date
-    tasks = sorted(g.crew_worker.tasks,
+    worker = g.crew_worker
+    tasks = sorted(worker.tasks,
                    key=lambda t: (t.status == 'done', t.due_date or date.max, -t.id))
-    return render_template('crew_home.html', worker=g.crew_worker, tasks=tasks)
+    return render_template('crew_home.html', worker=worker, tasks=tasks,
+                           open_punch=_open_punch(worker), my_jobs=_my_jobs(worker))
+
+
+@crew_bp.route('/clock-in', methods=['POST'])
+@crew_login_required
+def clock_in():
+    from models import TimePunch
+    worker = g.crew_worker
+    if _open_punch(worker):
+        flash('You are already clocked in. Clock out first.', 'error')
+        return redirect(url_for('crew.home'))
+    project_id = request.form.get('project_id', type=int)
+    allowed = {p.id for p in _my_jobs(worker)}
+    if not project_id or project_id not in allowed:
+        flash('Pick one of your jobs to clock into.', 'error')
+        return redirect(url_for('crew.home'))
+    db.session.add(TimePunch(worker_id=worker.id, project_id=project_id))
+    db.session.commit()
+    flash('Clocked in.')
+    return redirect(url_for('crew.home'))
+
+
+@crew_bp.route('/clock-out', methods=['POST'])
+@crew_login_required
+def clock_out():
+    from datetime import datetime
+    punch = _open_punch(g.crew_worker)
+    if not punch:
+        flash('You are not clocked in.', 'error')
+        return redirect(url_for('crew.home'))
+    punch.clock_out = datetime.utcnow()
+    db.session.commit()
+    flash(f'Clocked out — {punch.hours} h.')
+    return redirect(url_for('crew.home'))
 
 
 @crew_bp.route('/tasks/<int:task_id>/status', methods=['POST'])
