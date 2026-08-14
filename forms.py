@@ -61,7 +61,9 @@ class WorkLogForm(FlaskForm):
     end_date = DateField('To', format='%Y-%m-%d', validators=[DataRequired()])
     days_worked = FloatField('Days Worked', validators=[DataRequired(),])
     note = TextAreaField('Note (optional)')
-    create_payment = BooleanField('Also record the labor payment (days × daily rate)', default=True)
+    create_payment = BooleanField(
+        "Also record a labor payment now — only for workers who don't clock in "
+        "on the crew app (the time clock records it automatically)", default=False)
     submit = SubmitField('Log Work')
 
 class WorkLogFilterForm(FlaskForm):
