@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
+from urllib.parse import urlparse
 
 load_dotenv()
 
@@ -16,6 +17,10 @@ class Config:
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Local Postgres has no SSL; managed/remote (Render) requires it.
+    _db_host = urlparse(DATABASE_URL).hostname if DATABASE_URL else None
+    _local_db = _db_host in ('localhost', '127.0.0.1', None, '')
     
 
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -33,7 +38,7 @@ class Config:
     
         'connect_args': {
  
-            'sslmode': 'require',
+            'sslmode': 'disable' if _local_db else 'require',
             
  
             'connect_timeout': 10,
