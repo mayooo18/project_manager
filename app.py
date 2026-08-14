@@ -532,8 +532,26 @@ def work_logs():
             note=form.note.data
         )
         db.session.add(new_log)
+        db.session.flush()
+
+        pay_msg = ''
+        if form.create_payment.data:
+            worker = Worker.query.get(form.worker_id.data)
+            amount = (form.days_worked.data or 0) * ((worker.daily_rate or 0) if worker else 0)
+            if amount > 0:
+                db.session.add(Payment(
+                    worker_id=form.worker_id.data,
+                    project_id=form.project_id.data,
+                    amount=amount,
+                    payment_date=form.end_date.data or form.start_date.data,
+                    method='Labor',
+                    note='Auto-recorded from work log',
+                    work_log_id=new_log.id,
+                ))
+                pay_msg = f' · ${amount:,.2f} labor payment recorded'
+
         db.session.commit()
-        flash('Work log added successfully')
+        flash('Work log added' + pay_msg)
         return redirect(url_for('work_logs'))
 
     # Handle filtering

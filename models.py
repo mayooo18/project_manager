@@ -73,8 +73,11 @@ class Payment(db.Model):
     note = db.Column(db.Text)
     receipt_filename = db.Column(db.String(200))
     receipt_filepath = db.Column(db.String(300))
+    # Set when this payment was auto-generated from a work log (Phase 7 §5a).
+    work_log_id = db.Column(db.Integer, db.ForeignKey('work_log.id'), nullable=True)
 
     worker = db.relationship('Worker', back_populates='payments')
+    work_log = db.relationship('WorkLog', backref=db.backref('payment', uselist=False))
     # No project relationship needed here - it's defined in Project
 
 class ProjectFile(db.Model):

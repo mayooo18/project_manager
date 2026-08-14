@@ -58,6 +58,7 @@ class WorkLogForm(FlaskForm):
     end_date = DateField('To', format='%Y-%m-%d', validators=[DataRequired()])
     days_worked = FloatField('Days Worked', validators=[DataRequired(),])
     note = TextAreaField('Note (optional)')
+    create_payment = BooleanField('Also record the labor payment (days × daily rate)', default=True)
     submit = SubmitField('Log Work')
 
 class WorkLogFilterForm(FlaskForm):

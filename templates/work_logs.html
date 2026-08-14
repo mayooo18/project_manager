@@ -111,7 +111,11 @@
         {{ form.note(class="form-textarea", rows="4") }}
       </div>
   
-      <div class="md:col-span-2 flex justify-end">
+      <div class="md:col-span-2 flex items-center justify-between">
+        <label class="flex items-center gap-2 text-sm text-gray-600">
+          {{ form.create_payment() }}
+          Also record the labor payment (days × daily rate)
+        </label>
         <button class="btn btn-primary" type="submit" name="submit">
           <span class="material-icons icon mr-2">add_circle_outline</span>
           Log Work

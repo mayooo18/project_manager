@@ -56,7 +56,7 @@
                 <div class="relative nav-dropdown">
                     <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in tools_endpoints }}" style="color:#ff6b35;">Tools ▾</button>
                     <div class="nav-dropdown-menu">
-                        <a href="{{ url_for('document_form') }}" class="{{ 'nav-active' if request.endpoint == 'document_form' }}">Documents</a>
+                        <a href="{{ url_for('document_form') }}" class="{{ 'nav-active' if request.endpoint == 'document_form' }}">Legacy Documents</a>
                         <a href="{{ url_for('reminders.index') }}" class="{{ 'nav-active' if request.endpoint == 'reminders.index' }}">Reminders</a>
                         <a href="{{ url_for('vehicles.index') }}" class="{{ 'nav-active' if request.endpoint == 'vehicles.index' }}">Vehicles</a>
                     </div>
