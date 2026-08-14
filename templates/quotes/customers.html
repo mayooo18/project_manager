@@ -61,7 +61,7 @@
     <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
       <div class="flex items-start justify-between gap-4">
         <div class="min-w-0">
-          <p class="text-gray-100 font-semibold text-lg">{{ c.name }}</p>
+          <a href="{{ url_for('quotes.customer_detail', customer_id=c.id) }}" class="text-gray-100 font-semibold text-lg hover:text-orange-400">{{ c.name }}</a>
           <p class="text-gray-500 text-xs mt-1">
             {{ c.email or '' }}{% if c.email and c.phone %} &middot; {% endif %}{{ c.phone or '' }}
           </p>

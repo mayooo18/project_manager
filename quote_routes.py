@@ -33,7 +33,7 @@ from permissions import owner_required
 from extensions import db, limiter
 from models import (
     Customer, Quote, QuoteItem, Project, Invoice, Contract, ChangeOrder,
-    GcDocument, Location,
+    GcDocument, Location, find_or_create_location,
 )
 from forms import CustomerForm, DeleteForm
 
@@ -518,6 +518,61 @@ def merge_customer(customer_id):
     flash(f'Merged "{dup.name}" into "{survivor.name}" — all their jobs and '
           f'records moved over.', 'success')
     return redirect(url_for('quotes.customers'))
+
+
+def _job_money(project):
+    contract_total = sum(c.contract_total or 0 for c in project.contracts)
+    paid = sum(i.total or 0 for i in project.invoices if i.status == 'paid')
+    return contract_total, paid
+
+
+@quote_bp.route('/customers/<int:customer_id>')
+@login_required
+def customer_detail(customer_id):
+    customer = Customer.query.filter_by(
+        id=customer_id, user_id=current_user.id).first_or_404()
+
+    location_groups = []
+    for loc in sorted(customer.locations, key=lambda x: x.id):
+        jobs = []
+        for p in sorted(loc.projects, key=lambda x: x.id, reverse=True):
+            ct, paid = _job_money(p)
+            jobs.append({'project': p, 'contract': ct, 'paid': paid})
+        location_groups.append({'location': loc, 'jobs': jobs})
+
+    unlocated = []
+    for p in sorted(customer.projects, key=lambda x: x.id, reverse=True):
+        if p.location_id is None:
+            ct, paid = _job_money(p)
+            unlocated.append({'project': p, 'contract': ct, 'paid': paid})
+
+    total_contract = sum(c.contract_total or 0 for c in customer.contracts)
+    total_paid = sum(i.total or 0 for i in customer.invoices if i.status == 'paid')
+
+    return render_template(
+        'quotes/customer_detail.html', customer=customer,
+        location_groups=location_groups, unlocated=unlocated,
+        proposals=sorted(customer.quotes, key=lambda q: q.id, reverse=True),
+        invoices=sorted(customer.invoices, key=lambda i: i.id, reverse=True),
+        total_contract=total_contract, total_paid=total_paid)
+
+
+@quote_bp.route('/customers/<int:customer_id>/locations/add', methods=['POST'])
+@login_required
+def add_location(customer_id):
+    customer = Customer.query.filter_by(
+        id=customer_id, user_id=current_user.id).first_or_404()
+    address = (request.form.get('address') or '').strip()
+    if not address:
+        flash('Enter the property address.', 'error')
+        return redirect(url_for('quotes.customer_detail', customer_id=customer.id))
+    loc = find_or_create_location(current_user.id, customer.id, address)
+    label = (request.form.get('label') or '').strip()
+    if loc and label:
+        loc.label = label
+    db.session.commit()
+    flash('Property added.', 'success')
+    return redirect(url_for('quotes.customer_detail', customer_id=customer.id))
 
 
 # ── quotes list ──────────────────────────────────────────────────────────
