@@ -9,7 +9,7 @@ sensitive lives here — only the worker's own tasks and time (added in §2/§3)
 from functools import wraps
 
 from flask import (
-    Blueprint, render_template, redirect, url_for, request, flash, session, g,
+    Blueprint, render_template, redirect, url_for, request, flash, session, g, abort,
 )
 
 from extensions import db, limiter
@@ -69,7 +69,26 @@ def login():
 @crew_bp.route('/home')
 @crew_login_required
 def home():
-    return render_template('crew_home.html', worker=g.crew_worker)
+    from datetime import date
+    tasks = sorted(g.crew_worker.tasks,
+                   key=lambda t: (t.status == 'done', t.due_date or date.max, -t.id))
+    return render_template('crew_home.html', worker=g.crew_worker, tasks=tasks)
+
+
+@crew_bp.route('/tasks/<int:task_id>/status', methods=['POST'])
+@crew_login_required
+def task_status(task_id):
+    from datetime import datetime
+    from models import Task
+    task = Task.query.get_or_404(task_id)
+    if task.worker_id != g.crew_worker.id:   # a worker can only touch their own tasks
+        abort(403)
+    new_status = request.form.get('status')
+    if new_status in ('assigned', 'in_progress', 'done'):
+        task.status = new_status
+        task.completed_at = datetime.utcnow() if new_status == 'done' else None
+    db.session.commit()
+    return redirect(url_for('crew.home'))
 
 
 @crew_bp.route('/logout', methods=['POST', 'GET'])

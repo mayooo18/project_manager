@@ -308,6 +308,21 @@ def find_or_create_location(user_id, customer_id, address):
     return loc
 
 
+class Task(db.Model):
+    """A task on a job, assigned by an owner/admin to a worker (Phase 8 §2)."""
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=True)
+    description = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='assigned', nullable=False)  # assigned / in_progress / done
+    due_date = db.Column(db.Date)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+
+    project = db.relationship('Project', backref=db.backref('tasks', cascade='all, delete-orphan'))
+    worker = db.relationship('Worker', backref=db.backref('tasks', cascade='all, delete-orphan'))
+
+
 class AIActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

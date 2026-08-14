@@ -416,6 +416,9 @@ def project_detail(project_id):
     billed_total = sum(c.billed_to_date for c in contracts)
     paid_total = sum(inv.total or 0 for inv in invoices if inv.status == 'paid')
 
+    tasks = sorted(project.tasks, key=lambda t: (t.status == 'done', t.id))
+    workers = Worker.query.filter_by(active=True).order_by(Worker.name.asc()).all()
+
     return render_template(
         'project_detail.html', project=project,
         expenses_total=expenses_total, income_total=income_total,
@@ -424,8 +427,45 @@ def project_detail(project_id):
         change_orders=change_orders, permits=permits, documents=documents,
         work_logs=list(project.work_logs), files=list(project.files),
         contract_total=contract_total, billed_total=billed_total, paid_total=paid_total,
+        tasks=tasks, workers=workers,
         file_form=FileUploadForm(),
     )
+
+
+@app.route('/projects/<int:project_id>/tasks/add', methods=['POST'])
+@login_required
+def add_task(project_id):
+    from models import Task
+    project = Project.query.get_or_404(project_id)
+    description = (request.form.get('description') or '').strip()
+    if not description:
+        flash('Task needs a description.', 'error')
+        return redirect(url_for('project_detail', project_id=project.id))
+    worker_id = request.form.get('worker_id', type=int)
+    due_raw = (request.form.get('due_date') or '').strip()
+    due_date = None
+    if due_raw:
+        try:
+            due_date = datetime.strptime(due_raw, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+    db.session.add(Task(project_id=project.id, worker_id=worker_id or None,
+                        description=description, due_date=due_date))
+    db.session.commit()
+    flash('Task assigned.')
+    return redirect(url_for('project_detail', project_id=project.id))
+
+
+@app.route('/tasks/<int:task_id>/delete', methods=['POST'])
+@login_required
+def delete_task(task_id):
+    from models import Task
+    task = Task.query.get_or_404(task_id)
+    project_id = task.project_id
+    db.session.delete(task)
+    db.session.commit()
+    flash('Task removed.')
+    return redirect(url_for('project_detail', project_id=project_id))
 
 
 def _archive_job_documents(project):

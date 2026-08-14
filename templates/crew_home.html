@@ -24,10 +24,51 @@
       {% endfor %}
     {% endwith %}
 
-    <div class="rounded-xl border border-gray-800 bg-gray-900/50 p-6 text-center">
-      <p class="text-gray-300 text-sm">You're signed in.</p>
-      <p class="text-gray-600 text-xs mt-2">Your assigned tasks and clock-in will appear here.</p>
+    <p class="text-gray-400 text-xs uppercase tracking-widest mb-2">Your tasks</p>
+    {% if tasks %}
+    <div class="space-y-3">
+      {% for t in tasks %}
+      <div class="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-white {{ 'line-through text-gray-500' if t.status == 'done' }}">{{ t.description }}</p>
+            <p class="text-gray-500 text-xs mt-1">{{ t.project.name }}{% if t.due_date %} · due {{ t.due_date.strftime('%b %d') }}{% endif %}</p>
+          </div>
+          <span class="text-xs px-2 py-1 rounded-full flex-shrink-0
+            {{ 'bg-green-900/40 text-green-300' if t.status == 'done' else 'bg-blue-900/40 text-blue-300' if t.status == 'in_progress' else 'bg-gray-800 text-gray-300' }}">
+            {{ t.status.replace('_', ' ') }}</span>
+        </div>
+        {% if t.status != 'done' %}
+        <div class="flex gap-2 mt-3">
+          {% if t.status != 'in_progress' %}
+          <form method="POST" action="{{ url_for('crew.task_status', task_id=t.id) }}" class="flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="in_progress">
+            <button class="w-full py-2.5 rounded-lg bg-gray-800 text-blue-300 text-sm font-semibold">Start</button>
+          </form>
+          {% endif %}
+          <form method="POST" action="{{ url_for('crew.task_status', task_id=t.id) }}" class="flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="done">
+            <button class="w-full py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold">Mark done</button>
+          </form>
+        </div>
+        {% else %}
+        <form method="POST" action="{{ url_for('crew.task_status', task_id=t.id) }}" class="mt-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="status" value="in_progress">
+          <button class="text-gray-500 text-xs underline">Reopen</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
     </div>
+    {% else %}
+    <div class="rounded-xl border border-gray-800 bg-gray-900/50 p-6 text-center">
+      <p class="text-gray-400 text-sm">No tasks assigned right now.</p>
+      <p class="text-gray-600 text-xs mt-2">Your foreman will add them here.</p>
+    </div>
+    {% endif %}
 
   </div>
 </body>

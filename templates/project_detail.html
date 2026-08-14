@@ -217,6 +217,47 @@
 
   </div>
 
+  <!-- Crew tasks -->
+  {% set tstyle = {'assigned':'text-gray-300 border-gray-500','in_progress':'text-blue-300 border-blue-500','done':'text-green-300 border-green-500'} %}
+  <div class="card p-5 mt-4">
+    <p class="sec-title mb-3">Crew tasks</p>
+    {% if tasks %}
+    <div class="mb-4">
+      {% for t in tasks %}
+      <div class="row">
+        <div class="min-w-0">
+          <p class="text-gray-200 text-sm {{ 'line-through text-gray-500' if t.status == 'done' }}">{{ t.description }}</p>
+          <p class="muted">{{ t.worker.name if t.worker else 'Unassigned' }}{% if t.due_date %} · due {{ t.due_date.strftime('%b %d') }}{% endif %}</p>
+        </div>
+        <span class="flex items-center gap-2 flex-shrink-0">
+          <span class="pill {{ tstyle.get(t.status, 'text-gray-300 border-gray-500') }}">{{ t.status.replace('_', ' ') }}</span>
+          <form method="POST" action="{{ url_for('delete_task', task_id=t.id) }}" onsubmit="return confirm('Remove this task?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="text-gray-600 hover:text-red-400 text-xs">✕</button>
+          </form>
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted mb-4">No tasks yet.</p>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('add_task', project_id=project.id) }}"
+          class="grid grid-cols-1 sm:grid-cols-[1fr_160px_150px_auto] gap-2 items-center">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="description" placeholder="Task description…" required
+             style="background:#0b0f17;border:1px solid #374151;border-radius:0.5rem;color:#e5e7eb;padding:0.45rem 0.6rem;font-size:0.85rem;"/>
+      <select name="worker_id" style="background:#0b0f17;border:1px solid #374151;border-radius:0.5rem;color:#e5e7eb;padding:0.45rem 0.6rem;font-size:0.85rem;">
+        <option value="0">— Assign to —</option>
+        {% for w in workers %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+      </select>
+      <input type="date" name="due_date"
+             style="background:#0b0f17;border:1px solid #374151;border-radius:0.5rem;color:#e5e7eb;padding:0.45rem 0.6rem;font-size:0.85rem;"/>
+      <button type="submit" class="btn" style="border-color:#f97316;color:#ff8c5a;">Assign</button>
+    </form>
+  </div>
+
   <p class="muted mt-6">Tip: use the <b>Money</b> and <b>Finance</b> menus to log expenses, income, and labor against this job — they roll up into the profit above.</p>
 
 </div>
