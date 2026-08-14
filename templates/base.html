@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>{% block title %}Project Manager{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
@@ -11,7 +15,7 @@
 
     <nav class="shadow-md mb-8">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Logo" class="h-16 w-auto">
+            <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Logo" class="h-10 w-auto">
             {% set money_endpoints = ['workers', 'work_logs', 'payments', 'expenses', 'income', 'profitability', 'timeclock', 'payroll.index'] %}
             {% set compliance_endpoints = ['permits.index', 'permits.add', 'permits.edit', 'licenses.index', 'licenses.add', 'licenses.edit', 'subcontractors.index', 'subcontractors.add', 'subcontractors.edit', 'waivers.index', 'waivers.new', 'waivers.edit'] %}
             {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index', 'users'] %}
@@ -22,7 +26,7 @@
                 <a href="{{ url_for('projects') }}" class="{{ 'nav-active' if request.endpoint in ['projects', 'project_detail'] }}">Jobs</a>
 
                 <div class="relative nav-dropdown">
-                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in sales_endpoints }}" style="color:#ff6b35;">Sales ▾</button>
+                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in sales_endpoints }}">Sales ▾</button>
                     <div class="nav-dropdown-menu">
                         <a href="{{ url_for('quotes.customers') }}" class="{{ 'nav-active' if request.endpoint == 'quotes.customers' }}">Customers</a>
                         <a href="{{ url_for('quotes.index') }}" class="{{ 'nav-active' if request.endpoint in ['quotes.index', 'quotes.new', 'quotes.edit'] }}">Proposals</a>
@@ -32,7 +36,7 @@
                 </div>
 
                 <div class="relative nav-dropdown">
-                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in money_endpoints }}" style="color:#ff6b35;">Money ▾</button>
+                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in money_endpoints }}">Money ▾</button>
                     <div class="nav-dropdown-menu">
                         <a href="{{ url_for('workers') }}" class="{{ 'nav-active' if request.endpoint == 'workers' }}">Workers</a>
                         <a href="{{ url_for('work_logs') }}" class="{{ 'nav-active' if request.endpoint == 'work_logs' }}">Work Logs</a>
@@ -46,7 +50,7 @@
                 </div>
 
                 <div class="relative nav-dropdown">
-                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in compliance_endpoints }}" style="color:#ff6b35;">Compliance ▾</button>
+                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in compliance_endpoints }}">Compliance ▾</button>
                     <div class="nav-dropdown-menu">
                         <a href="{{ url_for('permits.index') }}" class="{{ 'nav-active' if request.endpoint in ['permits.index', 'permits.add', 'permits.edit'] }}">Permits</a>
                         <a href="{{ url_for('licenses.index') }}" class="{{ 'nav-active' if request.endpoint in ['licenses.index', 'licenses.add', 'licenses.edit'] }}">Licenses</a>
@@ -56,7 +60,7 @@
                 </div>
 
                 <div class="relative nav-dropdown">
-                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in tools_endpoints }}" style="color:#ff6b35;">Tools ▾</button>
+                    <button class="nav-dropdown-btn {{ 'nav-active' if request.endpoint in tools_endpoints }}">Tools ▾</button>
                     <div class="nav-dropdown-menu">
                         <a href="{{ url_for('document_form') }}" class="{{ 'nav-active' if request.endpoint == 'document_form' }}">Legacy Documents</a>
                         <a href="{{ url_for('reminders.index') }}" class="{{ 'nav-active' if request.endpoint == 'reminders.index' }}">Reminders</a>
@@ -73,19 +77,26 @@
     </nav>
 
     <style>
-        .nav-dropdown-btn { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
+        .nav-dropdown-btn {
+            background: none; border: none; cursor: pointer;
+            color: var(--ink-500); font-weight: 500; font-size: 0.9rem;
+            padding: 0.5rem 0.75rem; border-radius: var(--r-sm); transition: all .15s ease;
+        }
+        .nav-dropdown-btn:hover { background: var(--surface-2); color: var(--ink-900); }
         .nav-dropdown-menu {
             display: none;
-            position: absolute; top: 100%; right: 0; margin-top: 0.5rem;
-            background: #1a1a1a; border: 1px solid #2d2d2d; border-radius: 0.5rem;
-            padding: 0.5rem 0; min-width: 140px; z-index: 50;
+            position: absolute; top: 100%; right: 0; margin-top: 0.4rem;
+            background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r);
+            padding: 0.4rem 0; min-width: 160px; z-index: 50;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.45);
         }
-        .nav-dropdown-menu a { display: block; padding: 0.4rem 1rem; }
+        .nav-dropdown-menu a { display: block; padding: 0.45rem 1rem; font-size: 0.88rem; }
         .nav-dropdown.open .nav-dropdown-menu { display: block; }
-        .nav-active { font-weight: 700 !important; text-decoration: underline !important; }
+        .nav-active { color: var(--ink-900) !important; font-weight: 600 !important;
+            box-shadow: inset 0 -2px 0 var(--accent) !important; }
 
         /* Hamburger — hidden on desktop, shown on mobile */
-        #nav-toggle { display: none; background: none; border: none; color: #ff6b35;
+        #nav-toggle { display: none; background: none; border: none; color: var(--accent);
             font-size: 1.6rem; line-height: 1; cursor: pointer; padding: 0.25rem 0.5rem; }
 
         @media (max-width: 767px) {
@@ -95,8 +106,8 @@
                 display: none;
                 position: absolute; top: 100%; left: 0; right: 0;
                 flex-direction: column; align-items: flex-start;
-                background: #1a1a1a; border-top: 1px solid #2d2d2d;
-                padding: 1rem 1.25rem; gap: 1rem; z-index: 60;
+                background: var(--surface); border-top: 1px solid var(--border-strong);
+                padding: 1rem 1.25rem; gap: 0.75rem; z-index: 60;
                 box-shadow: 0 8px 24px rgba(0,0,0,0.5);
             }
             #nav-links.open { display: flex; }
@@ -104,8 +115,8 @@
             /* Sub-menus expand inline (not floating) on mobile */
             .nav-dropdown-menu {
                 position: static; right: auto; margin-top: 0.35rem;
-                background: #111; border: none; min-width: auto;
-                padding: 0.25rem 0 0.25rem 0.75rem;
+                background: var(--canvas); border: none; min-width: auto;
+                padding: 0.25rem 0 0.25rem 0.75rem; box-shadow: none;
             }
         }
     </style>
@@ -157,7 +168,7 @@
             width: 3.5rem;
             height: 3.5rem;
             border-radius: 50%;
-            background: #ff6b35;
+            background: var(--accent);
             color: #fff;
             border: none;
             font-size: 1.5rem;
@@ -169,7 +180,7 @@
             justify-content: center;
             transition: background 0.2s;
         }
-        #ai-chat-btn:hover { background: #e55a25; }
+        #ai-chat-btn:hover { background: var(--accent-hover); }
 
         #ai-chat-panel {
             position: fixed;
@@ -177,23 +188,23 @@
             right: 1.5rem;
             width: 360px;
             max-height: 540px;
-            background: #1a1a1a;
+            background: var(--surface);
             border-radius: 1rem;
             box-shadow: 0 8px 32px rgba(0,0,0,0.6);
             display: flex;
             flex-direction: column;
             z-index: 1000;
-            border: 1px solid #2d2d2d;
+            border: 1px solid var(--border-strong);
         }
 
         #ai-chat-header {
-            background: #2d2d2d;
+            background: var(--surface-2);
             padding: 0.75rem 1rem;
             border-radius: 1rem 1rem 0 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: #ff6b35;
+            color: var(--accent);
             font-weight: 600;
             font-size: 0.95rem;
         }
@@ -226,28 +237,28 @@
             white-space: pre-wrap;
         }
         .ai-msg-user {
-            background: #ff6b35;
+            background: var(--accent);
             color: #fff;
             align-self: flex-end;
             border-bottom-right-radius: 0.2rem;
         }
         .ai-msg-bot {
-            background: #2d2d2d;
+            background: var(--surface-2);
             color: #e5e7eb;
             align-self: flex-start;
             border-bottom-left-radius: 0.2rem;
         }
 
         .ai-card {
-            background: #111;
-            border: 1px solid #ff6b35;
+            background: var(--canvas);
+            border: 1px solid var(--accent);
             border-radius: 0.75rem;
             padding: 0.75rem;
             font-size: 0.8rem;
             width: 100%;
         }
         .ai-card-title {
-            color: #ff6b35;
+            color: var(--accent);
             font-weight: 600;
             margin-bottom: 0.5rem;
         }
@@ -255,7 +266,7 @@
             display: flex;
             justify-content: space-between;
             padding: 0.2rem 0;
-            border-bottom: 1px solid #2d2d2d;
+            border-bottom: 1px solid var(--border-strong);
         }
         .ai-card-key { color: #9ca3af; text-transform: capitalize; }
         .ai-card-val { color: #e5e7eb; font-weight: 500; }
@@ -301,38 +312,38 @@
             font-size: 0.78rem;
         }
         .ai-suggest-btn {
-            background: #2d2d2d;
-            color: #ff6b35;
-            border: 1px solid #ff6b35;
+            background: var(--surface-2);
+            color: var(--accent);
+            border: 1px solid var(--accent);
             border-radius: 1rem;
             padding: 0.2rem 0.6rem;
             font-size: 0.78rem;
             cursor: pointer;
         }
-        .ai-suggest-btn:hover { background: #ff6b35; color: #fff; }
+        .ai-suggest-btn:hover { background: var(--accent); color: #fff; }
 
         #ai-chat-footer {
             padding: 0.6rem;
-            border-top: 1px solid #2d2d2d;
+            border-top: 1px solid var(--border-strong);
             display: flex;
             gap: 0.4rem;
             align-items: center;
         }
         #ai-chat-input {
             flex: 1;
-            background: #2d2d2d;
-            border: 1px solid #3d3d3d;
+            background: var(--surface-2);
+            border: 1px solid var(--border-strong);
             border-radius: 0.5rem;
             color: #e5e7eb;
             padding: 0.4rem 0.6rem;
             font-size: 0.875rem;
             outline: none;
         }
-        #ai-chat-input:focus { border-color: #ff6b35; }
+        #ai-chat-input:focus { border-color: var(--accent); }
         #ai-chat-input::placeholder { color: #6b7280; }
 
         #ai-send-btn {
-            background: #ff6b35;
+            background: var(--accent);
             border: none;
             border-radius: 0.5rem;
             color: #fff;
@@ -340,11 +351,11 @@
             cursor: pointer;
             font-size: 1rem;
         }
-        #ai-send-btn:hover { background: #e55a25; }
+        #ai-send-btn:hover { background: var(--accent-hover); }
 
         #ai-mic-btn {
-            background: #2d2d2d;
-            border: 1px solid #3d3d3d;
+            background: var(--surface-2);
+            border: 1px solid var(--border-strong);
             border-radius: 0.5rem;
             color: #9ca3af;
             padding: 0.4rem 0.6rem;
