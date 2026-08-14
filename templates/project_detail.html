@@ -187,6 +187,19 @@
       <div class="row"><a class="lk text-sm truncate" href="{{ url_for('static', filename='uploads/' ~ f.filename) }}" target="_blank">{{ f.filename }}</a>
         <span class="text-gray-500 text-xs">{{ f.category or '' }}</span></div>
       {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+
+      <form method="POST" enctype="multipart/form-data"
+            action="{{ url_for('upload_file', project_id=project.id) }}"
+            class="mt-4 pt-4 border-t border-gray-800">
+        {{ file_form.hidden_tag() }}
+        <p class="muted mb-2">Upload a job file</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {{ file_form.file(class="text-gray-400 text-xs bg-gray-950 border border-gray-700 rounded-lg px-2 py-2", required=true) }}
+          {{ file_form.category(class="bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-2") }}
+        </div>
+        {{ file_form.note(class="mt-2 w-full bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-2", placeholder="Optional note", rows="2") }}
+        <button type="submit" class="mt-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-lg">Upload file</button>
+      </form>
     </div>
 
   </div>

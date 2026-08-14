@@ -272,21 +272,7 @@ def _sync_project_customer_location(project, customer_id, address):
 def projects():
     project_form = ProjectForm()
     project_form.customer_id.choices = _job_customer_choices()
-    file_form = FileUploadForm()
     all_projects = Project.query.all()
-
-    selected_category = request.args.get('category', 'all')
-    filtered_projects = []
-
-    for project in all_projects:
-        filtered_files = project.files
-        if selected_category and selected_category != 'all':
-            filtered_files = [f for f in project.files if f.category == selected_category]
-    
-    # Attach filtered files without overriding actual .files
-        project.filtered_files = filtered_files
-        filtered_projects.append(project)
-
 
     if project_form.validate_on_submit() and 'add_project' in request.form:
         new_project = Project(
@@ -302,8 +288,101 @@ def projects():
         db.session.commit()
         flash('Job added successfully')
         return redirect(url_for('project_detail', project_id=new_project.id))
-        
-    return render_template('projects.html', project_form=project_form, file_form=file_form, projects=filtered_projects, selected_category = selected_category)
+
+    search = (request.args.get('q') or '').strip().lower()
+    status_filter = (request.args.get('status') or 'all').strip()
+    today = datetime.utcnow().date()
+    job_rows = []
+
+    for project in all_projects:
+        contracts = list(project.contracts)
+        invoices = list(project.invoices)
+        contract_total = sum(c.contract_total or 0 for c in contracts)
+        billed_total = sum(c.billed_to_date for c in contracts)
+        paid_total = sum(
+            invoice.total or 0 for invoice in invoices
+            if invoice.status == 'paid')
+        income_total = sum(item.amount or 0 for item in project.incomes)
+        expense_total = sum(item.amount or 0 for item in project.expenses)
+        labor_total = sum(item.amount or 0 for item in project.payments)
+        profit = income_total - expense_total - labor_total
+
+        attention = []
+        pending_change_orders = sum(
+            1 for contract in contracts for change_order in contract.change_orders
+            if change_order.status == 'sent')
+        if pending_change_orders:
+            attention.append(
+                f'{pending_change_orders} change order'
+                f'{"s" if pending_change_orders != 1 else ""} awaiting approval')
+
+        failed_inspections = sum(
+            1 for permit in project.permits for inspection in permit.inspections
+            if inspection.status == 'Failed')
+        if failed_inspections:
+            attention.append(
+                f'{failed_inspections} failed inspection'
+                f'{"s" if failed_inspections != 1 else ""}')
+
+        expired_permits = sum(
+            1 for permit in project.permits
+            if (permit.status == 'Expired' or
+                (permit.expiration_date and permit.expiration_date < today and
+                 permit.status not in ('Finaled', 'Closed'))))
+        if expired_permits:
+            attention.append(
+                f'{expired_permits} expired permit'
+                f'{"s" if expired_permits != 1 else ""}')
+
+        unscheduled = sum(
+            max((contract.contract_total or 0) - contract.scheduled_total, 0)
+            for contract in contracts)
+        if unscheduled > 0.01:
+            attention.append(f'${unscheduled:,.0f} not scheduled for billing')
+
+        customer_name = project.customer.name if project.customer else ''
+        searchable = ' '.join([
+            project.name or '', customer_name, project.address or '',
+        ]).lower()
+        if search and search not in searchable:
+            continue
+        if status_filter != 'all' and project.status != status_filter:
+            continue
+
+        job_rows.append({
+            'project': project,
+            'customer_name': customer_name,
+            'contract_total': contract_total,
+            'billed_total': billed_total,
+            'paid_total': paid_total,
+            'profit': profit,
+            'attention': attention,
+            'file_count': len(project.files),
+        })
+
+    status_order = {'Active': 0, 'On Hold': 1, 'Completed': 2}
+    job_rows.sort(key=lambda row: (
+        status_order.get(row['project'].status, 3),
+        -(row['project'].id or 0)))
+
+    dashboard = {
+        'active': sum(1 for project in all_projects if project.status == 'Active'),
+        'on_hold': sum(1 for project in all_projects if project.status == 'On Hold'),
+        'completed': sum(1 for project in all_projects if project.status == 'Completed'),
+        'contract_total': sum(
+            c.contract_total or 0 for project in all_projects
+            for c in project.contracts),
+        'billed_total': sum(
+            c.billed_to_date for project in all_projects
+            for c in project.contracts),
+        'paid_total': sum(
+            invoice.total or 0 for project in all_projects
+            for invoice in project.invoices if invoice.status == 'paid'),
+    }
+
+    return render_template(
+        'projects.html', projects=job_rows, dashboard=dashboard,
+        search=request.args.get('q', ''), status_filter=status_filter)
 
 
 @app.route('/projects/<int:project_id>')
@@ -337,6 +416,7 @@ def project_detail(project_id):
         change_orders=change_orders, permits=permits, documents=documents,
         work_logs=list(project.work_logs), files=list(project.files),
         contract_total=contract_total, billed_total=billed_total, paid_total=paid_total,
+        file_form=FileUploadForm(),
     )
 
 
@@ -349,7 +429,7 @@ def upload_file(project_id):
         filename = save_uploaded_file(file)
         if not filename:
             flash('File type not allowed.', 'error')
-            return redirect(url_for('projects'))
+            return redirect(url_for('project_detail', project_id=project_id))
 
         new_file = ProjectFile(
             project_id=project_id,
@@ -361,7 +441,7 @@ def upload_file(project_id):
         db.session.add(new_file)
         db.session.commit()
         flash('File uploaded successfully')
-    return redirect(url_for('projects'))
+    return redirect(url_for('project_detail', project_id=project_id))
 
 
 @app.route('/edit_project/<int:project_id>', methods=['GET', 'POST'])
