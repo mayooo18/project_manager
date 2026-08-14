@@ -45,6 +45,7 @@
         <span class="pill {{ 'text-green-300 border-green-500' if project.status=='Active' else 'text-blue-300 border-blue-500' if project.status=='Completed' else 'text-yellow-300 border-yellow-500' }}">{{ project.status }}</span>
       </div>
       <p class="text-gray-500 text-sm mt-1">
+        {% if project.customer %}<span class="text-gray-300">{{ project.customer.name }}</span> · {% endif %}
         {{ project.address or 'No address' }}
         {% if project.start_date %} · Started {{ project.start_date.strftime('%b %d, %Y') }}{% endif %}
       </p>

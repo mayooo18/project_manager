@@ -14,6 +14,7 @@ class WorkerForm(FlaskForm):
 
 class ProjectForm(FlaskForm):
     name = StringField('Job Name', validators=[DataRequired()])
+    customer_id = SelectField('Customer', coerce=int, validators=[Optional()])
     description = TextAreaField('Description')
     address = StringField('Address')
     start_date = DateField('Start Date', format='%Y-%m-%d')

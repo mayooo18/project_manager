@@ -33,13 +33,20 @@
     <!-- CSRF Token -->
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   
-    <!-- Project Name -->
+    <!-- Job Name -->
     <div>
       <label class="block text-sm font-medium text-gray-700" for="name">Job Name</label>
       <input name="name" id="name" type="text" required
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
     </div>
-  
+
+    <!-- Customer -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Customer</label>
+      {{ project_form.customer_id(class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm") }}
+      <p class="text-xs text-gray-500 mt-1">The address below becomes this customer's property — reused automatically for repeat work.</p>
+    </div>
+
     <!-- Description -->
     <div>
       <label class="block text-sm font-medium text-gray-700" for="description">Description</label>

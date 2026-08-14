@@ -34,10 +34,17 @@
     <form method="POST" class="space-y-6">
       {{ form.hidden_tag() }}
 
-      <!-- Project Name -->
+      <!-- Job Name -->
       <div>
-        <label class="block text-sm font-medium text-gray-700" for="name">Project Name</label>
+        <label class="block text-sm font-medium text-gray-700" for="name">Job Name</label>
         {{ form.name(class_="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm") }}
+      </div>
+
+      <!-- Customer -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Customer</label>
+        {{ form.customer_id(class_="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm") }}
+        <p class="text-xs text-gray-500 mt-1">The address becomes this customer's property — reused automatically for repeat work.</p>
       </div>
 
       <!-- Description -->

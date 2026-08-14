@@ -28,6 +28,11 @@ class Project(db.Model):
     # Client portal magic-link (Phase 5): one private, revocable link per job.
     portal_token = db.Column(db.String(64), unique=True, nullable=True)
     portal_token_revoked_at = db.Column(db.DateTime, nullable=True)
+    # Customer + Location links (Phase 7): who the job is for, and which property.
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=True)
+    location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=True)
+    customer = db.relationship('Customer', backref='projects')
+    location = db.relationship('Location', backref='projects')
 
     work_logs = db.relationship('WorkLog', back_populates='project', cascade='all, delete-orphan')
     files = db.relationship("ProjectFile", backref="project", cascade="all, delete-orphan")
@@ -297,6 +302,20 @@ class Customer(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     quotes = db.relationship('Quote', back_populates='customer', cascade='all, delete-orphan')
+
+
+class Location(db.Model):
+    """A property/address belonging to a customer (Phase 7). A customer can have
+    many locations; a location can have many jobs over time (repeat work)."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    label = db.Column(db.String(150))     # short name, defaults to the address
+    address = db.Column(db.String(250))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    customer = db.relationship('Customer', backref=db.backref('locations', cascade='all, delete-orphan'))
 
 
 class Quote(db.Model):

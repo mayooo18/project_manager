@@ -4,7 +4,7 @@ from flask import Flask, render_template, redirect, request, url_for, flash, ses
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from extensions import db, limiter
 from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm, PaymentForm, PaymentFilterForm, ExpenseForm, IncomeForm, LoginForm
-from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income
+from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income, Customer, Location
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -253,10 +253,39 @@ def delete_worker(worker_id):
     return redirect(url_for('workers'))
 
 # Route for Projects
+def _job_customer_choices():
+    custs = (Customer.query.filter_by(user_id=current_user.id)
+             .order_by(Customer.name.asc()).all())
+    return [(0, '— None —')] + [(c.id, c.name) for c in custs]
+
+
+def _sync_project_customer_location(project, customer_id, address):
+    """Set the job's customer, and find-or-create the Location from its address
+    (reused when the same customer already has that address — repeat work)."""
+    project.customer_id = customer_id or None
+    addr = (address or '').strip()
+    if not customer_id or not addr:
+        project.location_id = None
+        return
+    norm = ' '.join(addr.lower().split())
+    loc = None
+    for existing in Location.query.filter_by(customer_id=customer_id).all():
+        if ' '.join((existing.address or '').strip().lower().split()) == norm:
+            loc = existing
+            break
+    if loc is None:
+        loc = Location(user_id=current_user.id, customer_id=customer_id,
+                       label=addr[:150], address=addr)
+        db.session.add(loc)
+        db.session.flush()
+    project.location_id = loc.id
+
+
 @app.route('/projects', methods=['GET', 'POST'])
 @login_required
 def projects():
     project_form = ProjectForm()
+    project_form.customer_id.choices = _job_customer_choices()
     file_form = FileUploadForm()
     all_projects = Project.query.all()
 
@@ -282,9 +311,11 @@ def projects():
             status=project_form.status.data
         )
         db.session.add(new_project)
+        _sync_project_customer_location(new_project, project_form.customer_id.data,
+                                        project_form.address.data)
         db.session.commit()
-        flash('Project added successfully')
-        return redirect(url_for('projects'))
+        flash('Job added successfully')
+        return redirect(url_for('project_detail', project_id=new_project.id))
         
     return render_template('projects.html', project_form=project_form, file_form=file_form, projects=filtered_projects, selected_category = selected_category)
 
@@ -352,6 +383,9 @@ def upload_file(project_id):
 def edit_project(project_id):
     project = Project.query.get_or_404(project_id)
     form = ProjectForm(obj=project)
+    form.customer_id.choices = _job_customer_choices()
+    if request.method == 'GET':
+        form.customer_id.data = project.customer_id or 0
 
     if form.validate_on_submit():
         project.name = form.name.data
@@ -359,9 +393,10 @@ def edit_project(project_id):
         project.address = form.address.data
         project.start_date = form.start_date.data
         project.status = form.status.data
+        _sync_project_customer_location(project, form.customer_id.data, form.address.data)
         db.session.commit()
-        flash('Project updated successfully.')
-        return redirect(url_for('projects'))
+        flash('Job updated successfully.')
+        return redirect(url_for('project_detail', project_id=project.id))
 
     return render_template('edit_project.html', form=form, project=project)
 
