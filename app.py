@@ -120,17 +120,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-from functools import wraps
-
-
-def owner_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not current_user.is_authenticated or not getattr(current_user, 'is_owner', False):
-            flash('That area is owner-only.', 'error')
-            return redirect(url_for('home'))
-        return view(*args, **kwargs)
-    return wrapped
+from permissions import owner_required
 
 
 def _owner_count():
@@ -721,6 +711,7 @@ def edit_project(project_id):
 
 @app.route('/delete_project/<int:project_id>', methods=['POST'])
 @login_required
+@owner_required
 def delete_project(project_id):
     project = Project.query.get_or_404(project_id)
     for f in project.files:
@@ -977,6 +968,7 @@ def edit_payment(payment_id):
 
 @app.route('/payments/delete/<int:payment_id>', methods=['POST'])
 @login_required
+@owner_required
 def delete_payment(payment_id):
     payment = Payment.query.get_or_404(payment_id)
     
@@ -1031,6 +1023,7 @@ def expenses():
 
 @app.route('/expenses/delete/<int:expense_id>', methods=['POST'])
 @login_required
+@owner_required
 def delete_expense(expense_id):
     expense = Expense.query.get_or_404(expense_id)
     if expense.receipt_filename:
@@ -1084,7 +1077,6 @@ def edit_expense(expense_id):
 
 @app.route('/profitability')
 @login_required
-@owner_required
 def profitability():
     projects = Project.query.all()
     data = []
@@ -1148,6 +1140,7 @@ def edit_income(income_id):
 
 @app.route('/income/delete/<int:income_id>', methods=['POST'])
 @login_required
+@owner_required
 def delete_income(income_id):
     income = Income.query.get_or_404(income_id)
     db.session.delete(income)

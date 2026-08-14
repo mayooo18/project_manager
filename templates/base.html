@@ -40,9 +40,7 @@
                         <a href="{{ url_for('payments') }}" class="{{ 'nav-active' if request.endpoint == 'payments' }}">Payments</a>
                         <a href="{{ url_for('expenses') }}" class="{{ 'nav-active' if request.endpoint == 'expenses' }}">Expenses</a>
                         <a href="{{ url_for('income') }}" class="{{ 'nav-active' if request.endpoint == 'income' }}">Income</a>
-                        {% if current_user.is_authenticated and current_user.is_owner %}
                         <a href="{{ url_for('profitability') }}" class="{{ 'nav-active' if request.endpoint == 'profitability' }}">Profit</a>
-                        {% endif %}
                     </div>
                 </div>
 

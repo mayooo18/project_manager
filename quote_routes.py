@@ -28,6 +28,7 @@ from flask import (
     jsonify, send_file, abort, current_app,
 )
 from flask_login import login_required, current_user
+from permissions import owner_required
 
 from extensions import db, limiter
 from models import (
@@ -484,6 +485,7 @@ def customers():
 
 @quote_bp.route('/customers/<int:customer_id>/delete', methods=['POST'])
 @login_required
+@owner_required
 def delete_customer(customer_id):
     customer = Customer.query.filter_by(
         id=customer_id, user_id=current_user.id).first_or_404()
@@ -586,6 +588,7 @@ def _save_quote(quote):
 
 @quote_bp.route('/<int:quote_id>/delete', methods=['POST'])
 @login_required
+@owner_required
 def delete(quote_id):
     quote = _owned_quote_or_404(quote_id)
     db.session.delete(quote)

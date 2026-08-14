@@ -84,11 +84,13 @@
             <button type="submit" class="text-gray-500 hover:text-orange-400 text-xs transition-colors">Merge</button>
           </form>
           {% endif %}
+          {% if current_user.is_owner %}
           <form method="POST" action="{{ url_for('quotes.delete_customer', customer_id=c.id) }}"
                 onsubmit="return confirm('Delete {{ c.name }} and their proposals? This cannot be undone.');">
             {{ delete_form.csrf_token }}
             <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
           </form>
+          {% endif %}
         </div>
       </div>
     </div>

@@ -61,11 +61,13 @@
           <a href="{{ url_for('contracts.pdf', contract_id=con.id) }}" target="_blank"
              class="text-sm" style="color:#9ca3af;"
              onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">PDF</a>
+          {% if current_user.is_owner %}
           <form method="POST" action="{{ url_for('contracts.delete', contract_id=con.id) }}"
                 onsubmit="return confirm('Delete this contract? This cannot be undone.');">
             {{ delete_form.csrf_token }}
             <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
           </form>
+          {% endif %}
         </div>
       </div>
     </div>

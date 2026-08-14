@@ -122,11 +122,13 @@
         ✓ Paid {{ invoice.paid_at.strftime('%Y-%m-%d') if invoice.paid_at }}{% if invoice.payment_method %} via {{ invoice.payment_method }}{% endif %}
         {% if invoice.income_id %}<span class="text-gray-500">· recorded as income on the linked project</span>{% endif %}
       </p>
+      {% if current_user.is_owner %}
       <form method="POST" action="{{ url_for('invoices.unpay', invoice_id=invoice.id) }}"
             onsubmit="return confirm('Revert this payment?{% if invoice.income_id %} The auto-recorded income will also be removed.{% endif %}');">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <button type="submit" class="text-gray-400 hover:text-red-400 text-sm">Revert payment</button>
       </form>
+      {% endif %}
     </div>
     {% else %}
     <form method="POST" action="{{ url_for('invoices.mark_paid', invoice_id=invoice.id) }}">

@@ -25,6 +25,7 @@ from flask import (
     send_file,
 )
 from flask_login import login_required, current_user
+from permissions import owner_required
 
 from extensions import db, limiter
 from models import Invoice, InvoiceItem, Customer, Quote, Project, Income
@@ -416,6 +417,7 @@ def from_quote(quote_id):
 
 @invoice_bp.route('/<int:invoice_id>/delete', methods=['POST'])
 @login_required
+@owner_required
 def delete(invoice_id):
     invoice = _owned_invoice_or_404(invoice_id)
     db.session.delete(invoice)
@@ -481,6 +483,7 @@ def mark_paid(invoice_id):
 
 @invoice_bp.route('/<int:invoice_id>/unpay', methods=['POST'])
 @login_required
+@owner_required
 def unpay(invoice_id):
     invoice = _owned_invoice_or_404(invoice_id)
     # Remove any auto-recorded income so we don't leave an orphan row.

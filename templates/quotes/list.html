@@ -74,11 +74,13 @@
               title="Create a single invoice from this proposal">→ Invoice</button>
           </form>
           {% endif %}
+          {% if current_user.is_owner %}
           <form method="POST" action="{{ url_for('quotes.delete', quote_id=q.id) }}"
                 onsubmit="return confirm('Delete this proposal? This cannot be undone.');">
             {{ delete_form.csrf_token }}
             <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
           </form>
+          {% endif %}
         </div>
       </div>
     </div>

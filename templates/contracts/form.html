@@ -207,11 +207,13 @@
           <a href="{{ url_for('change_orders.public_view', token=co.public_token) }}" target="_blank" class="text-gray-400 text-xs hover:text-orange-400">Public</a>
           {% endif %}
           {% if not co.applied_at %}
+          {% if current_user.is_owner %}
           <form method="POST" action="{{ url_for('change_orders.delete', change_order_id=co.id) }}"
                 onsubmit="return confirm('Delete this change order?');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <button type="submit" class="text-red-400 text-xs hover:underline">Delete</button>
           </form>
+          {% endif %}
           {% endif %}
         </div>
       </div>

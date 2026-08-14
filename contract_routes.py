@@ -23,6 +23,7 @@ from flask import (
     abort,
 )
 from flask_login import login_required, current_user
+from permissions import owner_required
 from sqlalchemy import select
 
 from extensions import db
@@ -372,6 +373,7 @@ def from_quote(quote_id):
 
 @contract_bp.route('/<int:contract_id>/delete', methods=['POST'])
 @login_required
+@owner_required
 def delete(contract_id):
     contract = _owned_contract_or_404(contract_id)
     # Guard: billed draws leave invoices pointing at this contract, and change

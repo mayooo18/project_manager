@@ -192,6 +192,7 @@
                 class="text-blue-600 hover:text-blue-800 mr-2">
                 <span class="material-icons text-base align-middle">edit</span>
               </a>
+              {% if current_user.is_owner %}
               <form method="POST" action="{{ url_for('delete_payment', payment_id=payment.id) }}" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="text-red-600 hover:text-red-800"
@@ -200,6 +201,7 @@
                   <span class="material-icons text-base align-middle">delete</span>
                 </button>
               </form>
+              {% endif %}
             </td>
           </tr>
           {% else %}

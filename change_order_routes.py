@@ -14,6 +14,7 @@ from flask import (
     send_file, url_for,
 )
 from flask_login import current_user, login_required
+from permissions import owner_required
 from sqlalchemy import select
 
 from extensions import db, limiter
@@ -357,6 +358,7 @@ def _save_change_order(change_order, contract):
 
 @change_order_bp.route('/<int:change_order_id>/delete', methods=['POST'])
 @login_required
+@owner_required
 def delete(change_order_id):
     change_order = _owned_change_order_or_404(change_order_id)
     contract_id = change_order.contract_id
