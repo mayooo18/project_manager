@@ -9,7 +9,20 @@
     <p>{{ form.category.label }} {{ form.category() }}</p>
     <p>{{ form.date.label }} {{ form.date() }}</p>
     <p>{{ form.note.label }} {{ form.note(rows=2) }}</p>
-    <p>{{ form.receipt.label }} {{ form.receipt() }}</p>
+    <p>{{ form.receipt.label }} {{ form.receipt(accept="image/*,application/pdf") }}</p>
+    {% if expense and expense.receipt_filename %}
+      {% set ext = expense.receipt_filename.rsplit('.', 1)[-1]|lower %}
+      <p>Current receipt:
+        <a href="{{ url_for('static', filename='uploads/' ~ expense.receipt_filename) }}" target="_blank">
+          {% if ext in ['jpg', 'jpeg', 'png', 'webp', 'gif'] %}
+            <img src="{{ url_for('static', filename='uploads/' ~ expense.receipt_filename) }}" alt="receipt" style="height:80px;border-radius:6px;vertical-align:middle;"/>
+          {% else %}
+            view current file
+          {% endif %}
+        </a>
+        <span style="font-size:.8rem;color:#9ca3af;">— uploading a new one replaces it</span>
+      </p>
+    {% endif %}
     <p><button type="submit">Update Expense</button></p>
 </form>
 {% endblock %}

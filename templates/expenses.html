@@ -51,14 +51,15 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-slate-600 mb-1" for="receipt">Receipt</label>
+        <label class="block text-sm font-medium text-slate-600 mb-1" for="receipt">Receipt photo <span class="text-slate-400 font-normal">(optional)</span></label>
         <div class="mt-1 flex items-center">
           <label for="receipt-upload" class="cursor-pointer bg-white py-2 px-4 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Choose File
+            Take photo / choose file
           </label>
-          {{ form.receipt(id="receipt-upload", class="sr-only") }}
+          {{ form.receipt(id="receipt-upload", class="sr-only", accept="image/*,application/pdf") }}
           <span class="ml-3 text-sm text-slate-500" id="file-chosen">no file selected</span>
         </div>
+        <p class="mt-1 text-xs text-slate-400">Snap the receipt with your phone camera, or attach a photo/PDF.</p>
       </div>
 
       <div>
@@ -112,9 +113,16 @@
             <td class="px-6 py-4 text-sm text-slate-500 truncate max-w-xs">{{ expense.note }}</td>
             <td class="px-6 py-4 text-sm text-slate-500">
               {% if expense.receipt_filename %}
-                <a class="text-indigo-600 hover:text-indigo-900" href="{{ url_for('static', filename='uploads/' ~ expense.receipt_filename) }}" target="_blank">View</a>
+                {% set ext = expense.receipt_filename.rsplit('.', 1)[-1]|lower %}
+                <a href="{{ url_for('static', filename='uploads/' ~ expense.receipt_filename) }}" target="_blank" title="Open receipt">
+                  {% if ext in ['jpg', 'jpeg', 'png', 'webp', 'gif'] %}
+                    <img src="{{ url_for('static', filename='uploads/' ~ expense.receipt_filename) }}" alt="receipt" class="h-10 w-10 object-cover rounded border border-slate-200 hover:opacity-80"/>
+                  {% else %}
+                    <span class="text-indigo-600 hover:text-indigo-900">{{ 'PDF' if ext == 'pdf' else 'View' }}</span>
+                  {% endif %}
+                </a>
               {% else %}
-                No File
+                <span class="text-slate-400">—</span>
               {% endif %}
             </td>
             <td class="px-6 py-4 text-sm font-medium">

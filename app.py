@@ -1138,7 +1138,7 @@ def edit_expense(expense_id):
         flash('Expense updated successfully')
         return redirect(url_for('expenses'))
 
-    return render_template('edit_expense.html', form=form)
+    return render_template('edit_expense.html', form=form, expense=expense)
 
 @app.route('/profitability')
 @login_required

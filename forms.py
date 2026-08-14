@@ -100,7 +100,8 @@ class ExpenseForm(FlaskForm):
     category = SelectField('Category', choices=EXPENSE_CATEGORIES, validators=[DataRequired()])
     date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
     note = TextAreaField('Note')
-    receipt = FileField('Receipt', validators=[FileAllowed(['jpg', 'png', 'pdf'], 'Images and PDFs only')])
+    receipt = FileField('Receipt photo (optional)', validators=[FileAllowed(
+        ['jpg', 'jpeg', 'png', 'heic', 'webp', 'gif', 'pdf'], 'Photos or PDF only')])
     submit = SubmitField('Add Expense')
 
 class FilterForm(FlaskForm):
