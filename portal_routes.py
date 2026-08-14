@@ -100,6 +100,53 @@ def revoke(project_id):
     return redirect(url_for('project_detail', project_id=project.id))
 
 
+def send_portal_email(project):
+    """Email the client the portal link via the existing Gmail integration.
+    Returns (ok, message). Needs the job's customer (Phase 7) + their email."""
+    import base64
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from googleapiclient.discovery import build as gbuild
+    from google_routes import get_credentials
+
+    customer = project.customer
+    if not customer or not customer.email:
+        return False, ('This job has no customer email. Set the customer on the job '
+                       'and add their email on the Customers page.')
+    if not project.portal_token or project.portal_token_revoked_at:
+        return False, 'Enable the client portal first.'
+
+    creds = get_credentials()
+    if not creds:
+        return False, 'Google account not connected (GOOGLE_REFRESH_TOKEN missing).'
+
+    link = url_for('portal.view', token=project.portal_token, _external=True)
+    html = render_template('portal_email.html', project=project, link=link, company=COMPANY)
+
+    msg = MIMEMultipart('alternative')
+    msg['To'] = customer.email
+    msg['From'] = 'me'
+    msg['Subject'] = f"Your project with {COMPANY['name']}: {project.name}"
+    msg.attach(MIMEText(html, 'html'))
+
+    gmail = gbuild('gmail', 'v1', credentials=creds)
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    gmail.users().messages().send(userId='me', body={'raw': raw}).execute()
+    return True, f'Portal link emailed to {customer.email}.'
+
+
+@portal_bp.route('/projects/<int:project_id>/portal/email', methods=['POST'])
+@login_required
+def email(project_id):
+    project = Project.query.get_or_404(project_id)
+    try:
+        ok, message = send_portal_email(project)
+    except Exception as exc:  # noqa: BLE001
+        ok, message = False, f'Email failed: {exc}'
+    flash(message, 'success' if ok else 'error')
+    return redirect(url_for('project_detail', project_id=project.id))
+
+
 # ── public: the portal page + job-scoped document PDFs ─────────────────────
 
 @portal_bp.route('/portal/<token>')

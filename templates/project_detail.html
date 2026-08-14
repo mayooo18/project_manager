@@ -83,6 +83,12 @@
                style="min-width:15rem; font-size:0.75rem; background:#0b0f17; border:1px solid #374151; border-radius:0.5rem; color:#e5e7eb; padding:0.4rem 0.6rem;"/>
         <button type="button" onclick="copyPortal()" class="btn">Copy</button>
         <a href="{{ portal_link }}" target="_blank" class="btn">Open</a>
+        {% if project.customer and project.customer.email %}
+        <form method="POST" action="{{ url_for('portal.email', project_id=project.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn" style="border-color:#f97316; color:#ff8c5a;">✉ Email to {{ project.customer.name }}</button>
+        </form>
+        {% endif %}
         <form method="POST" action="{{ url_for('portal.regenerate', project_id=project.id) }}"
               onsubmit="return confirm('Create a new link? The current one will stop working.');">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

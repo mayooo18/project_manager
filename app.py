@@ -4,7 +4,7 @@ from flask import Flask, render_template, redirect, request, url_for, flash, ses
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from extensions import db, limiter
 from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm, PaymentForm, PaymentFilterForm, ExpenseForm, IncomeForm, LoginForm
-from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income, Customer, Location
+from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income, Customer, Location, find_or_create_location
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -263,22 +263,8 @@ def _sync_project_customer_location(project, customer_id, address):
     """Set the job's customer, and find-or-create the Location from its address
     (reused when the same customer already has that address — repeat work)."""
     project.customer_id = customer_id or None
-    addr = (address or '').strip()
-    if not customer_id or not addr:
-        project.location_id = None
-        return
-    norm = ' '.join(addr.lower().split())
-    loc = None
-    for existing in Location.query.filter_by(customer_id=customer_id).all():
-        if ' '.join((existing.address or '').strip().lower().split()) == norm:
-            loc = existing
-            break
-    if loc is None:
-        loc = Location(user_id=current_user.id, customer_id=customer_id,
-                       label=addr[:150], address=addr)
-        db.session.add(loc)
-        db.session.flush()
-    project.location_id = loc.id
+    loc = find_or_create_location(current_user.id, customer_id, address)
+    project.location_id = loc.id if loc else None
 
 
 @app.route('/projects', methods=['GET', 'POST'])

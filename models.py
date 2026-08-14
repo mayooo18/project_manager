@@ -275,6 +275,23 @@ class GcDocument(db.Model):
     customer = db.relationship('Customer', backref='gc_documents')
 
 
+def find_or_create_location(user_id, customer_id, address):
+    """Return the customer's Location for this address (reused if it already
+    exists, case/space-insensitive), creating one if needed. None if no
+    customer or address. Flushes so the caller gets an id."""
+    addr = (address or '').strip()
+    if not customer_id or not addr:
+        return None
+    norm = ' '.join(addr.lower().split())
+    for loc in Location.query.filter_by(customer_id=customer_id).all():
+        if ' '.join((loc.address or '').strip().lower().split()) == norm:
+            return loc
+    loc = Location(user_id=user_id, customer_id=customer_id, label=addr[:150], address=addr)
+    db.session.add(loc)
+    db.session.flush()
+    return loc
+
+
 class AIActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

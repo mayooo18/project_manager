@@ -1,0 +1,16 @@
+<div style="font-family: Arial, Helvetica, sans-serif; color:#111; max-width:520px;">
+  <p style="font-size:15px;">Hi {{ project.customer.name }},</p>
+  <p style="font-size:14px; line-height:1.5;">
+    Here's your private link to follow your project with {{ company.name }} —
+    <strong>{{ project.name }}</strong>. You can see the current status, your
+    invoices, any change orders that need your approval, and your documents.
+  </p>
+  <p style="margin:24px 0;">
+    <a href="{{ link }}" style="background:#f97316; color:#fff; text-decoration:none;
+       padding:12px 22px; border-radius:8px; font-size:15px; font-weight:bold;">View your project</a>
+  </p>
+  <p style="font-size:12px; color:#666; line-height:1.5;">
+    This link is private to you — please don't share it. Questions? Call us at {{ company.phone }}.
+  </p>
+  <p style="font-size:12px; color:#999;">{{ company.name }} · {{ company.address_line1 }}, {{ company.address_line2 }}</p>
+</div>

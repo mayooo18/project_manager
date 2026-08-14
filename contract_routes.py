@@ -26,7 +26,10 @@ from flask_login import login_required, current_user
 from sqlalchemy import select
 
 from extensions import db
-from models import Contract, ContractDraw, Customer, Quote, Project, Invoice, InvoiceItem
+from models import (
+    Contract, ContractDraw, Customer, Quote, Project, Invoice, InvoiceItem,
+    find_or_create_location,
+)
 from forms import DeleteForm
 from quote_routes import COMPANY, LOGO_PATH, _pdf_text
 from invoice_routes import _new_invoice_token, _next_number
@@ -314,10 +317,30 @@ def from_quote(quote_id):
     quote = Quote.query.filter_by(
         id=quote_id, user_id=current_user.id).first_or_404()
 
+    # A signed proposal becomes active work — make sure it has a Job. If the
+    # proposal wasn't already linked to one, create it now (carrying the
+    # customer + address → Location), so "convert" produces contract + Job.
+    project_id = quote.project_id
+    if not project_id:
+        customer = quote.customer
+        project = Project(
+            name=quote.title or (f"Job for {customer.name}" if customer else 'New job'),
+            address=customer.address if customer else None,
+            status='Active',
+            customer_id=quote.customer_id,
+        )
+        db.session.add(project)
+        db.session.flush()
+        loc = find_or_create_location(current_user.id, quote.customer_id,
+                                      customer.address if customer else None)
+        if loc:
+            project.location_id = loc.id
+        project_id = project.id
+
     contract = Contract(
         user_id=current_user.id,
         customer_id=quote.customer_id,
-        project_id=quote.project_id,
+        project_id=project_id,
         quote_id=quote.id,
         number=_next_contract_number(),
         title=quote.title,
