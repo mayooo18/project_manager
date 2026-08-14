@@ -420,6 +420,84 @@ def project_detail(project_id):
     )
 
 
+def _archive_job_documents(project):
+    """Save the job's current proposal/contract/invoice/waiver PDFs into its
+    Files (static/uploads) so all paperwork lives with the job. Skips ones
+    already filed (by filename). Returns how many were newly saved."""
+    import os
+    from quote_routes import build_quote_pdf
+    from invoice_routes import build_invoice_pdf
+    from contract_routes import build_contract_pdf
+    from waiver_routes import build_gc_document_pdf
+
+    folder = app.config['UPLOAD_FOLDER']
+    existing = {f.filename for f in project.files}
+    saved = 0
+
+    def _save(buf, filename, category):
+        nonlocal saved
+        if filename in existing:
+            return
+        path = os.path.join(folder, filename)
+        with open(path, 'wb') as fh:
+            fh.write(buf.read())
+        db.session.add(ProjectFile(project_id=project.id, filename=filename,
+                                   filepath=path, category=category, note='Auto-filed'))
+        existing.add(filename)
+        saved += 1
+
+    for q in project.quotes:
+        _save(build_quote_pdf(q), f'proposal-{q.id}.pdf', 'proposal')
+    for c in project.contracts:
+        _save(build_contract_pdf(c), f'contract-{c.number or c.id}.pdf', 'contract')
+    for inv in project.invoices:
+        _save(build_invoice_pdf(inv), f'invoice-{inv.number or inv.id}.pdf', 'invoice')
+    for d in project.gc_documents:
+        _save(build_gc_document_pdf(d), f'{d.doc_kind}-{d.id}.pdf', 'misc')
+    return saved
+
+
+@app.route('/projects/<int:project_id>/file-documents', methods=['POST'])
+@login_required
+def project_file_documents(project_id):
+    project = Project.query.get_or_404(project_id)
+    filed = _archive_job_documents(project)
+    db.session.commit()
+    flash(f'{filed} document(s) filed to this job.' if filed
+          else 'All documents are already filed.')
+    return redirect(url_for('project_detail', project_id=project.id))
+
+
+@app.route('/projects/<int:project_id>/closeout', methods=['POST'])
+@login_required
+def project_closeout(project_id):
+    from datetime import date
+    from models import GcDocument
+    project = Project.query.get_or_404(project_id)
+    owner = project.customer.name if project.customer else None
+    paid_total = sum(i.total or 0 for i in project.invoices if i.status == 'paid')
+
+    db.session.add(GcDocument(
+        user_id=current_user.id, doc_kind='completion', project_id=project.id,
+        customer_id=project.customer_id, owner_name=owner,
+        property_address=project.address, through_date=date.today(),
+        notes=project.description or project.name))
+    db.session.add(GcDocument(
+        user_id=current_user.id, doc_kind='unconditional_final', project_id=project.id,
+        customer_id=project.customer_id, owner_name=owner,
+        property_address=project.address, amount=paid_total, through_date=date.today()))
+
+    for contract in project.contracts:
+        contract.status = 'completed'
+    project.status = 'Completed'
+    db.session.flush()
+    filed = _archive_job_documents(project)
+    db.session.commit()
+    flash('Job closed out — completion certificate and final lien waiver generated, '
+          f'{filed} document(s) filed, contract and job marked complete.')
+    return redirect(url_for('project_detail', project_id=project.id))
+
+
 @app.route('/upload_file/<int:project_id>', methods=['POST'])
 @login_required
 def upload_file(project_id):

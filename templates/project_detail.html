@@ -50,7 +50,20 @@
         {% if project.start_date %} · Started {{ project.start_date.strftime('%b %d, %Y') }}{% endif %}
       </p>
     </div>
-    <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn">Edit job</a>
+    <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
+      <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn">Edit job</a>
+      <form method="POST" action="{{ url_for('project_file_documents', project_id=project.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn">File documents</button>
+      </form>
+      {% if project.status != 'Completed' %}
+      <form method="POST" action="{{ url_for('project_closeout', project_id=project.id) }}"
+            onsubmit="return confirm('Close out this job? This generates the completion certificate and final lien waiver, files all documents to the job, and marks the contract + job complete.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn" style="border-color:#16a34a; color:#4ade80;">Close out</button>
+      </form>
+      {% endif %}
+    </div>
   </div>
 
   <!-- Money snapshot -->
