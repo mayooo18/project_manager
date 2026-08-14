@@ -558,7 +558,9 @@ def timeclock():
                     .order_by(TimePunch.clock_in.desc()).all())
     recent = (TimePunch.query.filter(TimePunch.clock_out.isnot(None))
               .order_by(TimePunch.clock_in.desc()).limit(50).all())
-    return render_template('timeclock.html', open_punches=open_punches, recent=recent)
+    approved_total = round(sum(p.labor_cost for p in recent if p.approved), 2)
+    return render_template('timeclock.html', open_punches=open_punches,
+                           recent=recent, approved_total=approved_total)
 
 
 @app.route('/timeclock/<int:punch_id>/approve', methods=['POST'])

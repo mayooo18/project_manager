@@ -37,6 +37,7 @@
           <span class="inline-block w-2 h-2 rounded-full bg-green-400 mr-2"></span>
           <span class="text-gray-100 text-sm">{{ p.worker.name }}</span>
           <span class="text-gray-500 text-xs">· {{ p.project.name if p.project else 'No job' }} · since {{ p.clock_in.strftime('%b %d %I:%M %p') }} · {{ p.hours }} h</span>
+          <span class="text-xs" style="color:#fbbf24;">· ${{ '%.2f' % p.labor_cost }} running</span>
         </div>
       </div>
       {% endfor %}
@@ -46,7 +47,10 @@
   </div>
 
   <div class="card p-5">
-    <p class="text-white font-semibold mb-2">Recent punches</p>
+    <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+      <p class="text-white font-semibold">Recent punches</p>
+      <p class="text-sm">Approved labor: <span style="color:#4ade80;font-weight:600;">${{ '%.2f' % approved_total }}</span></p>
+    </div>
     {% if recent %}
       {% for p in recent %}
       <div class="row">
@@ -54,7 +58,12 @@
           <div class="text-sm">
             <span class="text-gray-100">{{ p.worker.name }}</span>
             <span class="text-gray-500 text-xs">· {{ p.project.name if p.project else 'No job' }} · {{ p.hours }} h</span>
-            {% if p.approved %}<span class="text-green-400 text-xs ml-1">✓ approved</span>{% endif %}
+            {% if p.approved %}
+              <span class="text-xs ml-1" style="color:#4ade80;">· ${{ '%.2f' % p.labor_cost }}</span>
+              <span class="text-green-400 text-xs ml-1">✓ approved</span>
+            {% else %}
+              <span class="text-xs ml-1" style="color:#9ca3af;">· ${{ '%.2f' % p.labor_cost }} est</span>
+            {% endif %}
           </div>
           <form method="POST" action="{{ url_for('edit_punch', punch_id=p.id) }}" class="flex items-center gap-2 flex-wrap">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

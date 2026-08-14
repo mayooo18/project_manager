@@ -398,6 +398,13 @@ class TimePunch(db.Model):
         end = self.clock_out or datetime.utcnow()
         return round((end - self.clock_in).total_seconds() / 3600.0, 2)
 
+    @property
+    def labor_cost(self):
+        """Dollar cost of this punch: hours x hourly rate (daily_rate / 8).
+        Mirrors the amount approve_punch posts as a labor Payment."""
+        rate = (self.worker.daily_rate or 0) / self.HOURS_PER_DAY if self.worker else 0
+        return round((self.hours or 0) * rate, 2)
+
 
 class AIActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
