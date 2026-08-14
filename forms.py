@@ -128,6 +128,12 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
+class UserAdminForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(max=64)])
+    password = PasswordField('Temporary password', validators=[DataRequired(), Length(min=6)])
+    submit = SubmitField('Create foreman account')
+
+
 class GcDocumentForm(FlaskForm):
     doc_kind = SelectField('Document Type', choices=[
         ('conditional_progress', 'Conditional Waiver — Progress Payment'),

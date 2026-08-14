@@ -119,15 +119,86 @@ login_manager.init_app(app)
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
+from functools import wraps
+
+
+def owner_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not current_user.is_authenticated or not getattr(current_user, 'is_owner', False):
+            flash('That area is owner-only.', 'error')
+            return redirect(url_for('home'))
+        return view(*args, **kwargs)
+    return wrapped
+
+
+def _owner_count():
+    return User.query.filter_by(role='owner', active=True).count()
+
+
+@app.route('/users', methods=['GET', 'POST'])
+@login_required
+@owner_required
+def users():
+    from forms import UserAdminForm
+    form = UserAdminForm()
+    if form.validate_on_submit():
+        if User.query.filter_by(username=form.username.data).first():
+            flash('That username is already taken.', 'error')
+        else:
+            u = User(username=form.username.data, role='admin', active=True)
+            u.set_password(form.password.data)
+            db.session.add(u)
+            db.session.commit()
+            flash('Admin (foreman) account created.')
+        return redirect(url_for('users'))
+    all_users = User.query.order_by(User.role.desc(), User.username.asc()).all()
+    return render_template('users.html', form=form, users=all_users)
+
+
+@app.route('/users/<int:user_id>/role', methods=['POST'])
+@login_required
+@owner_required
+def user_role(user_id):
+    u = User.query.get_or_404(user_id)
+    new_role = request.form.get('role')
+    if new_role not in ('owner', 'admin'):
+        flash('Invalid role.', 'error')
+    elif u.role == 'owner' and new_role == 'admin' and _owner_count() <= 1:
+        flash('You cannot demote the last owner.', 'error')
+    else:
+        u.role = new_role
+        db.session.commit()
+        flash(f'{u.username} is now {new_role}.')
+    return redirect(url_for('users'))
+
+
+@app.route('/users/<int:user_id>/toggle-active', methods=['POST'])
+@login_required
+@owner_required
+def user_toggle_active(user_id):
+    u = User.query.get_or_404(user_id)
+    if u.active and u.role == 'owner' and _owner_count() <= 1:
+        flash('You cannot disable the last owner.', 'error')
+    else:
+        u.active = not u.active
+        db.session.commit()
+        flash(f"{u.username} {'enabled' if u.active else 'disabled'}.")
+    return redirect(url_for('users'))
+
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
+        if user and not user.active:
+            flash('That account has been disabled. Ask the owner to re-enable it.')
+            return redirect(url_for('login'))
         if user and user.check_password(form.password.data):
             login_user(user)
-            session.permanent = True 
+            session.permanent = True
             flash('Logged in successfully.')
             return redirect(url_for('home'))
         else:
@@ -1013,6 +1084,7 @@ def edit_expense(expense_id):
 
 @app.route('/profitability')
 @login_required
+@owner_required
 def profitability():
     projects = Project.query.all()
     data = []

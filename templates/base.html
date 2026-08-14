@@ -14,7 +14,7 @@
             <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Logo" class="h-16 w-auto">
             {% set money_endpoints = ['workers', 'work_logs', 'payments', 'expenses', 'income', 'profitability', 'timeclock'] %}
             {% set compliance_endpoints = ['permits.index', 'permits.add', 'permits.edit', 'licenses.index', 'licenses.add', 'licenses.edit', 'subcontractors.index', 'subcontractors.add', 'subcontractors.edit', 'waivers.index', 'waivers.new', 'waivers.edit'] %}
-            {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index'] %}
+            {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index', 'users'] %}
             {% set sales_endpoints = ['quotes.index', 'quotes.new', 'quotes.edit', 'quotes.customers', 'invoices.index', 'invoices.new', 'invoices.edit', 'contracts.index', 'contracts.new', 'contracts.edit'] %}
             <button id="nav-toggle" type="button" aria-label="Toggle menu" onclick="toggleNav(event)">☰</button>
             <div id="nav-links" class="flex items-center gap-4 relative">
@@ -40,7 +40,9 @@
                         <a href="{{ url_for('payments') }}" class="{{ 'nav-active' if request.endpoint == 'payments' }}">Payments</a>
                         <a href="{{ url_for('expenses') }}" class="{{ 'nav-active' if request.endpoint == 'expenses' }}">Expenses</a>
                         <a href="{{ url_for('income') }}" class="{{ 'nav-active' if request.endpoint == 'income' }}">Income</a>
+                        {% if current_user.is_authenticated and current_user.is_owner %}
                         <a href="{{ url_for('profitability') }}" class="{{ 'nav-active' if request.endpoint == 'profitability' }}">Profit</a>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -60,6 +62,9 @@
                         <a href="{{ url_for('document_form') }}" class="{{ 'nav-active' if request.endpoint == 'document_form' }}">Legacy Documents</a>
                         <a href="{{ url_for('reminders.index') }}" class="{{ 'nav-active' if request.endpoint == 'reminders.index' }}">Reminders</a>
                         <a href="{{ url_for('vehicles.index') }}" class="{{ 'nav-active' if request.endpoint == 'vehicles.index' }}">Vehicles</a>
+                        {% if current_user.is_authenticated and current_user.is_owner %}
+                        <a href="{{ url_for('users') }}" class="{{ 'nav-active' if request.endpoint == 'users' }}">Users</a>
+                        {% endif %}
                     </div>
                 </div>
 

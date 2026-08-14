@@ -123,12 +123,23 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(512), nullable=False)
     phone_number = db.Column(db.String(20), unique=True, nullable=True)
     sms_pending_action_id = db.Column(db.Integer, nullable=True)
+    # Office roles (Phase 8 §4): owner (full) or admin (foreman).
+    role = db.Column(db.String(20), default='owner', nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_owner(self):
+        return self.role == 'owner'
+
+    @property
+    def is_active(self):   # Flask-Login refuses login when this is False
+        return bool(self.active)
 
 
 class ProjectNote(db.Model):
