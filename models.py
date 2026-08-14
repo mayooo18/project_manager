@@ -25,6 +25,9 @@ class Project(db.Model):
     status = db.Column(db.String(50), default="Active")
     google_folder_id = db.Column(db.String(200), nullable=True)
     google_doc_id = db.Column(db.String(200), nullable=True)
+    # Client portal magic-link (Phase 5): one private, revocable link per job.
+    portal_token = db.Column(db.String(64), unique=True, nullable=True)
+    portal_token_revoked_at = db.Column(db.DateTime, nullable=True)
 
     work_logs = db.relationship('WorkLog', back_populates='project', cascade='all, delete-orphan')
     files = db.relationship("ProjectFile", backref="project", cascade="all, delete-orphan")

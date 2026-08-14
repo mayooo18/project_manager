@@ -64,6 +64,55 @@
     <div class="kpi"><p class="muted">Work logs</p><p class="text-gray-200 text-lg font-semibold">{{ work_logs|length }}</p></div>
   </div>
 
+  <!-- Client portal -->
+  {% set portal_active = project.portal_token and not project.portal_token_revoked_at %}
+  <div class="card p-5 mb-4">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <p class="sec-title">Client portal</p>
+        <p class="muted mt-1">
+          {% if portal_active %}A private, read-only link is live for this job.
+          {% else %}Share a private link — status, invoices, change orders, and documents. No login for the client.{% endif %}
+        </p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        {% if portal_active %}
+        {% set portal_link = url_for('portal.view', token=project.portal_token, _external=True) %}
+        <input id="portal-link" readonly value="{{ portal_link }}"
+               style="min-width:15rem; font-size:0.75rem; background:#0b0f17; border:1px solid #374151; border-radius:0.5rem; color:#e5e7eb; padding:0.4rem 0.6rem;"/>
+        <button type="button" onclick="copyPortal()" class="btn">Copy</button>
+        <a href="{{ portal_link }}" target="_blank" class="btn">Open</a>
+        <form method="POST" action="{{ url_for('portal.regenerate', project_id=project.id) }}"
+              onsubmit="return confirm('Create a new link? The current one will stop working.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn">New link</button>
+        </form>
+        <form method="POST" action="{{ url_for('portal.revoke', project_id=project.id) }}"
+              onsubmit="return confirm('Revoke the client link? The client will lose access.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn" style="border-color:#7f1d1d; color:#fca5a5;">Revoke</button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('portal.enable', project_id=project.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn" style="border-color:#f97316; color:#ff8c5a;">Enable client portal</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <script>
+    function copyPortal() {
+      var el = document.getElementById('portal-link');
+      if (!el) return;
+      el.select();
+      navigator.clipboard.writeText(el.value).then(function(){
+        var b = event.target; var t = b.textContent; b.textContent = 'Copied';
+        setTimeout(function(){ b.textContent = t; }, 1200);
+      });
+    }
+  </script>
+
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
     <!-- Sales & Billing -->
