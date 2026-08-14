@@ -30,7 +30,10 @@ from flask import (
 from flask_login import login_required, current_user
 
 from extensions import db, limiter
-from models import Customer, Quote, QuoteItem, Project
+from models import (
+    Customer, Quote, QuoteItem, Project, Invoice, Contract, ChangeOrder,
+    GcDocument, Location,
+)
 from forms import CustomerForm, DeleteForm
 
 quote_bp = Blueprint('quotes', __name__, url_prefix='/quotes')
@@ -426,17 +429,52 @@ def send_quote_email(quote):
 
 # ── customer directory ───────────────────────────────────────────────────
 
+def _norm(s):
+    return ' '.join((s or '').strip().lower().split())
+
+
+def _digits(s):
+    return ''.join(ch for ch in (s or '') if ch.isdigit())
+
+
+def _find_duplicate_customer(name, email, phone, exclude_id=None):
+    """Return (customer, reason) for an existing match. Email/phone are strong
+    identity signals (same person); a name-only match is a soft heads-up."""
+    custs = [c for c in Customer.query.filter_by(user_id=current_user.id).all()
+             if c.id != exclude_id]
+    e, p, n = _norm(email), _digits(phone), _norm(name)
+    for c in custs:
+        if e and _norm(c.email) == e:
+            return c, 'email'
+        if p and len(p) >= 7 and _digits(c.phone) == p:
+            return c, 'phone'
+    for c in custs:
+        if n and _norm(c.name) == n:
+            return c, 'name'
+    return None, None
+
+
 @quote_bp.route('/customers', methods=['GET', 'POST'])
 @login_required
 def customers():
     form = CustomerForm()
     if form.validate_on_submit():
-        customer = Customer(user_id=current_user.id)
-        form.populate_obj(customer)
-        db.session.add(customer)
-        db.session.commit()
-        flash('Customer added.', 'success')
-        return redirect(url_for('quotes.customers'))
+        dup, reason = _find_duplicate_customer(
+            form.name.data, form.email.data, form.phone.data)
+        if dup and reason in ('email', 'phone'):
+            flash(f'A customer with that {reason} already exists: {dup.name}. '
+                  f'Open them instead of creating a duplicate.', 'error')
+        else:
+            customer = Customer(user_id=current_user.id)
+            form.populate_obj(customer)
+            db.session.add(customer)
+            db.session.commit()
+            if dup and reason == 'name':
+                flash(f'Customer added. Note: "{dup.name}" already existed — '
+                      f'merge them below if this is the same person.', 'success')
+            else:
+                flash('Customer added.', 'success')
+            return redirect(url_for('quotes.customers'))
 
     all_customers = (Customer.query.filter_by(user_id=current_user.id)
                      .order_by(Customer.name.asc()).all())
@@ -452,6 +490,31 @@ def delete_customer(customer_id):
     db.session.delete(customer)
     db.session.commit()
     flash('Customer deleted.', 'success')
+    return redirect(url_for('quotes.customers'))
+
+
+@quote_bp.route('/customers/<int:customer_id>/merge', methods=['POST'])
+@login_required
+def merge_customer(customer_id):
+    """Merge a duplicate customer into a survivor: move every related record
+    (proposals, invoices, contracts, change orders, documents, locations, jobs)
+    to the survivor, then delete the empty duplicate."""
+    dup = Customer.query.filter_by(
+        id=customer_id, user_id=current_user.id).first_or_404()
+    survivor = Customer.query.filter_by(
+        id=request.form.get('survivor_id', type=int),
+        user_id=current_user.id).first()
+    if not survivor or survivor.id == dup.id:
+        flash('Pick a different customer to merge into.', 'error')
+        return redirect(url_for('quotes.customers'))
+
+    for model in (Quote, Invoice, Contract, ChangeOrder, GcDocument, Location, Project):
+        (model.query.filter_by(customer_id=dup.id)
+         .update({'customer_id': survivor.id}, synchronize_session=False))
+    db.session.delete(dup)
+    db.session.commit()
+    flash(f'Merged "{dup.name}" into "{survivor.name}" — all their jobs and '
+          f'records moved over.', 'success')
     return redirect(url_for('quotes.customers'))
 
 
