@@ -52,13 +52,8 @@ def login():
     if request.method == 'POST':
         phone = Worker.normalize_phone(request.form.get('phone'))
         pin = (request.form.get('pin') or '').strip()
-        worker = None
-        if phone:
-            # Match on normalized digits so formatting doesn't matter.
-            for w in Worker.query.filter_by(active=True).all():
-                if Worker.normalize_phone(w.phone) == phone:
-                    worker = w
-                    break
+        # Phones are stored normalized (digits) and unique, so a direct lookup works.
+        worker = Worker.query.filter_by(phone=phone, active=True).first() if phone else None
         if worker and worker.check_pin(pin):
             session[SESSION_KEY] = worker.id
             return redirect(url_for('crew.home'))

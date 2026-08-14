@@ -117,7 +117,9 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    user = User.query.get(int(user_id))
+    # Disabling an account revokes its session on the next request, not just at login.
+    return user if (user and user.active) else None
 
 
 from permissions import owner_required
@@ -183,10 +185,10 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if user and not user.active:
-            flash('That account has been disabled. Ask the owner to re-enable it.')
-            return redirect(url_for('login'))
         if user and user.check_password(form.password.data):
+            if not user.active:
+                flash('That account has been disabled. Ask the owner to re-enable it.')
+                return redirect(url_for('login'))
             login_user(user)
             session.permanent = True
             flash('Logged in successfully.')
@@ -266,12 +268,17 @@ def home():
 def workers():
     form = WorkerForm()
     if form.validate_on_submit():
+        phone = Worker.normalize_phone(form.phone.data)
+        if phone and Worker.query.filter_by(phone=phone).first():
+            flash('That phone is already used by another worker — each needs a '
+                  'unique phone for crew login.', 'error')
+            return redirect(url_for('workers'))
         new_worker = Worker(
             name=form.  name.data,
             contact=form.contact.data,
             daily_rate=form.daily_rate.data,
             active=form.active.data,
-            phone=Worker.normalize_phone(form.phone.data),
+            phone=phone,
         )
         if form.pin.data:
             new_worker.set_pin(form.pin.data)
@@ -290,11 +297,16 @@ def edit_worker(worker_id):
     form = WorkerForm(obj=worker)
 
     if form.validate_on_submit():
+        phone = Worker.normalize_phone(form.phone.data)
+        if phone and Worker.query.filter(Worker.phone == phone, Worker.id != worker.id).first():
+            flash('That phone is already used by another worker — each needs a '
+                  'unique phone for crew login.', 'error')
+            return redirect(url_for('edit_worker', worker_id=worker.id))
         worker.name = form.name.data
         worker.contact = form.contact.data
         worker.daily_rate = form.daily_rate.data
         worker.active = form.active.data
-        worker.phone = Worker.normalize_phone(form.phone.data)
+        worker.phone = phone
         if form.pin.data:
             worker.set_pin(form.pin.data)
         db.session.commit()
@@ -314,6 +326,7 @@ def toggle_worker(worker_id):
 
 @app.route('/delete_worker/<int:worker_id>', methods=['POST'])
 @login_required
+@owner_required
 def delete_worker(worker_id):
     worker = Worker.query.get_or_404(worker_id)
     db.session.delete(worker)
@@ -503,6 +516,10 @@ def add_task(project_id):
         flash('Task needs a description.', 'error')
         return redirect(url_for('project_detail', project_id=project.id))
     worker_id = request.form.get('worker_id', type=int)
+    # Ignore a missing/stale/invalid worker id (assign as unassigned) rather than
+    # writing a bad FK.
+    if worker_id and not Worker.query.get(worker_id):
+        worker_id = None
     due_raw = (request.form.get('due_date') or '').strip()
     due_date = None
     if due_raw:
@@ -543,11 +560,33 @@ def timeclock():
 @app.route('/timeclock/<int:punch_id>/approve', methods=['POST'])
 @login_required
 def approve_punch(punch_id):
-    from models import TimePunch
+    from models import TimePunch, Payment
     p = TimePunch.query.get_or_404(punch_id)
     p.approved = not p.approved
+    extra = ''
+    if p.approved:
+        # Approving turns the logged hours into labor cost on the job, so crew
+        # time flows into per-job profit (hours x hourly rate = daily_rate/8).
+        if p.payment_id is None and p.clock_out and p.project_id:
+            rate = (p.worker.daily_rate or 0) / TimePunch.HOURS_PER_DAY if p.worker else 0
+            amount = round((p.hours or 0) * rate, 2)
+            if amount > 0:
+                pay = Payment(worker_id=p.worker_id, project_id=p.project_id,
+                              amount=amount, payment_date=p.clock_out.date(),
+                              method='Labor', note=f'Approved crew time: {p.hours} h')
+                db.session.add(pay)
+                db.session.flush()
+                p.payment_id = pay.id
+                extra = f' · ${amount:,.2f} labor recorded'
+    elif p.payment_id is not None:
+        # Un-approving removes the generated labor payment (no orphan).
+        pay = Payment.query.get(p.payment_id)
+        if pay:
+            db.session.delete(pay)
+        p.payment_id = None
+        extra = ' · labor payment removed'
     db.session.commit()
-    flash('Punch approved.' if p.approved else 'Approval removed.')
+    flash(('Punch approved.' if p.approved else 'Approval removed.') + extra)
     return redirect(url_for('timeclock'))
 
 
@@ -558,17 +597,35 @@ def edit_punch(punch_id):
     p = TimePunch.query.get_or_404(punch_id)
     ci = (request.form.get('clock_in') or '').strip()
     co = (request.form.get('clock_out') or '').strip()
+
+    new_in = p.clock_in
     if ci:
         try:
-            p.clock_in = datetime.strptime(ci, '%Y-%m-%dT%H:%M')
+            new_in = datetime.strptime(ci, '%Y-%m-%dT%H:%M')
         except ValueError:
             pass
-    p.clock_out = None
-    if co:
+    if co == '':
+        new_out = None
+    else:
         try:
-            p.clock_out = datetime.strptime(co, '%Y-%m-%dT%H:%M')
+            new_out = datetime.strptime(co, '%Y-%m-%dT%H:%M')
         except ValueError:
-            pass
+            new_out = p.clock_out
+
+    if new_out and new_in and new_out < new_in:
+        flash('Clock-out cannot be before clock-in.', 'error')
+        return redirect(url_for('timeclock'))
+    if new_out is None:   # reopening this punch
+        other_open = TimePunch.query.filter(
+            TimePunch.worker_id == p.worker_id,
+            TimePunch.clock_out.is_(None),
+            TimePunch.id != p.id).first()
+        if other_open:
+            flash('That worker already has an open punch — close it before reopening this one.', 'error')
+            return redirect(url_for('timeclock'))
+
+    p.clock_in = new_in
+    p.clock_out = new_out
     db.session.commit()
     flash('Punch corrected.')
     return redirect(url_for('timeclock'))

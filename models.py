@@ -343,10 +343,16 @@ class TimePunch(db.Model):
     clock_out = db.Column(db.DateTime)
     approved = db.Column(db.Boolean, default=False)
     note = db.Column(db.Text)
+    # The labor Payment generated when this punch was approved (Phase 8, so
+    # crew time flows into per-job cost/profit). Cleared/removed on un-approve.
+    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     worker = db.relationship('Worker', backref=db.backref('time_punches', cascade='all, delete-orphan'))
     project = db.relationship('Project', backref=db.backref('time_punches', cascade='all, delete-orphan'))
+    payment = db.relationship('Payment', foreign_keys=[payment_id])
+
+    HOURS_PER_DAY = 8.0   # convert daily_rate to an hourly cost
 
     @property
     def is_open(self):
