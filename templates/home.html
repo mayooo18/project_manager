@@ -2,179 +2,158 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background-color:#000; font-family: Inter, "Noto Sans", sans-serif; }
-    .kpi { background:#1a1a1a; border:1px solid #374151; border-radius:0.9rem; padding:1rem; }
-    .kpi:active { background:#222; }
-    .action { background:#262626; border:1px solid #374151; border-radius:0.9rem;
-              padding:1rem; display:flex; flex-direction:column; align-items:center;
-              gap:0.4rem; text-align:center; transition:background .15s; }
-    .action:hover, .action:active { background:#2d2d2d; border-color:#ff6b35; }
-    .panel { background:#1a1a1a; border:1px solid #374151; border-radius:0.9rem; }
-    /* Self-contained grids (don't rely on Tailwind's purged utilities) */
-    .kgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.75rem; }
-    .agrid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0.75rem; }
-    .twocol { display:grid; grid-template-columns:1fr; gap:1rem; }
-    @media (min-width:768px){ .agrid { grid-template-columns:repeat(6,minmax(0,1fr)); } }
-    @media (min-width:1024px){
-      .kgrid { grid-template-columns:repeat(4,minmax(0,1fr)); }
-      .twocol { grid-template-columns:1fr 1fr; }
-    }
-  </style>
-</head>
-<body class="bg-black">
+<style>
+  .dash{max-width:1080px;margin:0 auto;}
+  .kgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+  .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+  .twocol{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:768px){.agrid{grid-template-columns:repeat(6,minmax(0,1fr));}}
+  @media(min-width:1024px){.kgrid{grid-template-columns:repeat(4,minmax(0,1fr));}.twocol{grid-template-columns:1fr 1fr;}}
+  a.kpi{display:block;text-decoration:none;transition:border-color .15s;}
+  a.kpi:hover{border-color:var(--accent);}
+  a.kpi .val{font-size:1.9rem;}
+  .action{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);
+          padding:1rem .5rem;display:flex;flex-direction:column;align-items:center;gap:.4rem;
+          text-align:center;transition:all .15s;text-decoration:none;}
+  .action:hover{border-color:var(--accent);background:var(--surface-2);}
+  .action .ico{font-size:1.4rem;line-height:1;}
+  .action .lab{font-size:.75rem;color:var(--ink-700);font-weight:500;}
+  .action.primary{background:var(--accent);border-color:var(--accent);}
+  .action.primary .lab{color:#fff;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.1rem;}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;}
+  .panel-head h2{font-size:.95rem;font-weight:700;color:var(--ink-900);margin:0 !important;}
+  .panel-head a{font-size:.78rem;color:var(--accent);text-decoration:none;}
+  .listrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+           background:var(--canvas);border:1px solid var(--border);border-radius:var(--r);
+           padding:.5rem .75rem;text-decoration:none;margin-bottom:.5rem;}
+  a.listrow:hover{border-color:var(--accent);}
+  .listrow .t{font-size:.88rem;color:var(--ink-700);display:block;}
+  .listrow .m{font-size:.75rem;color:var(--ink-500);}
+  .pill{font-size:10px;border:1px solid;border-radius:4px;padding:1px 6px;text-transform:uppercase;white-space:nowrap;}
+  .sect-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-500);font-weight:600;margin-bottom:.5rem;}
+</style>
 
-<div class="max-w-5xl mx-auto px-4 py-6">
+<div class="dash">
 
-  <!-- Greeting -->
-  <div class="mb-5">
-    <h1 class="text-white text-2xl sm:text-3xl font-bold leading-tight">Optimal Solutions</h1>
-    <p class="text-gray-500 text-sm">{{ today.strftime('%A, %B %d, %Y') }}</p>
+  <div class="page-head">
+    <div>
+      <h1>Optimal Solutions</h1>
+      <div class="sub">{{ today.strftime('%A, %B %d, %Y') }}</div>
+    </div>
   </div>
 
   <!-- KPIs -->
-  <div class="kgrid mb-6">
-    <a href="{{ url_for('projects') }}" class="kpi no-underline">
-      <p class="text-gray-400 text-xs uppercase tracking-wide">Active Jobs</p>
-      <p class="text-white text-3xl font-bold mt-1">{{ active_projects }}</p>
-      <p class="text-gray-600 text-xs mt-1">{{ project_count }} total</p>
+  <div class="kgrid" style="margin-bottom:1.5rem;">
+    <a href="{{ url_for('projects') }}" class="kpi">
+      <div class="lbl">Active Jobs</div>
+      <div class="val">{{ active_projects }}</div>
+      <div class="foot">{{ project_count }} total</div>
     </a>
-    <a href="{{ url_for('workers') }}" class="kpi no-underline">
-      <p class="text-gray-400 text-xs uppercase tracking-wide">Active Workers</p>
-      <p class="text-white text-3xl font-bold mt-1">{{ active_workers }}</p>
-      <p class="text-gray-600 text-xs mt-1">{{ worker_count }} total</p>
+    <a href="{{ url_for('workers') }}" class="kpi">
+      <div class="lbl">Active Workers</div>
+      <div class="val">{{ active_workers }}</div>
+      <div class="foot">{{ worker_count }} total</div>
     </a>
-    <a href="{{ url_for('income') }}" class="kpi no-underline">
-      <p class="text-gray-400 text-xs uppercase tracking-wide">Revenue</p>
-      <p class="text-[#ff6b35] text-3xl font-bold mt-1">${{ '{:,.0f}'.format(total_income) }}</p>
-      <p class="text-gray-600 text-xs mt-1">income to date</p>
+    <a href="{{ url_for('income') }}" class="kpi">
+      <div class="lbl">Revenue</div>
+      <div class="val c-accent">${{ '{:,.0f}'.format(total_income) }}</div>
+      <div class="foot">income to date</div>
     </a>
-    <a href="{{ url_for('profitability') }}" class="kpi no-underline">
-      <p class="text-gray-400 text-xs uppercase tracking-wide">Net Profit</p>
-      <p class="text-3xl font-bold mt-1 {{ 'text-green-400' if net_profit >= 0 else 'text-red-400' }}">${{ '{:,.0f}'.format(net_profit) }}</p>
-      <p class="text-gray-600 text-xs mt-1">income − expenses − pay</p>
+    <a href="{{ url_for('profitability') }}" class="kpi">
+      <div class="lbl">Net Profit</div>
+      <div class="val {{ 'c-green' if net_profit >= 0 else 'c-red' }}">${{ '{:,.0f}'.format(net_profit) }}</div>
+      <div class="foot">income − expenses − pay</div>
     </a>
-    <a href="{{ url_for('quotes.index') }}" class="kpi no-underline">
-      <p class="text-gray-400 text-xs uppercase tracking-wide">Pending Proposals</p>
-      <p class="text-white text-3xl font-bold mt-1">{{ pending_quote_count }}</p>
-      <p class="text-gray-600 text-xs mt-1">${{ '{:,.0f}'.format(pending_quote_value) }} outstanding</p>
+    <a href="{{ url_for('quotes.index') }}" class="kpi">
+      <div class="lbl">Pending Proposals</div>
+      <div class="val">{{ pending_quote_count }}</div>
+      <div class="foot">${{ '{:,.0f}'.format(pending_quote_value) }} outstanding</div>
     </a>
-    <a href="{{ url_for('quotes.customers') }}" class="kpi no-underline">
-      <p class="text-gray-400 text-xs uppercase tracking-wide">Customers</p>
-      <p class="text-white text-3xl font-bold mt-1">{{ customer_count }}</p>
-      <p class="text-gray-600 text-xs mt-1">on file</p>
+    <a href="{{ url_for('quotes.customers') }}" class="kpi">
+      <div class="lbl">Customers</div>
+      <div class="val">{{ customer_count }}</div>
+      <div class="foot">on file</div>
     </a>
-    <a href="{{ url_for('expenses') }}" class="kpi no-underline">
-      <p class="text-gray-400 text-xs uppercase tracking-wide">Expenses</p>
-      <p class="text-white text-3xl font-bold mt-1">${{ '{:,.0f}'.format(total_expenses) }}</p>
-      <p class="text-gray-600 text-xs mt-1">to date</p>
+    <a href="{{ url_for('expenses') }}" class="kpi">
+      <div class="lbl">Expenses</div>
+      <div class="val">${{ '{:,.0f}'.format(total_expenses) }}</div>
+      <div class="foot">to date</div>
     </a>
-    <a href="{{ url_for('reminders.index') }}" class="kpi no-underline">
-      <p class="text-gray-400 text-xs uppercase tracking-wide">Reminders</p>
-      <p class="text-white text-3xl font-bold mt-1">{{ upcoming_reminders|length }}</p>
-      <p class="text-gray-600 text-xs mt-1">due in 30 days</p>
+    <a href="{{ url_for('reminders.index') }}" class="kpi">
+      <div class="lbl">Reminders</div>
+      <div class="val">{{ upcoming_reminders|length }}</div>
+      <div class="foot">due in 30 days</div>
     </a>
   </div>
 
   <!-- Quick actions -->
-  <h2 class="text-gray-400 text-xs uppercase tracking-wide mb-2">Quick actions</h2>
-  <div class="agrid mb-6">
-    <a href="{{ url_for('quotes.new') }}" class="action no-underline" style="background:#ff6b35;border-color:#ff6b35;">
-      <span class="text-white text-xl">＋</span>
-      <span class="text-white text-xs font-semibold">New Proposal</span>
-    </a>
-    <a href="{{ url_for('quotes.customers') }}" class="action no-underline">
-      <span class="text-[#ff6b35] text-xl">👤</span>
-      <span class="text-gray-200 text-xs">Customer</span>
-    </a>
-    <a href="{{ url_for('work_logs') }}" class="action no-underline">
-      <span class="text-[#ff6b35] text-xl">⏱</span>
-      <span class="text-gray-200 text-xs">Log Work</span>
-    </a>
-    <a href="{{ url_for('expenses') }}" class="action no-underline">
-      <span class="text-[#ff6b35] text-xl">🧾</span>
-      <span class="text-gray-200 text-xs">Expense</span>
-    </a>
-    <a href="{{ url_for('payments') }}" class="action no-underline">
-      <span class="text-[#ff6b35] text-xl">💵</span>
-      <span class="text-gray-200 text-xs">Payment</span>
-    </a>
-    <a href="{{ url_for('income') }}" class="action no-underline">
-      <span class="text-[#ff6b35] text-xl">＄</span>
-      <span class="text-gray-200 text-xs">Income</span>
-    </a>
+  <div class="sect-label">Quick actions</div>
+  <div class="agrid" style="margin-bottom:1.5rem;">
+    <a href="{{ url_for('quotes.new') }}" class="action primary"><span class="ico">＋</span><span class="lab">New Proposal</span></a>
+    <a href="{{ url_for('quotes.customers') }}" class="action"><span class="ico">👤</span><span class="lab">Customer</span></a>
+    <a href="{{ url_for('work_logs') }}" class="action"><span class="ico">⏱</span><span class="lab">Log Work</span></a>
+    <a href="{{ url_for('expenses') }}" class="action"><span class="ico">🧾</span><span class="lab">Expense</span></a>
+    <a href="{{ url_for('payments') }}" class="action"><span class="ico">💵</span><span class="lab">Payment</span></a>
+    <a href="{{ url_for('income') }}" class="action"><span class="ico">＄</span><span class="lab">Income</span></a>
   </div>
 
   <!-- Two-column: reminders + recent quotes -->
   <div class="twocol">
 
-    <!-- Reminders due -->
-    <div class="panel p-4">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-white font-semibold">Due soon</h2>
-        <a href="{{ url_for('reminders.index') }}" class="text-[#ff6b35] text-xs hover:underline">View all</a>
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Due soon</h2>
+        <a href="{{ url_for('reminders.index') }}">View all</a>
       </div>
       {% if upcoming_reminders %}
-      <div class="flex flex-col gap-2">
         {% for r in upcoming_reminders %}
         {% set overdue = r.due_date < today %}
         {% set soon = r.due_date <= today + timedelta(days=7) %}
-        <div class="flex items-center justify-between gap-3 bg-[#111] border border-[#2d2d2d] rounded-lg px-3 py-2">
-          <span class="text-gray-200 text-sm">{{ r.text }}</span>
-          <span class="text-xs whitespace-nowrap {{ 'text-red-400' if overdue else 'text-yellow-400' if soon else 'text-gray-500' }}">
+        <div class="listrow">
+          <span class="t">{{ r.text }}</span>
+          <span class="m {{ 'c-red' if overdue else 'c-amber' if soon else '' }}" style="white-space:nowrap;">
             {{ 'Overdue' if overdue else r.due_date.strftime('%b %d') }}
           </span>
         </div>
         {% endfor %}
-      </div>
       {% else %}
-      <p class="text-gray-600 text-sm">Nothing due in the next 30 days. 🎉</p>
+        <p class="muted" style="font-size:.88rem;">Nothing due in the next 30 days. 🎉</p>
       {% endif %}
     </div>
 
-    <!-- Recent quotes -->
-    <div class="panel p-4">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-white font-semibold">Recent proposals</h2>
-        <a href="{{ url_for('quotes.index') }}" class="text-[#ff6b35] text-xs hover:underline">View all</a>
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Recent proposals</h2>
+        <a href="{{ url_for('quotes.index') }}">View all</a>
       </div>
       {% set status_styles = {
-        'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
-        'approved':'text-green-300 border-green-500','declined':'text-red-300 border-red-500',
-        'converted':'text-orange-300 border-orange-500'} %}
+        'draft':'color:var(--ink-500);border-color:var(--border-strong)',
+        'sent':'color:var(--blue-fg);border-color:var(--blue-fg)',
+        'approved':'color:var(--green-fg);border-color:var(--green-fg)',
+        'declined':'color:var(--red-fg);border-color:var(--red-fg)',
+        'converted':'color:var(--accent);border-color:var(--accent)'} %}
       {% if recent_quotes %}
-      <div class="flex flex-col gap-2">
         {% for q in recent_quotes %}
-        <a href="{{ url_for('quotes.edit', quote_id=q.id) }}"
-           class="no-underline flex items-center justify-between gap-3 bg-[#111] border border-[#2d2d2d] rounded-lg px-3 py-2 hover:border-[#ff6b35]">
-          <span class="min-w-0">
-            <span class="text-gray-200 text-sm block truncate">{{ q.title }}</span>
-            <span class="text-gray-600 text-xs">{{ q.customer.name }}</span>
+        <a href="{{ url_for('quotes.edit', quote_id=q.id) }}" class="listrow">
+          <span class="min-w-0" style="min-width:0;">
+            <span class="t" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ q.title }}</span>
+            <span class="m">{{ q.customer.name }}</span>
           </span>
-          <span class="flex items-center gap-2 flex-shrink-0">
-            <span class="text-gray-200 text-sm">${{ '{:,.0f}'.format(q.total or 0) }}</span>
-            <span class="text-[10px] border rounded px-1.5 py-0.5 uppercase {{ status_styles.get(q.status, 'text-gray-300 border-gray-500') }}">{{ q.status }}</span>
+          <span style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <span class="t">${{ '{:,.0f}'.format(q.total or 0) }}</span>
+            <span class="pill" style="{{ status_styles.get(q.status, 'color:var(--ink-500);border-color:var(--border-strong)') }}">{{ q.status }}</span>
           </span>
         </a>
         {% endfor %}
-      </div>
       {% else %}
-      <p class="text-gray-600 text-sm">No proposals yet.
-        <a href="{{ url_for('quotes.new') }}" class="text-[#ff6b35] hover:underline">Create one →</a>
-      </p>
+        <p class="muted" style="font-size:.88rem;">No proposals yet.
+          <a href="{{ url_for('quotes.new') }}" style="color:var(--accent);">Create one →</a>
+        </p>
       {% endif %}
     </div>
 
   </div>
 
 </div>
-
-</body>
-</html>
 {% endblock %}

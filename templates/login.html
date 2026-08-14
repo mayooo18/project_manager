@@ -1,99 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Project Manager</title>
-    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900&family=Noto+Sans:wght@400;500;700;900">
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign in · Optimal Solutions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --canvas:#0e1520; --surface:#172130; --border:#253243; --border-strong:#37465b;
+      --ink-900:#eef2f8; --ink-700:#c3cddb; --ink-500:#8a97ab; --ink-400:#6b7688;
+      --accent:#f97316; --accent-hover:#fb8c47; --accent-weak:rgba(249,115,22,.14);
+      --red-bg:rgba(239,68,68,.16); --red-fg:#f87171;
+      --green-bg:rgba(16,185,129,.16); --green-fg:#34d399;
+      --blue-bg:rgba(59,130,246,.16); --blue-fg:#60a5fa;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas);color:var(--ink-700);
+         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;
+         -webkit-font-smoothing:antialiased;}
+    .wrap{width:100%;max-width:400px;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+          box-shadow:0 8px 30px rgba(0,0,0,.4);padding:2rem;}
+    .brand{text-align:center;margin-bottom:1.5rem;}
+    .brand img{height:52px;width:auto;margin:0 auto .75rem;display:block;}
+    .brand h1{color:var(--ink-900);font-size:1.15rem;font-weight:700;letter-spacing:-.01em;}
+    .brand p{color:var(--ink-500);font-size:.9rem;margin-top:2px;}
+    .field{margin-bottom:1rem;}
+    .field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-700);margin-bottom:.4rem;}
+    .fld{width:100%;padding:.7rem .85rem;background:var(--canvas);border:1px solid var(--border-strong);
+         border-radius:8px;color:var(--ink-900);font-size:.92rem;font-family:inherit;transition:all .15s;}
+    .fld::placeholder{color:var(--ink-400);}
+    .fld:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);}
+    .err{color:var(--red-fg);font-size:.75rem;margin-top:.3rem;}
+    .forgot{text-align:center;margin:.25rem 0 1.25rem;}
+    .forgot a{color:var(--accent);font-size:.82rem;text-decoration:none;}
+    .forgot a:hover{color:var(--accent-hover);}
+    .btn-login{width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;
+               padding:.75rem;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .15s;
+               font-family:inherit;}
+    .btn-login:hover{background:var(--accent-hover);}
+    .flash{border-radius:8px;padding:.7rem .85rem;font-size:.85rem;margin-bottom:1rem;border:1px solid;}
+    .flash.error{background:var(--red-bg);color:var(--red-fg);border-color:rgba(248,113,113,.4);}
+    .flash.success{background:var(--green-bg);color:var(--green-fg);border-color:rgba(52,211,153,.4);}
+    .flash.info{background:var(--blue-bg);color:var(--blue-fg);border-color:rgba(96,165,250,.4);}
+    .foot{text-align:center;margin-top:1.25rem;color:var(--ink-400);font-size:.8rem;}
+  </style>
 </head>
-<body class="min-h-screen bg-black flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <!-- Login Card -->
-        <div class="bg-[#1a1a1a] rounded-2xl shadow-xl p-8 border border-[#374151]">
-            <div class="text-center mb-8">
-                <h1 class="text-2xl font-bold text-[#ff6b35] mb-2">Project Manager</h1>
-                <h2 class="text-xl font-semibold text-[#e5e7eb]">Welcome back</h2>
-            </div>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">
+        <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Optimal Solutions"/>
+        <h1>Optimal Solutions</h1>
+        <p>Sign in to your account</p>
+      </div>
 
-            <!-- Flash messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="mb-6 space-y-2">
-                        {% for category, message in messages %}
-                            <div class="rounded-xl px-4 py-3 text-sm
-                                 {% if category == 'error' %} bg-[#7f1d1d] text-[#f87171] border border-[#991b1b]
-                                 {% elif category == 'success' %} bg-[#065f46] text-[#34d399] border border-[#059669]
-                                 {% else %} bg-[#1e3a8a] text-[#60a5fa] border border-[#1e40af]
-                                 {% endif %}">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ 'error' if category == 'error' else 'success' if category == 'success' else 'info' }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
 
-            <!-- Login Form -->
-            <form method="POST" action="{{ url_for('login') }}" class="space-y-6">
-                {{ form.hidden_tag() }}
-
-                <!-- Username Field -->
-                <div>
-                    <label for="{{ form.username.id }}" class="block text-sm font-medium text-[#d1d5db] mb-2">
-                        Username
-                    </label>
-                    {{ form.username(
-                        class="w-full px-4 py-3 border border-[#374151] bg-[#262626] text-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:border-[#ff6b35] transition-all duration-200 placeholder-[#6b7280]",
-                        placeholder="Enter your username"
-                    ) }}
-                    {% if form.username.errors %}
-                        <div class="mt-2">
-                            {% for error in form.username.errors %}
-                                <p class="text-[#f87171] text-xs">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-
-                <!-- Password Field -->
-                <div>
-                    <label for="{{ form.password.id }}" class="block text-sm font-medium text-[#d1d5db] mb-2">
-                        Password
-                    </label>
-                    {{ form.password(
-                        class="w-full px-4 py-3 border border-[#374151] bg-[#262626] text-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:border-[#ff6b35] transition-all duration-200 placeholder-[#6b7280]",
-                        placeholder="Enter your password"
-                    ) }}
-                    {% if form.password.errors %}
-                        <div class="mt-2">
-                            {% for error in form.password.errors %}
-                                <p class="text-[#f87171] text-xs">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-
-                <!-- Forgot Password Link -->
-                <div class="text-center">
-                    <a href="#" class="text-sm text-[#ff6b35] hover:text-[#ff8c5a] transition-colors">
-                        Forgot password?
-                    </a>
-                </div>
-
-                <!-- Submit Button -->
-                <div>
-                    {{ form.submit(
-                        class="w-full bg-[#ff6b35] hover:bg-[#ff8c5a] text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:ring-offset-2 focus:ring-offset-[#1a1a1a] cursor-pointer"
-                    ) }}
-                </div>
-            </form>
+      <form method="POST" action="{{ url_for('login') }}">
+        {{ form.hidden_tag() }}
+        <div class="field">
+          <label for="{{ form.username.id }}">Username</label>
+          {{ form.username(class="fld", placeholder="Enter your username") }}
+          {% for e in form.username.errors %}<p class="err">{{ e }}</p>{% endfor %}
         </div>
-
-        <!-- Footer -->
-        <div class="text-center mt-6 text-sm text-[#6b7280]">
-            <p>© 2024 Project Manager. All rights reserved.</p>
+        <div class="field">
+          <label for="{{ form.password.id }}">Password</label>
+          {{ form.password(class="fld", placeholder="Enter your password") }}
+          {% for e in form.password.errors %}<p class="err">{{ e }}</p>{% endfor %}
         </div>
+        <div class="forgot"><a href="#">Forgot password?</a></div>
+        {{ form.submit(class="btn-login") }}
+      </form>
     </div>
+    <div class="foot">© Optimal Solutions · Project Manager</div>
+  </div>
 </body>
 </html>
