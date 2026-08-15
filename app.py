@@ -30,7 +30,7 @@ from contract_routes import contract_bp
 from change_order_routes import change_order_bp
 from subcontractor_routes import subcontractor_bp
 from license_routes import license_bp
-from permit_routes import permit_bp
+from permit_routes import permit_bp, sync_reminders_for_permit
 from waiver_routes import waiver_bp
 from portal_routes import portal_bp
 from crew_routes import crew_bp
@@ -689,6 +689,44 @@ def add_project_income(project_id):
     db.session.commit()
     flash('Income added to job.')
     return redirect(url_for('project_detail', project_id=project_id))
+
+
+@app.route('/projects/<int:project_id>/permits/add', methods=['POST'])
+@login_required
+def add_project_permit(project_id):
+    project = Project.query.get_or_404(project_id)
+    permit_type = (request.form.get('permit_type') or '').strip()
+    if not permit_type:
+        flash('Permit type is required.', 'error')
+        return redirect(url_for('project_detail', project_id=project.id))
+
+    def parse_date(field_name):
+        raw = (request.form.get(field_name) or '').strip()
+        if not raw:
+            return None
+        try:
+            return datetime.strptime(raw, '%Y-%m-%d').date()
+        except ValueError:
+            return None
+
+    permit = Permit(
+        user_id=current_user.id,
+        project_id=project.id,
+        permit_type=permit_type,
+        permit_number=(request.form.get('permit_number') or '').strip() or None,
+        issuing_authority=(request.form.get('issuing_authority') or '').strip() or None,
+        status=request.form.get('status') or 'Applied',
+        applied_date=parse_date('applied_date'),
+        issued_date=parse_date('issued_date'),
+        expiration_date=parse_date('expiration_date'),
+        notes=(request.form.get('notes') or '').strip() or None,
+    )
+    db.session.add(permit)
+    db.session.flush()
+    sync_reminders_for_permit(permit)
+    db.session.commit()
+    flash(f'{permit.permit_type} permit added to job.')
+    return redirect(url_for('project_detail', project_id=project.id))
 
 
 @app.route('/projects/<int:project_id>/tasks/add', methods=['POST'])

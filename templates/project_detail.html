@@ -281,6 +281,37 @@
         <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(p.status,'text-gray-300 border-gray-500') }}">{{ p.status }}</span><span class="muted">{{ p.inspections|length }} insp</span></span></div>
       {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
 
+      <form method="POST" action="{{ url_for('add_project_permit', project_id=project.id) }}"
+            style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="muted" style="margin-bottom:.5rem;">Add a job permit</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <select name="permit_type" class="fld-sm" required>
+            <option value="General">General</option>
+            <option value="Building">Building</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Plumbing">Plumbing</option>
+            <option value="HVAC">HVAC</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Roofing">Roofing</option>
+            <option value="Other">Other</option>
+          </select>
+          <input name="permit_number" class="fld-sm" placeholder="Permit #">
+          <input name="issuing_authority" class="fld-sm" placeholder="Issuing authority">
+          <select name="status" class="fld-sm">
+            <option value="Applied">Applied</option>
+            <option value="Issued">Issued</option>
+            <option value="Expired">Expired</option>
+            <option value="Finaled">Finaled</option>
+            <option value="Closed">Closed</option>
+          </select>
+          <input type="date" name="applied_date" class="fld-sm" value="{{ today }}">
+          <input type="date" name="expiration_date" class="fld-sm" title="Expiration date">
+        </div>
+        <textarea name="notes" class="fld-sm" style="margin-top:.5rem;width:100%;" placeholder="Notes" rows="2"></textarea>
+        <button type="submit" class="obtn accent" style="margin-top:.5rem;">Add permit</button>
+      </form>
+
       <p class="muted" style="margin-top:.85rem;">Waivers &amp; Certificates ({{ documents|length }})</p>
       {% for d in documents %}
       <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('waivers.edit', doc_id=d.id) }}">{{ d.doc_kind.replace('_',' ')|title }}</a>
