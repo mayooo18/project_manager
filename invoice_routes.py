@@ -25,6 +25,7 @@ from flask import (
     send_file,
 )
 from flask_login import login_required, current_user
+from sqlalchemy.orm import selectinload
 from permissions import owner_required
 
 from extensions import db, limiter
@@ -36,6 +37,7 @@ from quote_routes import (
 
 invoice_bp = Blueprint('invoices', __name__, url_prefix='/invoices')
 
+PAGE_SIZE = 100
 INVOICE_STATUSES = ['draft', 'sent', 'paid', 'void']
 PAYMENT_METHODS = ['Cash', 'Zelle', 'Check', 'Bank transfer', 'Card', 'Other']
 PUBLIC_LINK_LIFETIME = timedelta(days=30)
@@ -318,9 +320,14 @@ def send_invoice_email(invoice):
 @invoice_bp.route('/')
 @login_required
 def index():
-    invoices = (Invoice.query.filter_by(user_id=current_user.id)
-                .order_by(Invoice.created_at.desc()).all())
-    return render_template('invoices/list.html', invoices=invoices,
+    invoices = (Invoice.query
+                .filter_by(user_id=current_user.id)
+                .options(selectinload(Invoice.customer), selectinload(Invoice.project))
+                .order_by(Invoice.created_at.desc())
+                .paginate(page=max(request.args.get('page', 1, type=int) or 1, 1),
+                          per_page=PAGE_SIZE, error_out=False))
+    return render_template('invoices/list.html', invoices=invoices.items,
+                           pagination=invoices,
                            delete_form=DeleteForm())
 
 
@@ -386,6 +393,12 @@ def _save_invoice(invoice):
 def from_quote(quote_id):
     quote = Quote.query.filter_by(
         id=quote_id, user_id=current_user.id).first_or_404()
+    if quote.status != 'approved':
+        flash('Only an approved proposal can be converted to an invoice.', 'error')
+        return redirect(url_for('quotes.edit', quote_id=quote.id))
+    if Invoice.query.filter_by(quote_id=quote.id, user_id=current_user.id).first():
+        flash('This proposal already has an invoice.', 'error')
+        return redirect(url_for('quotes.edit', quote_id=quote.id))
 
     invoice = Invoice(
         user_id=current_user.id,

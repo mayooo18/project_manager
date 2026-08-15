@@ -16,12 +16,28 @@
 
 <div class="iwrap">
   <div class="page-head">
-    <h1>{{ 'Edit Proposal' if quote else 'New Proposal' }}</h1>
+    <h1>{{ 'Edit Proposal' if quote else 'New Proposal' }}{% if quote %} <span class="muted" style="font-size:1rem;font-weight:400;">· {{ quote.status }}</span>{% endif %}</h1>
     <a href="{{ url_for('quotes.index') }}" class="lnk">← All proposals</a>
   </div>
+  {% set locked = quote and quote.status in ['approved', 'converted'] %}
+  {% if locked %}
+  <div class="sec">
+    <p class="c-green" style="font-weight:600;">Accepted proposal</p>
+    <p class="muted" style="margin-top:.25rem;">This proposal is locked because it was approved by the customer{% if quote.status == 'converted' %} and converted{% endif %}.</p>
+    {% if quote.status == 'approved' %}
+    <form method="POST" action="{{ url_for('quotes.reopen', quote_id=quote.id) }}" style="margin-top:1rem;" onsubmit="return confirm('Reopen this approved proposal? This clears the customer signature and requires a new approval link.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="obtn">Reopen for changes</button>
+    </form>
+    {% elif quote.status == 'converted' %}
+    <p class="muted" style="margin-top:1rem;">Use the contract or invoice created from this proposal for amendments.</p>
+    {% endif %}
+  </div>
+  {% endif %}
 
   <form method="POST" action="{{ url_for('quotes.edit', quote_id=quote.id) if quote else url_for('quotes.new') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <fieldset {% if locked %}disabled{% endif %} style="border:0;padding:0;margin:0;">
 
     <div class="sec">
       <p class="step" style="margin-bottom:.75rem;">1 · Customer &amp; details</p>
@@ -67,9 +83,10 @@
       <p class="step" style="margin-bottom:.75rem;">3 · Notes (shown to customer)</p>
       <textarea name="notes" rows="3" class="fld" placeholder="Anything the customer should know…">{{ quote.notes if quote else '' }}</textarea>
     </div>
+    </fieldset>
 
     <div class="flex flex-wrap items-center gap-3">
-      <button type="submit" class="btn">Save Proposal</button>
+      {% if not locked %}<button type="submit" class="btn">Save Proposal</button>{% endif %}
       {% if quote %}<a href="{{ url_for('quotes.pdf', quote_id=quote.id) }}" target="_blank" class="obtn">Preview PDF</a>{% endif %}
     </div>
   </form>
@@ -118,6 +135,20 @@
     {% endif %}
     {% if quote.signed_at %}
     <p class="c-green" style="font-size:.9rem;margin-top:.75rem;">✓ Approved by {{ quote.signature_name }} on {{ quote.signed_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    {% endif %}
+    {% if quote.status == 'approved' %}
+    <div class="flex flex-wrap items-center gap-3" style="margin-top:1rem;">
+      <form method="POST" action="{{ url_for('contracts.from_quote', quote_id=quote.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="btn">Create Contract</button>
+      </form>
+      <form method="POST" action="{{ url_for('invoices.from_quote', quote_id=quote.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="obtn accent">Create Invoice</button>
+      </form>
+    </div>
+    {% elif quote.status == 'converted' %}
+    <p class="muted" style="margin-top:1rem;">This proposal has already been converted.</p>
     {% endif %}
   </div>
   {% endif %}

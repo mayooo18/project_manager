@@ -42,9 +42,9 @@ class Worker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     daily_rate = db.Column(db.Float)
-    active = db.Column(db.Boolean, default=True)
+    active = db.Column(db.Boolean, default=True, index=True)
     # Crew portal login (Phase 8): phone (digits only) + hashed PIN.
-    phone = db.Column(db.String(30))
+    phone = db.Column(db.String(30), index=True)
     pin_hash = db.Column(db.String(255))
 
     payments = db.relationship("Payment", back_populates="worker", cascade="all, delete-orphan")
@@ -68,7 +68,7 @@ class Project(db.Model):
     description = db.Column(db.Text)
     address = db.Column(db.String(200))
     start_date = db.Column(db.Date)
-    status = db.Column(db.String(50), default="Active")
+    status = db.Column(db.String(50), default="Active", index=True)
     google_folder_id = db.Column(db.String(200), nullable=True)
     google_doc_id = db.Column(db.String(200), nullable=True)
     # Client portal magic-link (Phase 5): one private, revocable link per job.
@@ -88,11 +88,11 @@ class Project(db.Model):
 
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
     description = db.Column(db.String(200))
     amount = db.Column(db.Float, nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    date = db.Column(db.DateTime, nullable=False)
+    category = db.Column(db.String(50), nullable=False, index=True)
+    date = db.Column(db.DateTime, nullable=False, index=True)
     note = db.Column(db.String(200))
     receipt_filename = db.Column(db.String(200))
     receipt_filepath = db.Column(db.String(300))
@@ -101,26 +101,26 @@ class Expense(db.Model):
 
 class Income(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
     amount = db.Column(db.Float, nullable=False)
     source = db.Column(db.String(100))
-    date = db.Column(db.DateTime, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, index=True)
     note = db.Column(db.Text)
     
     # No relationship needed here - it's defined in Project
 
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'))
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
+    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), index=True)
     amount = db.Column(db.Float, nullable=False)
-    payment_date = db.Column(db.Date, nullable=False)
+    payment_date = db.Column(db.Date, nullable=False, index=True)
     method = db.Column(db.String(50))
     note = db.Column(db.Text)
     receipt_filename = db.Column(db.String(200))
     receipt_filepath = db.Column(db.String(300))
     # Set when this payment was auto-generated from a work log (Phase 7 §5a).
-    work_log_id = db.Column(db.Integer, db.ForeignKey('work_log.id'), nullable=True)
+    work_log_id = db.Column(db.Integer, db.ForeignKey('work_log.id'), nullable=True, index=True)
 
     worker = db.relationship('Worker', back_populates='payments')
     work_log = db.relationship('WorkLog', backref=db.backref('payment', uselist=False))
@@ -137,9 +137,9 @@ class ProjectFile(db.Model):
 
 class WorkLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=False)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    start_date = db.Column(db.Date)
+    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=False, index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
+    start_date = db.Column(db.Date, index=True)
     end_date = db.Column(db.Date)
     days_worked = db.Column(db.Float)
     note = db.Column(db.Text)
@@ -187,10 +187,10 @@ class ProjectNote(db.Model):
 
 class Reminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     text = db.Column(db.Text, nullable=False)
-    due_date = db.Column(db.Date, nullable=True)
-    is_done = db.Column(db.Boolean, default=False)
+    due_date = db.Column(db.Date, nullable=True, index=True)
+    is_done = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
     vehicle_field = db.Column(db.String(50), nullable=True)
@@ -355,10 +355,10 @@ def find_or_create_location(user_id, customer_id, address):
 class Task(db.Model):
     """A task on a job, assigned by an owner/admin to a worker (Phase 8 §2)."""
     id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
+    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=True, index=True)
     description = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(20), default='assigned', nullable=False)  # assigned / in_progress / done
+    status = db.Column(db.String(20), default='assigned', nullable=False, index=True)  # assigned / in_progress / done
     due_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)
@@ -370,15 +370,15 @@ class Task(db.Model):
 class TimePunch(db.Model):
     """A worker's clock-in/out on a job (Phase 8 §3). One open punch at a time."""
     id = db.Column(db.Integer, primary_key=True)
-    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=False)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
-    clock_in = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    clock_out = db.Column(db.DateTime)
-    approved = db.Column(db.Boolean, default=False)
+    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=False, index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True, index=True)
+    clock_in = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    clock_out = db.Column(db.DateTime, index=True)
+    approved = db.Column(db.Boolean, default=False, index=True)
     note = db.Column(db.Text)
     # The labor Payment generated when this punch was approved (Phase 8, so
     # crew time flows into per-job cost/profit). Cleared/removed on un-approve.
-    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True)
+    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     worker = db.relationship('Worker', backref=db.backref('time_punches', cascade='all, delete-orphan'))
@@ -449,14 +449,14 @@ class Location(db.Model):
 
 class Quote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False, index=True)
     # Optional link to an internal project, so an approved quote can feed cost/profit tracking.
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True, index=True)
 
     title = db.Column(db.String(200), nullable=False)
     # draft → sent → approved / declined → converted (to invoice, Phase 2)
-    status = db.Column(db.String(20), default='draft', nullable=False)
+    status = db.Column(db.String(20), default='draft', nullable=False, index=True)
     notes = db.Column(db.Text)  # customer-facing notes shown on the PDF / approval page
     total = db.Column(db.Float, default=0.0)
     deposit = db.Column(db.Float)          # optional upfront deposit
@@ -476,7 +476,7 @@ class Quote(db.Model):
     signature_data = db.Column(db.Text)  # base64 data-URL of the drawn signature
     signed_at = db.Column(db.DateTime)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     sent_at = db.Column(db.DateTime)
 
     customer = db.relationship('Customer', back_populates='quotes')
@@ -507,18 +507,18 @@ class QuoteItem(db.Model):
 
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False, index=True)
     # Optional links back to the internal project and the source quote.
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
-    quote_id = db.Column(db.Integer, db.ForeignKey('quote.id'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True, index=True)
+    quote_id = db.Column(db.Integer, db.ForeignKey('quote.id'), nullable=True, index=True)
     # Set when this invoice bills a milestone of a contract's draw schedule (Phase 3).
-    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True, index=True)
 
     number = db.Column(db.String(50))       # human-friendly invoice number, e.g. INV-0007
     title = db.Column(db.String(200), nullable=False)
     # draft → sent → paid  (void = cancelled)
-    status = db.Column(db.String(20), default='draft', nullable=False)
+    status = db.Column(db.String(20), default='draft', nullable=False, index=True)
     notes = db.Column(db.Text)              # customer-facing notes shown on the PDF
     total = db.Column(db.Float, default=0.0)
     deposit = db.Column(db.Float)           # deposit already collected (reduces balance due)
@@ -529,7 +529,7 @@ class Invoice(db.Model):
     payment_method = db.Column(db.String(50))   # Cash / Zelle / Check / Bank transfer / Card / Other
     # If marking paid also recorded income on the linked project, we keep the id
     # so the action can be undone without leaving an orphan Income row.
-    income_id = db.Column(db.Integer, db.ForeignKey('income.id'), nullable=True)
+    income_id = db.Column(db.Integer, db.ForeignKey('income.id'), nullable=True, index=True)
 
     # Public, tokenized view link (/i/<token>) — mirrors the quote approval link.
     public_token = db.Column(db.String(64), unique=True, nullable=False)
@@ -540,7 +540,7 @@ class Invoice(db.Model):
     )
     public_token_revoked_at = db.Column(db.DateTime)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     sent_at = db.Column(db.DateTime)
 
     customer = db.relationship('Customer', backref='invoices')
@@ -578,20 +578,20 @@ class InvoiceItem(db.Model):
 
 class Contract(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
-    quote_id = db.Column(db.Integer, db.ForeignKey('quote.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False, index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True, index=True)
+    quote_id = db.Column(db.Integer, db.ForeignKey('quote.id'), nullable=True, index=True)
 
     number = db.Column(db.String(50))        # e.g. CON-0003
     title = db.Column(db.String(200), nullable=False)
     contract_total = db.Column(db.Float, default=0.0)
     retainage_percent = db.Column(db.Float)  # optional % held back (informational)
     # draft → active (work under way) → completed
-    status = db.Column(db.String(20), default='draft', nullable=False)
+    status = db.Column(db.String(20), default='draft', nullable=False, index=True)
     notes = db.Column(db.Text)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     customer = db.relationship('Customer', backref='contracts')
     project = db.relationship('Project', backref='contracts')
@@ -625,13 +625,13 @@ class Contract(db.Model):
 
 class ContractDraw(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=False)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=False, index=True)
     sequence = db.Column(db.Integer, default=0)
     description = db.Column(db.String(200), nullable=False)  # e.g. "Deposit", "Rough-in complete"
     amount = db.Column(db.Float, default=0.0)
     # pending → invoiced → paid (paid is derived from the linked invoice)
-    status = db.Column(db.String(20), default='pending', nullable=False)
-    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=True)
+    status = db.Column(db.String(20), default='pending', nullable=False, index=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=True, index=True)
 
     contract = db.relationship('Contract', back_populates='draws')
     invoice = db.relationship('Invoice', backref='contract_draw')

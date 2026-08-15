@@ -4,7 +4,11 @@ from flask import Flask, render_template, redirect, request, url_for, flash, ses
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from extensions import db, limiter
 from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogFilterForm, PaymentForm, PaymentFilterForm, ExpenseForm, IncomeForm, LoginForm
-from models import  Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income, Customer, Location, find_or_create_location, summarize_expense_categories
+from models import (
+    Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income, Customer,
+    Location, Contract, ContractDraw, Permit, Task, find_or_create_location,
+    summarize_expense_categories,
+)
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -12,6 +16,7 @@ from flask_login import LoginManager, login_required, current_user, login_user, 
 import logging 
 from datetime import timedelta, datetime
 from sqlalchemy import text
+from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import OperationalError, DisconnectionError
 from document_forms import DocumentForm
 from ai_routes import ai_bp
@@ -69,6 +74,8 @@ csrf.exempt(google_bp)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 ALLOWED_UPLOAD_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'heic', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt'}
+PAGE_SIZE = 100
+SLOW_REQUEST_SECONDS = 0.75
 
 
 def save_uploaded_file(file_storage):
@@ -81,6 +88,37 @@ def save_uploaded_file(file_storage):
     filename = f"{uuid.uuid4().hex}_{original}"
     file_storage.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
     return filename
+
+
+@app.before_request
+def start_request_timer():
+    request._started_at = time.perf_counter()
+
+
+@app.after_request
+def log_slow_request(response):
+    started = getattr(request, '_started_at', None)
+    if started is not None:
+        elapsed = time.perf_counter() - started
+        if elapsed >= SLOW_REQUEST_SECONDS:
+            app.logger.warning(
+                "slow request %.3fs %s %s status=%s",
+                elapsed, request.method, request.path, response.status_code,
+            )
+    return response
+
+
+def page_arg():
+    return max(request.args.get('page', 1, type=int) or 1, 1)
+
+
+@app.context_processor
+def pagination_helpers():
+    def page_url(page):
+        args = request.args.to_dict(flat=True)
+        args['page'] = page
+        return url_for(request.endpoint, **request.view_args, **args)
+    return {'page_url': page_url}
 
 
 @app.after_request
@@ -354,7 +392,23 @@ def _sync_project_customer_location(project, customer_id, address):
 def projects():
     project_form = ProjectForm()
     project_form.customer_id.choices = _job_customer_choices()
-    all_projects = Project.query.all()
+    all_projects = (Project.query
+                    .options(
+                        selectinload(Project.customer),
+                        selectinload(Project.files),
+                        selectinload(Project.incomes),
+                        selectinload(Project.expenses),
+                        selectinload(Project.payments),
+                        selectinload(Project.invoices),
+                        selectinload(Project.permits).selectinload(Permit.inspections),
+                        selectinload(Project.contracts)
+                            .selectinload(Contract.draws)
+                            .selectinload(ContractDraw.invoice),
+                        selectinload(Project.contracts)
+                            .selectinload(Contract.change_orders),
+                    )
+                    .order_by(Project.id.desc())
+                    .all())
 
     if project_form.validate_on_submit() and 'add_project' in request.form:
         new_project = Project(
@@ -471,7 +525,26 @@ def projects():
 @login_required
 def project_detail(project_id):
     """Job hub — everything linked to one job in a single view."""
-    project = Project.query.get_or_404(project_id)
+    project = (Project.query
+               .options(
+                   selectinload(Project.expenses),
+                   selectinload(Project.incomes),
+                   selectinload(Project.payments),
+                   selectinload(Project.files),
+                   selectinload(Project.work_logs).selectinload(WorkLog.worker),
+                   selectinload(Project.quotes),
+                   selectinload(Project.invoices),
+                   selectinload(Project.tasks).selectinload(Task.worker),
+                   selectinload(Project.permits).selectinload(Permit.inspections),
+                   selectinload(Project.gc_documents),
+                   selectinload(Project.contracts)
+                       .selectinload(Contract.draws)
+                       .selectinload(ContractDraw.invoice),
+                   selectinload(Project.contracts)
+                       .selectinload(Contract.change_orders),
+               )
+               .filter_by(id=project_id)
+               .first_or_404())
 
     # Money (matches the dashboard: income − expenses − labor pay)
     expenses_total = sum(e.amount or 0 for e in project.expenses)
@@ -818,8 +891,8 @@ def work_logs():
     filter_form = WorkLogFilterForm()
 
     # Set dropdown choices
-    workers = Worker.query.all()
-    projects = Project.query.all()
+    workers = Worker.query.order_by(Worker.name.asc()).all()
+    projects = Project.query.order_by(Project.name.asc()).all()
     form.worker_id.choices = [(w.id, w.name) for w in workers]
     form.project_id.choices = [(p.id, p.name) for p in projects]
     filter_form.worker_id.choices = [(-1, 'All')] + [(w.id, w.name) for w in workers]
@@ -871,13 +944,17 @@ def work_logs():
         if filter_form.end_date.data:
             logs_query = logs_query.filter(WorkLog.end_date <= filter_form.end_date.data)
 
-    logs = logs_query.order_by(WorkLog.start_date.desc()).all()
+    logs_page = (logs_query
+                 .options(selectinload(WorkLog.worker), selectinload(WorkLog.project))
+                 .order_by(WorkLog.start_date.desc())
+                 .paginate(page=page_arg(), per_page=PAGE_SIZE, error_out=False))
 
     return render_template(
         'work_logs.html',
         form=form,
         filter_form=filter_form,
-        logs=logs
+        logs=logs_page.items,
+        pagination=logs_page
     )
 
 
@@ -922,8 +999,10 @@ def delete_work_log(log_id):
 def payments():
     form = PaymentForm()
     filter_form = PaymentFilterForm()
-    form.worker_id.choices = [(0, '---')] + [(w.id, w.name) for w in Worker.query.all()]
-    form.project_id.choices = [(0, '---')] + [(p.id, p.name) for p in Project.query.all()]
+    workers = Worker.query.order_by(Worker.name.asc()).all()
+    projects = Project.query.order_by(Project.name.asc()).all()
+    form.worker_id.choices = [(0, '---')] + [(w.id, w.name) for w in workers]
+    form.project_id.choices = [(0, '---')] + [(p.id, p.name) for p in projects]
     
     # Handle submission
     if form.validate_on_submit():
@@ -976,13 +1055,17 @@ def payments():
     if max_amount is not None:
         payments_query = payments_query.filter(Payment.amount <= max_amount)
 
-    filtered_payments = payments_query.order_by(Payment.payment_date.desc()).all()
+    payments_page = (payments_query
+                     .options(selectinload(Payment.worker))
+                     .order_by(Payment.payment_date.desc())
+                     .paginate(page=page_arg(), per_page=PAGE_SIZE, error_out=False))
 
     return render_template('payments.html',
         form=form,
-        payments=filtered_payments,
+        payments=payments_page.items,
+        pagination=payments_page,
         filter_form=filter_form,
-        workers=Worker.query.all()
+        workers=workers
     )
 
 @app.route('/payments/edit/<int:payment_id>', methods=['GET', 'POST'])
@@ -1052,7 +1135,7 @@ def delete_payment(payment_id):
 @login_required
 def expenses():
     form = ExpenseForm()
-    form.project_id.choices = [(p.id, p.name) for p in Project.query.all()]
+    form.project_id.choices = [(p.id, p.name) for p in Project.query.order_by(Project.name.asc()).all()]
 
     if form.validate_on_submit():
         filename = None
@@ -1079,9 +1162,14 @@ def expenses():
         flash('Expense added successfully')
         return redirect(url_for('expenses'))
 
-    all_expenses = Expense.query.order_by(Expense.date.desc()).all()
+    all_expenses = Expense.query.all()
     category_summary, category_total = summarize_expense_categories(all_expenses)
-    return render_template('expenses.html', form=form, expenses=all_expenses,
+    expenses_page = (Expense.query
+                     .options(selectinload(Expense.project))
+                     .order_by(Expense.date.desc())
+                     .paginate(page=page_arg(), per_page=PAGE_SIZE, error_out=False))
+    return render_template('expenses.html', form=form, expenses=expenses_page.items,
+                           pagination=expenses_page,
                            category_summary=category_summary, category_total=category_total)
 
 @app.route('/expenses/delete/<int:expense_id>', methods=['POST'])
@@ -1141,7 +1229,10 @@ def edit_expense(expense_id):
 @app.route('/profitability')
 @login_required
 def profitability():
-    projects = Project.query.all()
+    projects = (Project.query
+                .options(selectinload(Project.expenses), selectinload(Project.incomes))
+                .order_by(Project.name.asc())
+                .all())
     data = []
 
     for project in projects:
@@ -1163,7 +1254,7 @@ def profitability():
 @login_required
 def income():
     form = IncomeForm()
-    form.project_id.choices = [(p.id, p.name) for p in Project.query.all()]
+    form.project_id.choices = [(p.id, p.name) for p in Project.query.order_by(Project.name.asc()).all()]
 
     if form.validate_on_submit():
         new_income = Income(
@@ -1178,8 +1269,11 @@ def income():
         flash('Income added successfully')
         return redirect(url_for('income'))
 
-    all_income = Income.query.order_by(Income.date.desc()).all()
-    return render_template('income.html', form=form, incomes=all_income)
+    income_page = (Income.query
+                   .order_by(Income.date.desc())
+                   .paginate(page=page_arg(), per_page=PAGE_SIZE, error_out=False))
+    return render_template('income.html', form=form, incomes=income_page.items,
+                           pagination=income_page)
 
 
 @app.route('/income/edit/<int:income_id>', methods=['GET', 'POST'])

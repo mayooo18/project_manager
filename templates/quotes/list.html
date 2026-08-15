@@ -32,17 +32,19 @@
         <span style="color:var(--ink-900);font-weight:600;">${{ '%.2f'|format(q.total or 0) }}</span>
         <a href="{{ url_for('quotes.edit', quote_id=q.id) }}" class="lnk">Edit</a>
         <a href="{{ url_for('quotes.pdf', quote_id=q.id) }}" target="_blank" class="lnk">PDF</a>
-        <form method="POST" action="{{ url_for('contracts.from_quote', quote_id=q.id) }}">
-          {{ delete_form.csrf_token }}
-          <button type="submit" class="linkbtn" title="Create a contract with a draw schedule from this proposal">→ Contract</button>
-        </form>
-        {% if q.status == 'converted' %}
-        <span class="c-accent" style="font-size:.85rem;opacity:.7;" title="Already converted to an invoice">Invoiced</span>
+        {% if q.status == 'approved' %}
+          <form method="POST" action="{{ url_for('contracts.from_quote', quote_id=q.id) }}">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="linkbtn" title="Create a contract with a draw schedule from this proposal">→ Contract</button>
+          </form>
+          <form method="POST" action="{{ url_for('invoices.from_quote', quote_id=q.id) }}">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="linkbtn" title="Create a single invoice from this proposal">→ Invoice</button>
+          </form>
+        {% elif q.status == 'converted' %}
+          <span class="c-accent" style="font-size:.85rem;opacity:.7;">Converted</span>
         {% else %}
-        <form method="POST" action="{{ url_for('invoices.from_quote', quote_id=q.id) }}">
-          {{ delete_form.csrf_token }}
-          <button type="submit" class="linkbtn" title="Create a single invoice from this proposal">→ Invoice</button>
-        </form>
+          <span class="muted" style="font-size:.85rem;">Awaiting approval</span>
         {% endif %}
         {% if current_user.is_owner %}
         <form method="POST" action="{{ url_for('quotes.delete', quote_id=q.id) }}" onsubmit="return confirm('Delete this proposal? This cannot be undone.');">
@@ -58,6 +60,13 @@
   <div class="list-empty">
     <p style="color:var(--ink-700);">No proposals yet.</p>
     <p class="muted" style="margin-top:.25rem;">Create a proposal, then send the customer a link to approve and e-sign it.</p>
+  </div>
+  {% endif %}
+  {% if pagination and pagination.pages > 1 %}
+  <div style="display:flex;gap:.75rem;align-items:center;justify-content:flex-end;margin-top:1rem;">
+    {% if pagination.has_prev %}<a class="obtn" href="{{ page_url(pagination.prev_num) }}">Previous</a>{% endif %}
+    <span class="muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}<a class="obtn" href="{{ page_url(pagination.next_num) }}">Next</a>{% endif %}
   </div>
   {% endif %}
 </div>

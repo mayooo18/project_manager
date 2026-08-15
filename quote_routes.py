@@ -28,6 +28,7 @@ from flask import (
     jsonify, send_file, abort, current_app,
 )
 from flask_login import login_required, current_user
+from sqlalchemy.orm import selectinload
 from permissions import owner_required
 
 from extensions import db, limiter
@@ -39,6 +40,7 @@ from forms import CustomerForm, DeleteForm
 
 quote_bp = Blueprint('quotes', __name__, url_prefix='/quotes')
 
+PAGE_SIZE = 100
 QUOTE_STATUSES = ['draft', 'sent', 'approved', 'declined', 'converted']
 MAX_SIGNATURE_BYTES = 512 * 1024
 MAX_SIGNATURE_DIMENSION = 2048
@@ -580,9 +582,14 @@ def add_location(customer_id):
 @quote_bp.route('/')
 @login_required
 def index():
-    quotes = (Quote.query.filter_by(user_id=current_user.id)
-              .order_by(Quote.created_at.desc()).all())
-    return render_template('quotes/list.html', quotes=quotes,
+    quotes = (Quote.query
+              .filter_by(user_id=current_user.id)
+              .options(selectinload(Quote.customer), selectinload(Quote.project))
+              .order_by(Quote.created_at.desc())
+              .paginate(page=max(request.args.get('page', 1, type=int) or 1, 1),
+                        per_page=PAGE_SIZE, error_out=False))
+    return render_template('quotes/list.html', quotes=quotes.items,
+                           pagination=quotes,
                            delete_form=DeleteForm())
 
 
@@ -603,6 +610,10 @@ def edit(quote_id):
 
 def _save_quote(quote):
     if request.method == 'POST':
+        if quote is not None and quote.status in ('approved', 'converted'):
+            flash('This proposal has already been accepted. Create a contract or invoice from it instead of editing the signed proposal.', 'error')
+            return redirect(url_for('quotes.edit', quote_id=quote.id))
+
         customer_id = request.form.get('customer_id', type=int)
         title = (request.form.get('title') or '').strip()
         notes = (request.form.get('notes') or '').strip()
@@ -687,6 +698,23 @@ def regenerate_public_link(quote_id):
     db.session.commit()
     flash('A new public approval link was created and will expire in 30 days.',
           'success')
+    return redirect(url_for('quotes.edit', quote_id=quote.id))
+
+
+@quote_bp.route('/<int:quote_id>/reopen', methods=['POST'])
+@login_required
+def reopen(quote_id):
+    quote = _owned_quote_or_404(quote_id)
+    if quote.status == 'converted':
+        flash('This proposal has already been converted. Amend the contract or invoice that was created from it.', 'error')
+        return redirect(url_for('quotes.edit', quote_id=quote.id))
+    quote.status = 'draft'
+    quote.signature_name = None
+    quote.signature_data = None
+    quote.signed_at = None
+    quote.public_token_revoked_at = datetime.utcnow()
+    db.session.commit()
+    flash('Proposal reopened for changes. Send a new approval link after saving updates.', 'success')
     return redirect(url_for('quotes.edit', quote_id=quote.id))
 
 

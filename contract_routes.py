@@ -25,6 +25,7 @@ from flask import (
 from flask_login import login_required, current_user
 from permissions import owner_required
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from extensions import db
 from models import (
@@ -37,6 +38,7 @@ from invoice_routes import _new_invoice_token, _next_number
 
 contract_bp = Blueprint('contracts', __name__, url_prefix='/contracts')
 
+PAGE_SIZE = 100
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
@@ -255,9 +257,18 @@ def build_contract_pdf(contract):
 @contract_bp.route('/')
 @login_required
 def index():
-    contracts = (Contract.query.filter_by(user_id=current_user.id)
-                 .order_by(Contract.created_at.desc()).all())
-    return render_template('contracts/list.html', contracts=contracts,
+    contracts = (Contract.query
+                 .filter_by(user_id=current_user.id)
+                 .options(
+                     selectinload(Contract.customer),
+                     selectinload(Contract.project),
+                     selectinload(Contract.draws).selectinload(ContractDraw.invoice),
+                 )
+                 .order_by(Contract.created_at.desc())
+                 .paginate(page=max(request.args.get('page', 1, type=int) or 1, 1),
+                           per_page=PAGE_SIZE, error_out=False))
+    return render_template('contracts/list.html', contracts=contracts.items,
+                           pagination=contracts,
                            delete_form=DeleteForm())
 
 
@@ -317,6 +328,14 @@ def _save_contract(contract):
 def from_quote(quote_id):
     quote = Quote.query.filter_by(
         id=quote_id, user_id=current_user.id).first_or_404()
+    existing = Contract.query.filter_by(
+        quote_id=quote.id, user_id=current_user.id).first()
+    if existing:
+        flash('This proposal already has a contract.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=existing.id))
+    if quote.status != 'approved':
+        flash('Only an approved proposal can be converted to a contract.', 'error')
+        return redirect(url_for('quotes.edit', quote_id=quote.id))
 
     # A signed proposal becomes active work — make sure it has a Job. If the
     # proposal wasn't already linked to one, create it now (carrying the

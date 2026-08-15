@@ -52,5 +52,12 @@
     <p class="muted" style="margin-top:.25rem;">Create one directly, or turn an approved proposal into a contract with a draw schedule.</p>
   </div>
   {% endif %}
+  {% if pagination and pagination.pages > 1 %}
+  <div style="display:flex;gap:.75rem;align-items:center;justify-content:flex-end;margin-top:1rem;">
+    {% if pagination.has_prev %}<a class="obtn" href="{{ page_url(pagination.prev_num) }}">Previous</a>{% endif %}
+    <span class="muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}<a class="obtn" href="{{ page_url(pagination.next_num) }}">Next</a>{% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
