@@ -7,7 +7,7 @@ from forms import WorkerForm, ProjectForm, FileUploadForm, WorkLogForm, WorkLogF
 from models import (
     Project, ProjectFile, WorkLog, Worker, Payment, Expense, Income, Customer,
     Location, Contract, ContractDraw, Permit, Task, find_or_create_location,
-    summarize_expense_categories,
+    summarize_expense_categories, EXPENSE_CATEGORIES,
 )
 from werkzeug.utils import secure_filename
 import os
@@ -577,8 +577,118 @@ def project_detail(project_id):
         work_logs=list(project.work_logs), files=list(project.files),
         contract_total=contract_total, billed_total=billed_total, paid_total=paid_total,
         tasks=tasks, workers=workers,
+        expense_categories_choices=EXPENSE_CATEGORIES,
+        today=datetime.utcnow().date().strftime('%Y-%m-%d'),
         file_form=FileUploadForm(),
     )
+
+
+@app.route('/projects/<int:project_id>/expenses/add', methods=['POST'])
+@login_required
+def add_project_expense(project_id):
+    Project.query.get_or_404(project_id)
+    receipt = request.files.get('receipt')
+    filename = None
+    filepath = None
+    if receipt and receipt.filename:
+        filename = save_uploaded_file(receipt)
+        if not filename:
+            flash('Receipt file type not allowed.', 'error')
+            return redirect(url_for('project_detail', project_id=project_id))
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    amount = request.form.get('amount', type=float)
+    if amount is None:
+        flash('Expense amount is required.', 'error')
+        return redirect(url_for('project_detail', project_id=project_id))
+
+    date_raw = request.form.get('date') or datetime.utcnow().date().strftime('%Y-%m-%d')
+    try:
+        expense_date = datetime.strptime(date_raw, '%Y-%m-%d')
+    except ValueError:
+        expense_date = datetime.utcnow()
+
+    db.session.add(Expense(
+        project_id=project_id,
+        description=(request.form.get('description') or '').strip() or None,
+        amount=amount,
+        category=request.form.get('category') or 'misc',
+        date=expense_date,
+        note=(request.form.get('note') or '').strip() or None,
+        receipt_filename=filename,
+        receipt_filepath=filepath,
+    ))
+    db.session.commit()
+    flash('Expense added to job.')
+    return redirect(url_for('project_detail', project_id=project_id))
+
+
+@app.route('/projects/<int:project_id>/payments/add', methods=['POST'])
+@login_required
+def add_project_payment(project_id):
+    Project.query.get_or_404(project_id)
+    receipt = request.files.get('receipt')
+    filename = None
+    filepath = None
+    if receipt and receipt.filename:
+        filename = save_uploaded_file(receipt)
+        if not filename:
+            flash('Receipt file type not allowed.', 'error')
+            return redirect(url_for('project_detail', project_id=project_id))
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    amount = request.form.get('amount', type=float)
+    if amount is None:
+        flash('Payment amount is required.', 'error')
+        return redirect(url_for('project_detail', project_id=project_id))
+
+    payment_date_raw = request.form.get('payment_date') or datetime.utcnow().date().strftime('%Y-%m-%d')
+    try:
+        payment_date = datetime.strptime(payment_date_raw, '%Y-%m-%d').date()
+    except ValueError:
+        payment_date = datetime.utcnow().date()
+
+    worker_id = request.form.get('worker_id', type=int) or None
+    db.session.add(Payment(
+        worker_id=worker_id,
+        project_id=project_id,
+        amount=amount,
+        payment_date=payment_date,
+        method=(request.form.get('method') or '').strip() or None,
+        note=(request.form.get('note') or '').strip() or None,
+        receipt_filename=filename,
+        receipt_filepath=filepath,
+    ))
+    db.session.commit()
+    flash('Payment added to job.')
+    return redirect(url_for('project_detail', project_id=project_id))
+
+
+@app.route('/projects/<int:project_id>/income/add', methods=['POST'])
+@login_required
+def add_project_income(project_id):
+    Project.query.get_or_404(project_id)
+    amount = request.form.get('amount', type=float)
+    if amount is None:
+        flash('Income amount is required.', 'error')
+        return redirect(url_for('project_detail', project_id=project_id))
+
+    date_raw = request.form.get('date') or datetime.utcnow().date().strftime('%Y-%m-%d')
+    try:
+        income_date = datetime.strptime(date_raw, '%Y-%m-%d')
+    except ValueError:
+        income_date = datetime.utcnow()
+
+    db.session.add(Income(
+        project_id=project_id,
+        amount=amount,
+        source=(request.form.get('source') or '').strip() or None,
+        date=income_date,
+        note=(request.form.get('note') or '').strip() or None,
+    ))
+    db.session.commit()
+    flash('Income added to job.')
+    return redirect(url_for('project_detail', project_id=project_id))
 
 
 @app.route('/projects/<int:project_id>/tasks/add', methods=['POST'])
@@ -625,13 +735,65 @@ def delete_task(task_id):
 @login_required
 def timeclock():
     from models import TimePunch
+    manual_form = WorkLogForm()
+    workers = Worker.query.order_by(Worker.name.asc()).all()
+    projects = Project.query.order_by(Project.name.asc()).all()
+    manual_form.worker_id.choices = [(w.id, w.name) for w in workers]
+    manual_form.project_id.choices = [(p.id, p.name) for p in projects]
     open_punches = (TimePunch.query.filter_by(clock_out=None)
                     .order_by(TimePunch.clock_in.desc()).all())
     recent = (TimePunch.query.filter(TimePunch.clock_out.isnot(None))
               .order_by(TimePunch.clock_in.desc()).limit(50).all())
     approved_total = round(sum(p.labor_cost for p in recent if p.approved), 2)
+    manual_logs = (WorkLog.query
+                   .options(selectinload(WorkLog.worker), selectinload(WorkLog.project))
+                   .order_by(WorkLog.start_date.desc())
+                   .limit(25).all())
     return render_template('timeclock.html', open_punches=open_punches,
-                           recent=recent, approved_total=approved_total)
+                           recent=recent, approved_total=approved_total,
+                           manual_form=manual_form, manual_logs=manual_logs)
+
+
+@app.route('/timeclock/manual-adjustments', methods=['POST'])
+@login_required
+def add_manual_adjustment():
+    form = WorkLogForm()
+    form.worker_id.choices = [(w.id, w.name) for w in Worker.query.order_by(Worker.name.asc()).all()]
+    form.project_id.choices = [(p.id, p.name) for p in Project.query.order_by(Project.name.asc()).all()]
+    if not form.validate_on_submit():
+        flash('Manual adjustment could not be saved. Check the required fields.', 'error')
+        return redirect(url_for('timeclock'))
+
+    new_log = WorkLog(
+        worker_id=form.worker_id.data,
+        project_id=form.project_id.data,
+        start_date=form.start_date.data,
+        end_date=form.end_date.data,
+        days_worked=form.days_worked.data,
+        note=form.note.data
+    )
+    db.session.add(new_log)
+    db.session.flush()
+
+    pay_msg = ''
+    if form.create_payment.data:
+        worker = Worker.query.get(form.worker_id.data)
+        amount = (form.days_worked.data or 0) * ((worker.daily_rate or 0) if worker else 0)
+        if amount > 0:
+            db.session.add(Payment(
+                worker_id=form.worker_id.data,
+                project_id=form.project_id.data,
+                amount=amount,
+                payment_date=form.end_date.data or form.start_date.data,
+                method='Labor',
+                note='Manual labor adjustment',
+                work_log_id=new_log.id,
+            ))
+            pay_msg = f' · ${amount:,.2f} labor payment recorded'
+
+    db.session.commit()
+    flash('Manual labor adjustment added' + pay_msg)
+    return redirect(url_for('timeclock'))
 
 
 @app.route('/timeclock/<int:punch_id>/approve', methods=['POST'])

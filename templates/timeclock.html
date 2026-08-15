@@ -8,6 +8,9 @@
   .fld{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-900);padding:.35rem .5rem;font-size:.8rem;}
   .row{border-top:1px solid var(--border);padding:.6rem 0;}
   .dot{display:inline-block;width:.5rem;height:.5rem;border-radius:999px;background:var(--green-fg);margin-right:.5rem;}
+  .adj-grid{display:grid;grid-template-columns:1fr;gap:.75rem;}
+  @media(min-width:768px){.adj-grid{grid-template-columns:1fr 1fr;}}
+  .col-2{grid-column:1/-1;}
 </style>
 
 <div class="tc">
@@ -70,6 +73,46 @@
       {% endfor %}
     {% else %}
       <p style="color:var(--ink-500);font-size:.9rem;">No punches yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+      <p class="sec-title">Manual adjustments</p>
+      <a href="{{ url_for('work_logs') }}" class="lnk">Full history</a>
+    </div>
+    <form method="POST" action="{{ url_for('add_manual_adjustment') }}">
+      {{ manual_form.hidden_tag() }}
+      <div class="adj-grid">
+        <div><label class="muted" style="font-size:.78rem;">Worker</label>{{ manual_form.worker_id(class="fld", style="width:100%;") }}</div>
+        <div><label class="muted" style="font-size:.78rem;">Job</label>{{ manual_form.project_id(class="fld", style="width:100%;") }}</div>
+        <div><label class="muted" style="font-size:.78rem;">From</label>{{ manual_form.start_date(class="fld", style="width:100%;") }}</div>
+        <div><label class="muted" style="font-size:.78rem;">To</label>{{ manual_form.end_date(class="fld", style="width:100%;") }}</div>
+        <div><label class="muted" style="font-size:.78rem;">Days</label>{{ manual_form.days_worked(class="fld", style="width:100%;", placeholder="e.g., 1") }}</div>
+        <div class="col-2"><label class="muted" style="font-size:.78rem;">Note</label>{{ manual_form.note(class="fld", rows="2", style="width:100%;") }}</div>
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:.5rem;margin:.75rem 0;color:var(--ink-500);font-size:.85rem;">
+        {{ manual_form.create_payment(style="width:auto;margin-top:.15rem;") }}
+        <span>Also record a labor payment now.</span>
+      </label>
+      <button type="submit" class="obtn green">Add adjustment</button>
+    </form>
+
+    {% if manual_logs %}
+    <div style="margin-top:1rem;">
+      {% for log in manual_logs %}
+      <div class="row flex items-center justify-between gap-3 flex-wrap">
+        <div style="font-size:.85rem;">
+          <span style="color:var(--ink-900);">{{ log.worker.name }}</span>
+          <span class="muted">· {{ log.project.name }} · {{ log.days_worked }} day{{ '' if log.days_worked == 1 else 's' }} · {{ log.start_date.strftime('%b %d') }}</span>
+          {% if log.note %}<span class="muted">· {{ log.note }}</span>{% endif %}
+        </div>
+        <a href="{{ url_for('edit_work_log', log_id=log.id) }}" class="lnk">Edit</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted" style="margin-top:1rem;font-size:.9rem;">No manual adjustments yet.</p>
     {% endif %}
   </div>
 

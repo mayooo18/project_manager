@@ -27,6 +27,11 @@
   .catgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
   @media(min-width:640px){.catgrid{grid-template-columns:repeat(3,1fr);}}
   @media(min-width:1024px){.catgrid{grid-template-columns:repeat(5,1fr);}}
+  .money-entry-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+  @media(min-width:1024px){.money-entry-grid{grid-template-columns:repeat(3,1fr);}}
+  .mini-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1rem;}
+  .mini-form label{display:block;margin-bottom:.25rem;}
+  .mini-form .fld-sm{width:100%;margin-bottom:.5rem;}
   .twocol{display:grid;grid-template-columns:1fr;gap:16px;}
   @media(min-width:1024px){.twocol{grid-template-columns:1fr 1fr;}}
 </style>
@@ -95,6 +100,76 @@
     <p class="muted" style="margin-top:.85rem;">Labor isn't shown here — it's tracked separately under the Labor total above (crew time clock + work logs).</p>
   </div>
   {% endif %}
+
+  <div class="card" style="padding:1.25rem;margin-bottom:1.5rem;">
+    <div class="flex items-center justify-between gap-3 flex-wrap" style="margin-bottom:1rem;">
+      <div>
+        <p class="sec-title">Money entries</p>
+        <p class="muted" style="margin-top:.25rem;">Quick-add records already linked to this job.</p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <a href="{{ url_for('expenses') }}" class="obtn">Expense history</a>
+        <a href="{{ url_for('payments') }}" class="obtn">Payment history</a>
+        <a href="{{ url_for('income') }}" class="obtn">Income history</a>
+      </div>
+    </div>
+    <div class="money-entry-grid">
+      <form class="mini-form" method="POST" enctype="multipart/form-data" action="{{ url_for('add_project_expense', project_id=project.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="sec-title" style="font-size:.9rem;margin-bottom:.75rem;">Add expense</p>
+        <label class="muted">Category</label>
+        <select name="category" class="fld-sm">
+          {% for key, label in expense_categories_choices %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+        <label class="muted">Amount</label>
+        <input name="amount" type="number" step="0.01" class="fld-sm" required>
+        <label class="muted">Description</label>
+        <input name="description" type="text" class="fld-sm">
+        <label class="muted">Date</label>
+        <input name="date" type="date" value="{{ today }}" class="fld-sm">
+        <label class="muted">Receipt</label>
+        <input name="receipt" type="file" accept="image/*,application/pdf" class="fld-sm">
+        <label class="muted">Note</label>
+        <textarea name="note" rows="2" class="fld-sm"></textarea>
+        <button type="submit" class="obtn accent">Add expense</button>
+      </form>
+
+      <form class="mini-form" method="POST" enctype="multipart/form-data" action="{{ url_for('add_project_payment', project_id=project.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="sec-title" style="font-size:.9rem;margin-bottom:.75rem;">Record payment</p>
+        <label class="muted">Worker</label>
+        <select name="worker_id" class="fld-sm">
+          <option value="">— None —</option>
+          {% for worker in workers %}<option value="{{ worker.id }}">{{ worker.name }}</option>{% endfor %}
+        </select>
+        <label class="muted">Amount</label>
+        <input name="amount" type="number" step="0.01" class="fld-sm" required>
+        <label class="muted">Date</label>
+        <input name="payment_date" type="date" value="{{ today }}" class="fld-sm">
+        <label class="muted">Method</label>
+        <input name="method" type="text" class="fld-sm" placeholder="Cash, Check, Zelle...">
+        <label class="muted">Receipt</label>
+        <input name="receipt" type="file" accept="image/*,application/pdf" class="fld-sm">
+        <label class="muted">Note</label>
+        <textarea name="note" rows="2" class="fld-sm"></textarea>
+        <button type="submit" class="obtn accent">Record payment</button>
+      </form>
+
+      <form class="mini-form" method="POST" action="{{ url_for('add_project_income', project_id=project.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="sec-title" style="font-size:.9rem;margin-bottom:.75rem;">Record income</p>
+        <label class="muted">Amount</label>
+        <input name="amount" type="number" step="0.01" class="fld-sm" required>
+        <label class="muted">Source</label>
+        <input name="source" type="text" class="fld-sm" placeholder="Deposit, cash payment...">
+        <label class="muted">Date</label>
+        <input name="date" type="date" value="{{ today }}" class="fld-sm">
+        <label class="muted">Note</label>
+        <textarea name="note" rows="2" class="fld-sm"></textarea>
+        <button type="submit" class="obtn accent">Record income</button>
+      </form>
+    </div>
+  </div>
 
   <!-- Client portal -->
   {% set portal_active = project.portal_token and not project.portal_token_revoked_at %}
@@ -272,7 +347,7 @@
     </form>
   </div>
 
-  <p class="muted" style="margin-top:1.5rem;">Tip: use the <b>Money</b> menu to log expenses, income, and labor against this job — they roll up into the profit above.</p>
+  <p class="muted" style="margin-top:1.5rem;">Tip: job money entries, invoices, and labor all roll up into the profit above.</p>
 
 </div>
 {% endblock %}
