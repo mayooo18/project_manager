@@ -2,146 +2,84 @@
 {% block title %}{{ 'Edit Permit' if permit else 'Add Permit' }}{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
-    .fld { width:100%; background:#111827; border:1px solid #374151; border-radius:0.5rem;
-           padding:0.5rem 0.75rem; color:#f3f4f6; font-size:0.875rem; }
-    .fld:focus { outline:none; border-color:#f97316; }
-    .lbl { display:block; font-size:0.875rem; color:#9ca3af; margin-bottom:0.25rem; }
-  </style>
-</head>
-<body class="bg-black">
+<style>
+  .pf{max-width:680px;margin:0 auto;}
+  .fld{width:100%;background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:.5rem .75rem;color:var(--ink-900);font-size:.875rem;}
+  .fld:focus{outline:none;border-color:var(--accent);}
+  .lbl{display:block;font-size:.8rem;font-weight:600;color:var(--ink-700);margin-bottom:.3rem;}
+  .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+  .g3{display:grid;grid-template-columns:1fr;gap:.75rem;}
+  @media(min-width:640px){.g3{grid-template-columns:repeat(3,1fr);}}
+  .insp{background:var(--canvas);border:1px solid var(--border);border-radius:var(--r);padding:.5rem .75rem;margin-bottom:.5rem;}
+</style>
 
-<div class="max-w-2xl mx-auto px-4 py-8">
-
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">{{ 'Edit Permit' if permit else 'Add Permit' }}</h1>
-    <a href="{{ url_for('permits.index') }}" class="text-sm transition-colors" style="color: #9ca3af;"
-      onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">← All permits</a>
+<div class="pf">
+  <div class="page-head">
+    <h1>{{ 'Edit Permit' if permit else 'Add Permit' }}</h1>
+    <a href="{{ url_for('permits.index') }}" class="lnk">← All permits</a>
   </div>
 
-  <form method="POST" class="flex flex-col gap-4 bg-gray-900 border border-gray-700 rounded-xl p-5">
+  <form method="POST" class="sec" style="display:flex;flex-direction:column;gap:1rem;">
     {{ form.csrf_token }}
-
-    <div class="grid grid-cols-2 gap-3">
-      <div>
-        {{ form.permit_type.label(class="lbl") }}
-        {{ form.permit_type(class="fld", placeholder="Building, Electrical, Plumbing, Mechanical…") }}
-      </div>
-      <div>
-        {{ form.project_id.label(class="lbl") }}
-        {{ form.project_id(class="fld") }}
-      </div>
+    <div class="g2">
+      <div>{{ form.permit_type.label(class="lbl") }}{{ form.permit_type(class="fld", placeholder="Building, Electrical, Plumbing, Mechanical…") }}</div>
+      <div>{{ form.project_id.label(class="lbl") }}{{ form.project_id(class="fld") }}</div>
     </div>
-
-    <div class="grid grid-cols-3 gap-3">
-      <div>
-        {{ form.permit_number.label(class="lbl") }}
-        {{ form.permit_number(class="fld") }}
-      </div>
-      <div>
-        {{ form.issuing_authority.label(class="lbl") }}
-        {{ form.issuing_authority(class="fld") }}
-      </div>
-      <div>
-        {{ form.status.label(class="lbl") }}
-        {{ form.status(class="fld") }}
-      </div>
+    <div class="g3">
+      <div>{{ form.permit_number.label(class="lbl") }}{{ form.permit_number(class="fld") }}</div>
+      <div>{{ form.issuing_authority.label(class="lbl") }}{{ form.issuing_authority(class="fld") }}</div>
+      <div>{{ form.status.label(class="lbl") }}{{ form.status(class="fld") }}</div>
     </div>
-
-    <div class="grid grid-cols-3 gap-3">
-      <div>
-        {{ form.applied_date.label(class="lbl") }}
-        {{ form.applied_date(class="fld") }}
-      </div>
-      <div>
-        {{ form.issued_date.label(class="lbl") }}
-        {{ form.issued_date(class="fld") }}
-      </div>
-      <div>
-        {{ form.expiration_date.label(class="lbl") }}
-        {{ form.expiration_date(class="fld") }}
-      </div>
+    <div class="g3">
+      <div>{{ form.applied_date.label(class="lbl") }}{{ form.applied_date(class="fld") }}</div>
+      <div>{{ form.issued_date.label(class="lbl") }}{{ form.issued_date(class="fld") }}</div>
+      <div>{{ form.expiration_date.label(class="lbl") }}{{ form.expiration_date(class="fld") }}</div>
     </div>
-
-    <div>
-      {{ form.notes.label(class="lbl") }}
-      {{ form.notes(class="fld", rows=2) }}
-    </div>
-
-    {{ form.submit(class="mt-1 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors") }}
+    <div>{{ form.notes.label(class="lbl") }}{{ form.notes(class="fld", rows=2) }}</div>
+    {{ form.submit(class="btn", style="align-self:flex-start;") }}
   </form>
 
   {% if permit %}
-  <!-- Inspections -->
-  <div class="mt-6 bg-gray-900 border border-gray-700 rounded-xl p-5">
-    <h2 class="text-white font-semibold mb-3">Inspections</h2>
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="sec-title" style="margin-bottom:.85rem;">Inspections</p>
 
     {% if permit.inspections %}
-    <div class="flex flex-col gap-2 mb-4">
-      {% for insp in permit.inspections %}
-      {% set st = {'Scheduled':'text-blue-300','Passed':'text-green-300','Failed':'text-red-300','Cancelled':'text-gray-400'} %}
-      <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
-        <div class="min-w-0">
-          <p class="text-gray-200 text-sm">{{ insp.inspection_type }}
-            {% if insp.scheduled_date %}<span class="text-gray-500 text-xs">· {{ insp.scheduled_date.strftime('%b %d, %Y') }}</span>{% endif %}
-          </p>
-        </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <form method="POST" action="{{ url_for('permits.update_inspection', inspection_id=insp.id) }}" class="flex items-center gap-1">
-            {{ form.csrf_token }}
-            <input type="text" name="result_notes" value="{{ insp.result_notes or '' }}" placeholder="Result / notes"
-                   class="fld py-1 text-xs" style="width:11rem;"/>
-            <select name="status" class="fld py-1 text-xs {{ st.get(insp.status, 'text-gray-300') }}" onchange="this.form.submit()">
-              {% for s in ['Scheduled','Passed','Failed','Cancelled'] %}
-              <option value="{{ s }}" {{ 'selected' if insp.status == s }}>{{ s }}</option>
-              {% endfor %}
-            </select>
-            <button type="submit" class="text-xs text-gray-300 hover:text-orange-400 border border-gray-700 rounded px-2 py-1">Save</button>
-          </form>
-          <form method="POST" action="{{ url_for('permits.delete_inspection', inspection_id=insp.id) }}"
-            onsubmit="return confirm('Delete this inspection?');">
-            {{ form.csrf_token }}
-            <button type="submit" class="text-gray-600 hover:text-red-400 text-xs">✕</button>
-          </form>
-        </div>
+    {% for insp in permit.inspections %}
+    <div class="insp flex items-center justify-between gap-3 flex-wrap">
+      <div style="min-width:0;">
+        <p style="color:var(--ink-700);font-size:.88rem;">{{ insp.inspection_type }}{% if insp.scheduled_date %}<span class="muted"> · {{ insp.scheduled_date.strftime('%b %d, %Y') }}</span>{% endif %}</p>
       </div>
-      {% endfor %}
+      <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
+        <form method="POST" action="{{ url_for('permits.update_inspection', inspection_id=insp.id) }}" class="flex items-center gap-1">
+          {{ form.csrf_token }}
+          <input type="text" name="result_notes" value="{{ insp.result_notes or '' }}" placeholder="Result / notes" class="fld" style="width:11rem;padding:.25rem .5rem;font-size:.78rem;"/>
+          <select name="status" class="fld" style="width:auto;padding:.25rem .4rem;font-size:.78rem;" onchange="this.form.submit()">
+            {% for s in ['Scheduled','Passed','Failed','Cancelled'] %}<option value="{{ s }}" {{ 'selected' if insp.status == s }}>{{ s }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="obtn">Save</button>
+        </form>
+        <form method="POST" action="{{ url_for('permits.delete_inspection', inspection_id=insp.id) }}" onsubmit="return confirm('Delete this inspection?');">
+          {{ form.csrf_token }}
+          <button type="submit" class="linkbtn danger">✕</button>
+        </form>
+      </div>
     </div>
+    {% endfor %}
     {% else %}
-    <p class="text-gray-600 text-xs mb-4">No inspections logged yet.</p>
+    <p class="muted" style="margin-bottom:1rem;">No inspections logged yet.</p>
     {% endif %}
 
-    <!-- Add inspection -->
-    <form method="POST" action="{{ url_for('permits.add_inspection', permit_id=permit.id) }}"
-          class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
+    <form method="POST" action="{{ url_for('permits.add_inspection', permit_id=permit.id) }}" class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end" style="margin-top:.75rem;">
       {{ inspection_form.csrf_token }}
-      <div class="sm:col-span-2">
-        {{ inspection_form.inspection_type.label(class="lbl") }}
-        {{ inspection_form.inspection_type(class="fld", placeholder="Footing, Framing, Rough Electrical, Final…") }}
-      </div>
-      <div>
-        {{ inspection_form.scheduled_date.label(class="lbl") }}
-        {{ inspection_form.scheduled_date(class="fld") }}
-      </div>
-      <div>
-        {{ inspection_form.submit(class="w-full bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold px-3 py-2 rounded-lg transition-colors") }}
-      </div>
+      <div class="sm:col-span-2">{{ inspection_form.inspection_type.label(class="lbl") }}{{ inspection_form.inspection_type(class="fld", placeholder="Footing, Framing, Rough Electrical, Final…") }}</div>
+      <div>{{ inspection_form.scheduled_date.label(class="lbl") }}{{ inspection_form.scheduled_date(class="fld") }}</div>
+      <div>{{ inspection_form.submit(class="obtn", style="width:100%;") }}</div>
     </form>
-    <p class="text-gray-600 text-xs mt-3">Scheduled inspections create reminders 3 days and 1 day before.</p>
+    <p class="muted" style="margin-top:.75rem;">Scheduled inspections create reminders 3 days and 1 day before.</p>
   </div>
   {% else %}
-  <p class="text-gray-600 text-xs mt-4">Save the permit first, then add its inspections.</p>
+  <p class="muted" style="margin-top:1rem;">Save the permit first, then add its inspections.</p>
   {% endif %}
-
 </div>
-
-</body>
-</html>
 {% endblock %}

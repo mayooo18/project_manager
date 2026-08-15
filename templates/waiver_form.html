@@ -2,103 +2,36 @@
 {% block title %}{{ 'Edit Document' if doc else 'New Document' }}{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
-    .fld { width:100%; background:#111827; border:1px solid #374151; border-radius:0.5rem;
-           padding:0.5rem 0.75rem; color:#f3f4f6; font-size:0.875rem; }
-    .fld:focus { outline:none; border-color:#f97316; }
-    .lbl { display:block; font-size:0.875rem; color:#9ca3af; margin-bottom:0.25rem; }
-  </style>
-</head>
-<body class="bg-black">
-
-<div class="max-w-2xl mx-auto px-4 py-8">
-
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">{{ 'Edit Document' if doc else 'New Document' }}</h1>
-    <a href="{{ url_for('waivers.index') }}" class="text-sm transition-colors" style="color: #9ca3af;"
-      onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">← All documents</a>
+<div style="max-width:680px;margin:0 auto;">
+  <div class="page-head">
+    <h1>{{ 'Edit Document' if doc else 'New Document' }}</h1>
+    <a href="{{ url_for('waivers.index') }}" class="lnk">← All documents</a>
   </div>
 
-  <form method="POST" class="flex flex-col gap-4 bg-gray-900 border border-gray-700 rounded-xl p-5">
+  <form method="POST" class="card" style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
     {{ form.csrf_token }}
-
-    <div>
-      {{ form.doc_kind.label(class="lbl") }}
-      {{ form.doc_kind(class="fld") }}
-    </div>
-
+    <div>{{ form.doc_kind.label(class="lbl") }}{{ form.doc_kind(class="fld") }}</div>
     <div class="grid grid-cols-2 gap-3">
-      <div>
-        {{ form.project_id.label(class="lbl") }}
-        {{ form.project_id(class="fld") }}
-      </div>
-      <div>
-        {{ form.customer_id.label(class="lbl") }}
-        {{ form.customer_id(class="fld") }}
-      </div>
+      <div>{{ form.project_id.label(class="lbl") }}{{ form.project_id(class="fld") }}</div>
+      <div>{{ form.customer_id.label(class="lbl") }}{{ form.customer_id(class="fld") }}</div>
     </div>
-
     <div class="grid grid-cols-2 gap-3">
-      <div>
-        {{ form.owner_name.label(class="lbl") }}
-        {{ form.owner_name(class="fld") }}
-      </div>
-      <div>
-        {{ form.property_address.label(class="lbl") }}
-        {{ form.property_address(class="fld") }}
-      </div>
+      <div>{{ form.owner_name.label(class="lbl") }}{{ form.owner_name(class="fld") }}</div>
+      <div>{{ form.property_address.label(class="lbl") }}{{ form.property_address(class="fld") }}</div>
     </div>
-
     <div class="grid grid-cols-3 gap-3">
-      <div>
-        {{ form.amount.label(class="lbl") }}
-        {{ form.amount(class="fld", placeholder="Payment amount") }}
-      </div>
-      <div>
-        {{ form.through_date.label(class="lbl") }}
-        {{ form.through_date(class="fld") }}
-      </div>
-      <div>
-        {{ form.check_number.label(class="lbl") }}
-        {{ form.check_number(class="fld") }}
-      </div>
+      <div>{{ form.amount.label(class="lbl") }}{{ form.amount(class="fld", placeholder="Payment amount") }}</div>
+      <div>{{ form.through_date.label(class="lbl") }}{{ form.through_date(class="fld") }}</div>
+      <div>{{ form.check_number.label(class="lbl") }}{{ form.check_number(class="fld") }}</div>
     </div>
-
-    <div>
-      {{ form.exceptions.label(class="lbl") }}
-      {{ form.exceptions(class="fld", rows=2, placeholder="Disputed / excluded amounts (waivers)") }}
-    </div>
-
-    <div>
-      {{ form.notes.label(class="lbl") }}
-      {{ form.notes(class="fld", rows=3, placeholder="Scope of work (used on the completion certificate)") }}
-    </div>
-
+    <div>{{ form.exceptions.label(class="lbl") }}{{ form.exceptions(class="fld", rows=2, placeholder="Disputed / excluded amounts (waivers)") }}</div>
+    <div>{{ form.notes.label(class="lbl") }}{{ form.notes(class="fld", rows=3, placeholder="Scope of work (used on the completion certificate)") }}</div>
     <div class="flex items-center gap-3">
-      {{ form.submit(class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors") }}
-      {% if doc %}
-      <a href="{{ url_for('waivers.pdf', doc_id=doc.id) }}" target="_blank"
-         class="text-sm font-semibold px-4 py-2 rounded-lg border border-gray-600 text-gray-200 hover:border-orange-500 hover:text-orange-400 transition-colors">
-        View PDF
-      </a>
-      {% endif %}
+      {{ form.submit(class="btn") }}
+      {% if doc %}<a href="{{ url_for('waivers.pdf', doc_id=doc.id) }}" target="_blank" class="obtn">View PDF</a>{% endif %}
     </div>
   </form>
 
-  <p class="text-gray-600 text-xs mt-4">
-    Amount, check #, and “through date” apply to lien waivers. The Scope/Notes field prints on the completion certificate.
-    Lien-waiver wording varies by state — confirm the form meets your state's requirements before use.
-  </p>
-
+  <p class="muted" style="margin-top:1rem;">Amount, check #, and "through date" apply to lien waivers. The Scope/Notes field prints on the completion certificate. Lien-waiver wording varies by state — confirm the form meets your state's requirements before use.</p>
 </div>
-
-</body>
-</html>
 {% endblock %}

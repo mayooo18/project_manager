@@ -1,51 +1,33 @@
 {% extends 'base.html' %}
+{% block title %}Profitability{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Profitability</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-</head>
-<body class="bg-gray-50 min-h-screen text-gray-800 font-sans">
-  <div class="max-w-5xl mx-auto py-8 px-4">
-    <header class="mb-8">
-      <h1 class="text-3xl font-bold">Profitability</h1>
-      <p class="text-gray-500 text-sm">Analyze your profitability per project</p>
-    </header>
-
-    <section class="mt-6">
-      <div class="overflow-x-auto bg-white shadow rounded-lg">
-        <table class="min-w-full table-auto">
-          <thead class="bg-gray-100 text-left text-sm font-medium">
-            <tr>
-              <th class="px-4 py-2">Job</th>
-              <th class="px-4 py-2">Total Expenses</th>
-              <th class="px-4 py-2">Total Income</th>
-              <th class="px-4 py-2">Profit</th>
-            </tr>
-          </thead>
-          <tbody class="text-sm">
-            {% for item in data %}
-              <tr class="border-t">
-                <td class="px-4 py-2 text-gray-800">{{ item.project }}</td>
-                <td class="px-4 py-2 text-gray-600">${{ '%.2f' | format(item.expenses) }}</td>
-                <td class="px-4 py-2 text-gray-600">${{ '%.2f' | format(item.income) }}</td>
-                <td class="px-4 py-2 {% if item.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
-                  ${{ '%.2f' | format(item.profit) }}
-                </td>
-              </tr>
-            {% else %}
-              <tr>
-                <td colspan="4" class="px-4 py-2 text-center text-gray-500">No data available.</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </section>
+<div style="max-width:1000px;margin:0 auto;">
+  <div class="page-head">
+    <div>
+      <h1>Profitability</h1>
+      <div class="sub">Profit per job — income minus expenses.</div>
+    </div>
   </div>
-</body>
-</html>
+
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Job</th><th>Total Expenses</th><th>Total Income</th><th>Profit</th></tr>
+      </thead>
+      <tbody>
+        {% for item in data %}
+        <tr>
+          <td style="color:var(--ink-900);">{{ item.project }}</td>
+          <td>${{ '%.2f' | format(item.expenses) }}</td>
+          <td>${{ '%.2f' | format(item.income) }}</td>
+          <td class="{{ 'c-green' if item.profit >= 0 else 'c-red' }}" style="font-weight:600;">${{ '%.2f' | format(item.profit) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:var(--ink-500);">No data available.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

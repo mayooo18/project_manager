@@ -2,94 +2,76 @@
 {% block title %}Time Clock{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
-  <style>
-    body { background:#000; font-family: Inter, "Noto Sans", sans-serif; }
-    .card { background:#111827; border:1px solid #374151; border-radius:.85rem; }
-    .fld { background:#0b0f17; border:1px solid #374151; border-radius:.5rem; color:#e5e7eb; padding:.35rem .5rem; font-size:.8rem; }
-    .btn { font-size:.78rem; border:1px solid #374151; border-radius:.5rem; color:#e5e7eb; padding:.3rem .6rem; }
-    .btn:hover { border-color:#f97316; color:#ff8c5a; }
-    .row { border-top:1px solid #1f2937; padding:.6rem 0; }
-  </style>
-</head>
-<body class="bg-black">
-<div class="max-w-4xl mx-auto px-4 py-8">
+<style>
+  .tc{max-width:920px;margin:0 auto;}
+  .tc .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;margin-bottom:1.25rem;}
+  .fld{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-900);padding:.35rem .5rem;font-size:.8rem;}
+  .row{border-top:1px solid var(--border);padding:.6rem 0;}
+  .dot{display:inline-block;width:.5rem;height:.5rem;border-radius:999px;background:var(--green-fg);margin-right:.5rem;}
+</style>
 
-  <h1 class="text-2xl font-bold text-white mb-6">Time Clock</h1>
+<div class="tc">
+  <div class="page-head"><h1>Time Clock</h1></div>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-    <div class="mb-4 rounded-lg p-3 text-sm border {{ 'border-red-700 bg-red-900/30 text-red-200' if category == 'error' else 'border-green-700 bg-green-900/30 text-green-200' }}">{{ message }}</div>
-    {% endfor %}
-  {% endwith %}
-
-  <div class="card p-5 mb-5">
-    <p class="text-white font-semibold mb-2">Clocked in now ({{ open_punches|length }})</p>
+  <div class="card">
+    <p class="sec-title" style="margin-bottom:.5rem;">Clocked in now ({{ open_punches|length }})</p>
     {% if open_punches %}
       {% for p in open_punches %}
       <div class="row flex items-center justify-between gap-3">
         <div>
-          <span class="inline-block w-2 h-2 rounded-full bg-green-400 mr-2"></span>
-          <span class="text-gray-100 text-sm">{{ p.worker.name }}</span>
-          <span class="text-gray-500 text-xs">· {{ p.project.name if p.project else 'No job' }} · since {{ p.clock_in.strftime('%b %d %I:%M %p') }} · {{ p.hours }} h</span>
-          <span class="text-xs" style="color:#fbbf24;">· ${{ '%.2f' % p.labor_cost }} running</span>
+          <span class="dot"></span>
+          <span style="color:var(--ink-900);font-size:.9rem;">{{ p.worker.name }}</span>
+          <span class="muted" style="color:var(--ink-500);font-size:.78rem;">· {{ p.project.name if p.project else 'No job' }} · since {{ p.clock_in.strftime('%b %d %I:%M %p') }} · {{ p.hours }} h</span>
+          <span style="color:var(--amber-fg);font-size:.78rem;">· ${{ '%.2f' % p.labor_cost }} running</span>
         </div>
       </div>
       {% endfor %}
     {% else %}
-      <p class="text-gray-600 text-sm">Nobody is clocked in right now.</p>
+      <p style="color:var(--ink-500);font-size:.9rem;">Nobody is clocked in right now.</p>
     {% endif %}
   </div>
 
-  <div class="card p-5">
+  <div class="card">
     <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-      <p class="text-white font-semibold">Recent punches</p>
-      <p class="text-sm">Approved labor: <span style="color:#4ade80;font-weight:600;">${{ '%.2f' % approved_total }}</span></p>
+      <p class="sec-title">Recent punches</p>
+      <p style="font-size:.9rem;color:var(--ink-500);">Approved labor: <span class="c-green" style="font-weight:600;">${{ '%.2f' % approved_total }}</span></p>
     </div>
     {% if recent %}
       {% for p in recent %}
       <div class="row">
         <div class="flex items-center justify-between gap-3 flex-wrap">
-          <div class="text-sm">
-            <span class="text-gray-100">{{ p.worker.name }}</span>
-            <span class="text-gray-500 text-xs">· {{ p.project.name if p.project else 'No job' }} · {{ p.hours }} h</span>
+          <div style="font-size:.85rem;">
+            <span style="color:var(--ink-900);">{{ p.worker.name }}</span>
+            <span style="color:var(--ink-500);font-size:.78rem;">· {{ p.project.name if p.project else 'No job' }} · {{ p.hours }} h</span>
             {% if p.approved %}
-              <span class="text-xs ml-1" style="color:#4ade80;">· ${{ '%.2f' % p.labor_cost }}</span>
-              <span class="text-green-400 text-xs ml-1">✓ approved</span>
+              <span class="c-green" style="font-size:.78rem;margin-left:.25rem;">· ${{ '%.2f' % p.labor_cost }} ✓ approved</span>
             {% else %}
-              <span class="text-xs ml-1" style="color:#9ca3af;">· ${{ '%.2f' % p.labor_cost }} est</span>
+              <span style="color:var(--ink-500);font-size:.78rem;margin-left:.25rem;">· ${{ '%.2f' % p.labor_cost }} est</span>
             {% endif %}
           </div>
           <form method="POST" action="{{ url_for('edit_punch', punch_id=p.id) }}" class="flex items-center gap-2 flex-wrap">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="datetime-local" name="clock_in" value="{{ p.clock_in.strftime('%Y-%m-%dT%H:%M') }}" class="fld"/>
-            <input type="datetime-local" name="clock_out" value="{{ p.clock_out.strftime('%Y-%m-%dT%H:%M') if p.clock_out }}" class="fld"/>
-            <button type="submit" class="btn">Save</button>
-        </form>
+            <input type="datetime-local" name="clock_in" value="{{ p.clock_in.strftime('%Y-%m-%dT%H:%M') }}" class="fld" style="width:auto;"/>
+            <input type="datetime-local" name="clock_out" value="{{ p.clock_out.strftime('%Y-%m-%dT%H:%M') if p.clock_out }}" class="fld" style="width:auto;"/>
+            <button type="submit" class="obtn">Save</button>
+          </form>
           <span class="flex items-center gap-2">
             <form method="POST" action="{{ url_for('approve_punch', punch_id=p.id) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="btn" style="border-color:#16a34a;color:#4ade80;">{{ 'Unapprove' if p.approved else 'Approve' }}</button>
+              <button type="submit" class="obtn green">{{ 'Unapprove' if p.approved else 'Approve' }}</button>
             </form>
             <form method="POST" action="{{ url_for('delete_punch', punch_id=p.id) }}" onsubmit="return confirm('Delete this punch?');">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="text-gray-600 hover:text-red-400 text-xs">✕</button>
+              <button type="submit" class="linkbtn danger">✕</button>
             </form>
           </span>
         </div>
       </div>
       {% endfor %}
     {% else %}
-      <p class="text-gray-600 text-sm">No punches yet.</p>
+      <p style="color:var(--ink-500);font-size:.9rem;">No punches yet.</p>
     {% endif %}
   </div>
 
 </div>
-</body>
-</html>
 {% endblock %}

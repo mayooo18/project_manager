@@ -2,80 +2,87 @@
 {% block title %}Jobs{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background:#000; font-family:Inter,"Noto Sans",sans-serif; }
-    .panel { background:#111827; border:1px solid #374151; border-radius:.85rem; }
-    .metric { background:#0b0f17; border:1px solid #1f2937; border-radius:.7rem; padding:1rem; }
-    .job-card { background:#111827; border:1px solid #374151; border-radius:.85rem; transition:border-color .15s, transform .15s; }
-    .job-card:hover { border-color:#ff6b35; transform:translateY(-1px); }
-    .filter-input { background:#0a0a0a; border:1px solid #374151; color:#e5e7eb; border-radius:.55rem; }
-    .filter-input:focus { outline:none; border-color:#ff6b35; box-shadow:none; }
-    .bar { height:.4rem; background:#1f2937; border-radius:999px; overflow:hidden; }
-    .bar-fill { height:100%; background:#ff6b35; border-radius:999px; }
-  </style>
-</head>
-<body class="bg-black text-gray-200">
-<div class="max-w-6xl mx-auto px-4 py-8">
+<style>
+  .jobs{max-width:1120px;margin:0 auto;}
+  .metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);
+          padding:1rem;text-decoration:none;display:block;transition:border-color .15s;}
+  a.metric:hover{border-color:var(--accent);}
+  .metric .k{color:var(--ink-500);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;}
+  .metric .n{font-size:1.4rem;font-weight:800;color:var(--ink-900);margin-top:4px;}
+  .metric .n.sm{font-size:1.15rem;}
+  .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:1.5rem;}
+  @media(min-width:640px){.mgrid{grid-template-columns:repeat(3,1fr);}}
+  @media(min-width:1024px){.mgrid{grid-template-columns:repeat(6,1fr);}}
+  .filter-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1rem;margin-bottom:1.5rem;}
+  .fgrid{display:grid;grid-template-columns:1fr;gap:12px;align-items:end;}
+  @media(min-width:640px){.fgrid{grid-template-columns:1fr 180px auto;}}
+  .fld{width:100%;padding:.5rem .7rem;background:var(--canvas);border:1px solid var(--border-strong);
+       color:var(--ink-900);border-radius:var(--r-sm);font-size:.9rem;margin-top:.25rem;}
+  .fld:focus{outline:none;border-color:var(--accent);}
+  .jgrid{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:1024px){.jgrid{grid-template-columns:1fr 1fr;}}
+  .job-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);
+            padding:1.25rem;transition:border-color .15s,transform .15s;}
+  .job-card:hover{border-color:var(--accent);transform:translateY(-1px);}
+  .pill{font-size:10px;text-transform:uppercase;border:1px solid;border-radius:4px;padding:1px 7px;}
+  .jstats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:1.1rem;}
+  @media(min-width:640px){.jstats{grid-template-columns:repeat(4,1fr);}}
+  .jstats .k{color:var(--ink-500);font-size:.72rem;}
+  .jstats .v{color:var(--ink-900);font-weight:600;}
+  .bar{height:.4rem;background:var(--surface-2);border-radius:999px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--accent);border-radius:999px;}
+  .attention{margin-top:1rem;border:1px solid rgba(245,158,11,.35);background:var(--amber-bg);border-radius:var(--r);padding:.75rem;}
+  .attention .h{color:var(--amber-fg);font-size:.72rem;font-weight:700;text-transform:uppercase;margin-bottom:.3rem;}
+  .attention li{color:var(--amber-fg);font-size:.75rem;}
+  .job-foot{display:flex;align-items:center;justify-content:space-between;margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border);}
+  .obtn{border:1px solid var(--accent);color:var(--accent);font-weight:600;font-size:.85rem;
+        padding:.35rem .8rem;border-radius:var(--r-sm);text-decoration:none;background:transparent;}
+  .obtn:hover{background:var(--accent-weak);}
+  .empty{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);text-align:center;padding:3.5rem 1.5rem;}
+</style>
 
-  <div class="mb-6">
-    <p class="text-orange-400 text-xs uppercase tracking-widest">Operations</p>
-    <h1 class="text-white text-3xl font-bold mt-1">Jobs</h1>
-    <p class="text-gray-500 text-sm mt-1">
-      Jobs begin automatically when an approved proposal is converted into a contract.
-    </p>
-  </div>
+<div class="jobs">
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-    <div class="mb-4 rounded-lg border p-3 text-sm {{ 'border-red-700 bg-red-900/30 text-red-200' if category == 'error' else 'border-green-700 bg-green-900/30 text-green-200' }}">
-      {{ message }}
-    </div>
-    {% endfor %}
-  {% endwith %}
-
-  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-    <a href="{{ url_for('projects', status='Active') }}" class="metric no-underline hover:border-orange-400">
-      <p class="text-gray-500 text-xs uppercase">Active</p>
-      <p class="text-white text-2xl font-bold mt-1">{{ dashboard.active }}</p>
-    </a>
-    <a href="{{ url_for('projects', status='On Hold') }}" class="metric no-underline hover:border-yellow-500">
-      <p class="text-gray-500 text-xs uppercase">On Hold</p>
-      <p class="text-yellow-400 text-2xl font-bold mt-1">{{ dashboard.on_hold }}</p>
-    </a>
-    <a href="{{ url_for('projects', status='Completed') }}" class="metric no-underline hover:border-blue-500">
-      <p class="text-gray-500 text-xs uppercase">Completed</p>
-      <p class="text-blue-300 text-2xl font-bold mt-1">{{ dashboard.completed }}</p>
-    </a>
-    <div class="metric">
-      <p class="text-gray-500 text-xs uppercase">Contracted</p>
-      <p class="text-white text-xl font-bold mt-1">${{ '{:,.0f}'.format(dashboard.contract_total) }}</p>
-    </div>
-    <div class="metric">
-      <p class="text-gray-500 text-xs uppercase">Billed</p>
-      <p class="text-white text-xl font-bold mt-1">${{ '{:,.0f}'.format(dashboard.billed_total) }}</p>
-    </div>
-    <div class="metric">
-      <p class="text-gray-500 text-xs uppercase">Paid</p>
-      <p class="text-green-400 text-xl font-bold mt-1">${{ '{:,.0f}'.format(dashboard.paid_total) }}</p>
+  <div class="page-head">
+    <div>
+      <div class="sect-label" style="color:var(--accent);letter-spacing:.08em;">Operations</div>
+      <h1>Jobs</h1>
+      <div class="sub">Jobs begin automatically when an approved proposal is converted into a contract.</div>
     </div>
   </div>
 
-  <form method="GET" action="{{ url_for('projects') }}" class="panel p-4 mb-6">
-    <div class="grid grid-cols-1 sm:grid-cols-[1fr_180px_auto] gap-3">
+  <!-- Status metrics -->
+  <div class="mgrid">
+    <a href="{{ url_for('projects', status='Active') }}" class="metric">
+      <p class="k">Active</p><p class="n">{{ dashboard.active }}</p>
+    </a>
+    <a href="{{ url_for('projects', status='On Hold') }}" class="metric">
+      <p class="k">On Hold</p><p class="n c-amber">{{ dashboard.on_hold }}</p>
+    </a>
+    <a href="{{ url_for('projects', status='Completed') }}" class="metric">
+      <p class="k">Completed</p><p class="n c-blue">{{ dashboard.completed }}</p>
+    </a>
+    <div class="metric">
+      <p class="k">Contracted</p><p class="n sm">${{ '{:,.0f}'.format(dashboard.contract_total) }}</p>
+    </div>
+    <div class="metric">
+      <p class="k">Billed</p><p class="n sm">${{ '{:,.0f}'.format(dashboard.billed_total) }}</p>
+    </div>
+    <div class="metric">
+      <p class="k">Paid</p><p class="n sm c-green">${{ '{:,.0f}'.format(dashboard.paid_total) }}</p>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <form method="GET" action="{{ url_for('projects') }}" class="filter-card">
+    <div class="fgrid">
       <div>
-        <label for="job-search" class="text-gray-500 text-xs">Search jobs, customers, or addresses</label>
-        <input id="job-search" type="search" name="q" value="{{ search }}"
-               placeholder="Search…" class="filter-input w-full mt-1 px-3 py-2"/>
+        <label for="job-search" class="muted">Search jobs, customers, or addresses</label>
+        <input id="job-search" type="search" name="q" value="{{ search }}" placeholder="Search…" class="fld"/>
       </div>
       <div>
-        <label for="job-status" class="text-gray-500 text-xs">Status</label>
-        <select id="job-status" name="status" class="filter-input w-full mt-1 px-3 py-2">
+        <label for="job-status" class="muted">Status</label>
+        <select id="job-status" name="status" class="fld">
           <option value="all" {{ 'selected' if status_filter == 'all' }}>All jobs</option>
           <option value="Active" {{ 'selected' if status_filter == 'Active' }}>Active</option>
           <option value="On Hold" {{ 'selected' if status_filter == 'On Hold' }}>On Hold</option>
@@ -83,89 +90,85 @@
         </select>
       </div>
       <div class="flex items-end gap-2">
-        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm px-5 py-2 rounded-lg">Filter</button>
+        <button type="submit" class="btn">Filter</button>
         {% if search or status_filter != 'all' %}
-        <a href="{{ url_for('projects') }}" class="text-gray-400 hover:text-white text-sm px-2 py-2">Clear</a>
+        <a href="{{ url_for('projects') }}" class="muted" style="padding:.5rem;">Clear</a>
         {% endif %}
       </div>
     </div>
   </form>
 
   <div class="flex items-center justify-between mb-3">
-    <h2 class="text-white font-semibold">{{ projects|length }} job{{ '' if projects|length == 1 else 's' }}</h2>
-    <p class="text-gray-600 text-xs">Open a Job Hub for full details and actions.</p>
+    <h2 style="margin-bottom:0;font-size:1.05rem;">{{ projects|length }} job{{ '' if projects|length == 1 else 's' }}</h2>
+    <p class="muted">Open a Job Hub for full details and actions.</p>
   </div>
 
   {% if projects %}
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <div class="jgrid">
     {% for row in projects %}
     {% set job = row.project %}
     {% set billing_percent = ((row.billed_total / row.contract_total * 100) if row.contract_total else 0) %}
-    <article class="job-card p-5">
+    <article class="job-card">
       <div class="flex items-start justify-between gap-4">
-        <div class="min-w-0">
+        <div style="min-width:0;">
           <div class="flex items-center gap-2 flex-wrap">
-            <a href="{{ url_for('project_detail', project_id=job.id) }}" class="text-white text-lg font-semibold hover:text-orange-400 truncate">{{ job.name }}</a>
-            <span class="text-[10px] uppercase border rounded px-2 py-0.5
-              {{ 'text-green-300 border-green-500' if job.status == 'Active' else 'text-yellow-300 border-yellow-500' if job.status == 'On Hold' else 'text-blue-300 border-blue-500' }}">{{ job.status }}</span>
+            <a href="{{ url_for('project_detail', project_id=job.id) }}" class="lk" style="color:var(--ink-900);font-size:1.05rem;font-weight:600;">{{ job.name }}</a>
+            <span class="pill {{ 'text-green-300 border-green-500' if job.status == 'Active' else 'text-yellow-300 border-yellow-500' if job.status == 'On Hold' else 'text-blue-300 border-blue-500' }}">{{ job.status }}</span>
           </div>
-          <p class="text-gray-400 text-sm mt-1">{{ row.customer_name or 'No customer linked' }}</p>
-          <p class="text-gray-600 text-xs mt-0.5">{{ job.address or 'No property address' }}</p>
+          <p style="color:var(--ink-500);font-size:.88rem;margin-top:.25rem;">{{ row.customer_name or 'No customer linked' }}</p>
+          <p class="muted" style="margin-top:.1rem;">{{ job.address or 'No property address' }}</p>
         </div>
-        <a href="{{ url_for('project_detail', project_id=job.id) }}"
-           class="flex-shrink-0 border border-orange-400 text-orange-400 hover:bg-orange-400/10 text-sm font-semibold px-3 py-1.5 rounded-lg">Open</a>
+        <a href="{{ url_for('project_detail', project_id=job.id) }}" class="obtn accent flex-shrink-0">Open</a>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
-        <div><p class="text-gray-600 text-xs">Contract</p><p class="text-gray-100 font-semibold">${{ '{:,.0f}'.format(row.contract_total) }}</p></div>
-        <div><p class="text-gray-600 text-xs">Billed</p><p class="text-gray-100 font-semibold">${{ '{:,.0f}'.format(row.billed_total) }}</p></div>
-        <div><p class="text-gray-600 text-xs">Paid</p><p class="text-green-400 font-semibold">${{ '{:,.0f}'.format(row.paid_total) }}</p></div>
-        <div><p class="text-gray-600 text-xs">Profit</p><p class="font-semibold {{ 'text-green-400' if row.profit >= 0 else 'text-red-400' }}">${{ '{:,.0f}'.format(row.profit) }}</p></div>
+      <div class="jstats">
+        <div><p class="k">Contract</p><p class="v">${{ '{:,.0f}'.format(row.contract_total) }}</p></div>
+        <div><p class="k">Billed</p><p class="v">${{ '{:,.0f}'.format(row.billed_total) }}</p></div>
+        <div><p class="k">Paid</p><p class="v c-green">${{ '{:,.0f}'.format(row.paid_total) }}</p></div>
+        <div><p class="k">Profit</p><p class="v {{ 'c-green' if row.profit >= 0 else 'c-red' }}">${{ '{:,.0f}'.format(row.profit) }}</p></div>
       </div>
 
-      <div class="mt-4">
-        <div class="flex justify-between text-xs mb-1">
-          <span class="text-gray-600">Billing progress</span>
-          <span class="text-gray-400">{{ '%.0f'|format([billing_percent, 100]|min) }}%</span>
+      <div style="margin-top:1rem;">
+        <div class="flex justify-between" style="font-size:.75rem;margin-bottom:.25rem;">
+          <span class="muted">Billing progress</span>
+          <span style="color:var(--ink-500);">{{ '%.0f'|format([billing_percent, 100]|min) }}%</span>
         </div>
         <div class="bar"><div class="bar-fill" style="width:{{ [billing_percent, 100]|min }}%"></div></div>
       </div>
 
       {% if row.attention %}
-      <div class="mt-4 border border-yellow-700/60 bg-yellow-900/20 rounded-lg p-3">
-        <p class="text-yellow-400 text-xs font-semibold uppercase mb-1">Needs attention</p>
-        <ul class="text-yellow-100/80 text-xs space-y-1">
+      <div class="attention">
+        <p class="h">Needs attention</p>
+        <ul style="list-style:none;">
           {% for item in row.attention %}<li>• {{ item }}</li>{% endfor %}
         </ul>
       </div>
       {% endif %}
 
-      <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-800">
-        <p class="text-gray-600 text-xs">
+      <div class="job-foot">
+        <p class="muted">
           {% if job.start_date %}Started {{ job.start_date.strftime('%b %d, %Y') }} · {% endif %}
           {{ row.file_count }} file{{ '' if row.file_count == 1 else 's' }}
         </p>
-        <a href="{{ url_for('edit_project', project_id=job.id) }}" class="text-gray-500 hover:text-orange-400 text-xs">Edit job</a>
+        <a href="{{ url_for('edit_project', project_id=job.id) }}" class="muted" style="text-decoration:none;">Edit job</a>
       </div>
     </article>
     {% endfor %}
   </div>
   {% else %}
-  <div class="panel text-center px-6 py-14">
-    <p class="text-white text-lg font-semibold">No jobs found</p>
+  <div class="empty">
+    <p style="color:var(--ink-900);font-size:1.1rem;font-weight:600;">No jobs found</p>
     {% if search or status_filter != 'all' %}
-    <p class="text-gray-500 text-sm mt-2">Try clearing the search or status filter.</p>
-    <a href="{{ url_for('projects') }}" class="inline-block text-orange-400 hover:underline text-sm mt-3">Clear filters</a>
+    <p class="muted" style="margin-top:.5rem;">Try clearing the search or status filter.</p>
+    <a href="{{ url_for('projects') }}" class="c-accent" style="display:inline-block;margin-top:.75rem;">Clear filters</a>
     {% else %}
-    <p class="text-gray-500 text-sm mt-2">Start with a customer and proposal. When the approved proposal becomes a contract, its Job will appear here automatically.</p>
-    <div class="flex justify-center gap-3 mt-5">
-      <a href="{{ url_for('quotes.customers') }}" class="border border-gray-600 text-gray-200 hover:border-orange-400 text-sm px-4 py-2 rounded-lg">Customers</a>
-      <a href="{{ url_for('quotes.new') }}" class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">New Proposal</a>
+    <p class="muted" style="margin-top:.5rem;max-width:32rem;margin-left:auto;margin-right:auto;">Start with a customer and proposal. When the approved proposal becomes a contract, its Job will appear here automatically.</p>
+    <div class="flex justify-center gap-3" style="margin-top:1.25rem;">
+      <a href="{{ url_for('quotes.customers') }}" class="obtn">Customers</a>
+      <a href="{{ url_for('quotes.new') }}" class="btn">New Proposal</a>
     </div>
     {% endif %}
   </div>
   {% endif %}
 </div>
-</body>
-</html>
 {% endblock %}

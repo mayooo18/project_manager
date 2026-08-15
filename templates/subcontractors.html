@@ -2,96 +2,68 @@
 {% block title %}Subcontractors{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
-  </style>
-</head>
-<body class="bg-black">
-
-<div class="max-w-4xl mx-auto px-4 py-8">
-
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">Subcontractors</h1>
-    <a href="{{ url_for('subcontractors.add') }}"
-      class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-      style="color: #fff !important;">
-      + Add Subcontractor
-    </a>
+<style>
+  .subcell{background:var(--canvas);border:1px solid var(--border);border-radius:var(--r);padding:.5rem .75rem;}
+  .subgrid{display:grid;grid-template-columns:1fr;gap:.75rem;margin-top:.75rem;}
+  @media(min-width:640px){.subgrid{grid-template-columns:1fr 1fr;}}
+</style>
+<div style="max-width:920px;margin:0 auto;">
+  <div class="page-head">
+    <h1>Subcontractors</h1>
+    <a href="{{ url_for('subcontractors.add') }}" class="btn">+ Add Subcontractor</a>
   </div>
 
   {% if subcontractors %}
-  <div class="flex flex-col gap-4">
-    {% for s in subcontractors %}
-    <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
-      <div class="flex items-start justify-between gap-4 mb-3">
-        <div>
-          <div class="flex items-center flex-wrap gap-2">
-            <p class="text-gray-100 font-semibold text-lg">{{ s.name }}</p>
-            {% if s.trade %}<span class="text-xs font-normal text-orange-400 border border-orange-400/40 rounded px-1.5 py-0.5">{{ s.trade }}</span>{% endif %}
-            {% if s.w9_on_file %}<span class="text-xs font-normal text-green-400 border border-green-400/40 rounded px-1.5 py-0.5">W-9 ✓</span>
-            {% else %}<span class="text-xs font-normal text-gray-500 border border-gray-600 rounded px-1.5 py-0.5">No W-9</span>{% endif %}
-          </div>
-          <p class="text-gray-500 text-xs mt-1">
-            {% if s.contact_name %}{{ s.contact_name }}{% endif %}
-            {% if s.phone %} &middot; {{ s.phone }}{% endif %}
-            {% if s.email %} &middot; {{ s.email }}{% endif %}
-          </p>
+  {% for s in subcontractors %}
+  <div class="list-card">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <div class="flex items-center flex-wrap gap-2">
+          <p style="color:var(--ink-900);font-weight:600;font-size:1.05rem;">{{ s.name }}</p>
+          {% if s.trade %}<span class="c-accent" style="font-size:.65rem;border:1px solid var(--accent);border-radius:4px;padding:1px 6px;">{{ s.trade }}</span>{% endif %}
+          {% if s.w9_on_file %}<span class="c-green" style="font-size:.65rem;border:1px solid var(--green-fg);border-radius:4px;padding:1px 6px;">W-9 ✓</span>
+          {% else %}<span class="muted" style="font-size:.65rem;border:1px solid var(--border-strong);border-radius:4px;padding:1px 6px;">No W-9</span>{% endif %}
         </div>
-        <div class="flex items-center gap-3 flex-shrink-0">
-          <a href="{{ url_for('subcontractors.edit', sub_id=s.id) }}"
-            class="text-sm transition-colors" style="color: #9ca3af;"
-            onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">Edit</a>
-          <form method="POST" action="{{ url_for('subcontractors.delete', sub_id=s.id) }}"
-            onsubmit="return confirm('Delete {{ s.name }}? This cannot be undone.');">
-            {{ delete_form.csrf_token }}
-            <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
-          </form>
-        </div>
+        <p class="muted" style="margin-top:.25rem;">
+          {% if s.contact_name %}{{ s.contact_name }}{% endif %}
+          {% if s.phone %} · {{ s.phone }}{% endif %}
+          {% if s.email %} · {{ s.email }}{% endif %}
+        </p>
       </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-        <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2">
-          <p class="text-gray-500 text-xs mb-1">License</p>
-          <p class="text-gray-200">{{ s.license_number or '—' }}</p>
-          {% if s.license_expiration %}
-          <p class="text-xs mt-1 {{ 'text-red-400' if s.license_expiration <= today + timedelta(days=7) else 'text-yellow-400' if s.license_expiration <= today + timedelta(days=30) else 'text-gray-500' }}">
-            Expires {{ s.license_expiration.strftime('%b %d, %Y') }}
-          </p>
-          {% endif %}
-        </div>
-
-        <div class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2">
-          <p class="text-gray-500 text-xs mb-1">Insurance (COI)</p>
-          <p class="text-gray-200">{{ s.insurance_carrier or '—' }}</p>
-          {% if s.insurance_expiration %}
-          <p class="text-xs mt-1 {{ 'text-red-400' if s.insurance_expiration <= today + timedelta(days=7) else 'text-yellow-400' if s.insurance_expiration <= today + timedelta(days=30) else 'text-gray-500' }}">
-            Expires {{ s.insurance_expiration.strftime('%b %d, %Y') }}
-          </p>
-          {% endif %}
-        </div>
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <a href="{{ url_for('subcontractors.edit', sub_id=s.id) }}" class="lnk">Edit</a>
+        <form method="POST" action="{{ url_for('subcontractors.delete', sub_id=s.id) }}" onsubmit="return confirm('Delete {{ s.name }}? This cannot be undone.');">
+          {{ delete_form.csrf_token }}
+          <button type="submit" class="linkbtn danger">Delete</button>
+        </form>
       </div>
-
-      {% if s.notes %}
-      <p class="text-gray-500 text-xs mt-3">{{ s.notes }}</p>
-      {% endif %}
     </div>
-    {% endfor %}
+
+    <div class="subgrid">
+      <div class="subcell">
+        <p class="muted" style="margin-bottom:.25rem;">License</p>
+        <p style="color:var(--ink-700);font-size:.9rem;">{{ s.license_number or '—' }}</p>
+        {% if s.license_expiration %}
+        <p style="font-size:.72rem;margin-top:.25rem;" class="{{ 'c-red' if s.license_expiration <= today + timedelta(days=7) else 'c-amber' if s.license_expiration <= today + timedelta(days=30) else 'muted' }}">Expires {{ s.license_expiration.strftime('%b %d, %Y') }}</p>
+        {% endif %}
+      </div>
+      <div class="subcell">
+        <p class="muted" style="margin-bottom:.25rem;">Insurance (COI)</p>
+        <p style="color:var(--ink-700);font-size:.9rem;">{{ s.insurance_carrier or '—' }}</p>
+        {% if s.insurance_expiration %}
+        <p style="font-size:.72rem;margin-top:.25rem;" class="{{ 'c-red' if s.insurance_expiration <= today + timedelta(days=7) else 'c-amber' if s.insurance_expiration <= today + timedelta(days=30) else 'muted' }}">Expires {{ s.insurance_expiration.strftime('%b %d, %Y') }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if s.notes %}<p class="muted" style="margin-top:.75rem;">{{ s.notes }}</p>{% endif %}
   </div>
+  {% endfor %}
   {% else %}
-  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center">
-    <p class="text-gray-400 text-sm">No subcontractors yet.</p>
-    <p class="text-gray-600 text-xs mt-1">Add a sub to track their trade, license, and insurance (COI) expirations — reminders are created automatically.</p>
+  <div class="list-empty">
+    <p style="color:var(--ink-700);">No subcontractors yet.</p>
+    <p class="muted" style="margin-top:.25rem;">Add a sub to track their trade, license, and insurance (COI) expirations — reminders are created automatically.</p>
   </div>
   {% endif %}
-
 </div>
-
-</body>
-</html>
 {% endblock %}

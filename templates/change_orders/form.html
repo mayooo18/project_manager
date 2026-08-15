@@ -2,116 +2,102 @@
 {% block title %}{{ 'Edit Change Order' if change_order else 'New Change Order' }}{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background:#000; font-family:Inter,"Noto Sans",sans-serif; }
-    .fld { background:#0a0a0a; border:1px solid #2d2d2d; border-radius:.5rem; color:#e5e7eb; padding:.5rem .75rem; width:100%; }
-    .fld:focus { outline:none; border-color:#ff6b35; }
-    .sec { background:#111827; border:1px solid #374151; border-radius:.75rem; padding:1.25rem; }
-  </style>
-</head>
-<body class="bg-black">
-<div class="max-w-3xl mx-auto px-4 py-8">
-  <div class="flex items-center justify-between gap-4 mb-6">
-    <h1 class="text-2xl font-bold text-white">
-      {{ 'Edit Change Order' if change_order else 'New Change Order' }}
-      {% if change_order %}<span class="text-gray-500 text-base font-normal">· {{ change_order.number }}</span>{% endif %}
-    </h1>
-    <a href="{{ url_for('contracts.edit', contract_id=contract.id) }}" class="text-gray-400 hover:text-orange-400 text-sm">← Contract</a>
+<style>
+  .cwrap{max-width:820px;margin:0 auto;}
+  .fld{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-900);padding:.5rem .75rem;width:100%;font-size:.9rem;}
+  .fld:focus{outline:none;border-color:var(--accent);}
+  .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;margin-bottom:1.25rem;}
+  .lbl{color:var(--ink-500);font-size:.72rem;}
+  .step{color:var(--ink-500);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;}
+  .item-row{background:var(--canvas);border:1px solid var(--border);border-radius:var(--r);padding:.75rem;margin-bottom:.75rem;}
+  .chip{font-size:.75rem;border:1px solid var(--border-strong);color:var(--ink-700);border-radius:var(--r-sm);padding:.25rem .5rem;background:none;cursor:pointer;}
+  .chip.accent{border-color:var(--accent);color:var(--accent);}
+</style>
+
+<div class="cwrap">
+  <div class="page-head">
+    <h1>{{ 'Edit Change Order' if change_order else 'New Change Order' }}{% if change_order %} <span class="muted" style="font-size:1rem;font-weight:400;">· {{ change_order.number }}</span>{% endif %}</h1>
+    <a href="{{ url_for('contracts.edit', contract_id=contract.id) }}" class="lnk">← Contract</a>
   </div>
 
-  <div class="sec mb-5">
-    <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">Contract context</p>
+  <div class="sec">
+    <p class="step" style="margin-bottom:.75rem;">Contract context</p>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div><p class="text-gray-600 text-xs">Contract</p><p class="text-gray-200 text-sm">{{ contract.number }} · {{ contract.title }}</p></div>
-      <div><p class="text-gray-600 text-xs">Customer</p><p class="text-gray-200 text-sm">{{ contract.customer.name }}</p></div>
-      <div><p class="text-gray-600 text-xs">Current total</p><p class="text-white font-bold">${{ '%.2f'|format(contract.contract_total or 0) }}</p></div>
+      <div><p class="muted">Contract</p><p style="color:var(--ink-700);font-size:.88rem;">{{ contract.number }} · {{ contract.title }}</p></div>
+      <div><p class="muted">Customer</p><p style="color:var(--ink-700);font-size:.88rem;">{{ contract.customer.name }}</p></div>
+      <div><p class="muted">Current total</p><p style="color:var(--ink-900);font-weight:700;">${{ '%.2f'|format(contract.contract_total or 0) }}</p></div>
     </div>
   </div>
 
   <form method="POST" action="{{ url_for('change_orders.edit', change_order_id=change_order.id) if change_order else url_for('change_orders.new', contract_id=contract.id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    <fieldset {{ 'disabled' if change_order and change_order.applied_at }}>
-      <div class="sec mb-5">
-        <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">1 · Amendment details</p>
-        <label class="text-gray-500 text-xs">Title *</label>
-        <input type="text" name="title" class="fld mb-3" maxlength="200" required
-               placeholder="e.g. Add recessed lighting" value="{{ change_order.title if change_order else '' }}"/>
-        <label class="text-gray-500 text-xs">Reason for change</label>
+    <fieldset {{ 'disabled' if change_order and change_order.applied_at }} style="border:none;padding:0;margin:0;">
+      <div class="sec">
+        <p class="step" style="margin-bottom:.75rem;">1 · Amendment details</p>
+        <label class="lbl">Title *</label>
+        <input type="text" name="title" class="fld" style="margin-bottom:.75rem;" maxlength="200" required placeholder="e.g. Add recessed lighting" value="{{ change_order.title if change_order else '' }}"/>
+        <label class="lbl">Reason for change</label>
         <textarea name="reason" rows="3" class="fld" placeholder="Why is this amendment needed?">{{ change_order.reason if change_order else '' }}</textarea>
       </div>
 
-      <div class="sec mb-5">
+      <div class="sec">
         <div class="flex items-center justify-between mb-3">
-          <p class="text-gray-400 text-xs uppercase tracking-wide">2 · Added work / deductions</p>
-          <button type="button" onclick="addRow()" class="text-orange-400 text-sm hover:underline">+ Add item</button>
+          <p class="step">2 · Added work / deductions</p>
+          <button type="button" onclick="addRow()" class="chip accent">+ Add item</button>
         </div>
-        <p class="text-gray-600 text-xs mb-3">Use a negative unit price for a deduction or credit.</p>
+        <p class="muted" style="margin-bottom:.75rem;">Use a negative unit price for a deduction or credit.</p>
         <div id="items"></div>
-        <div class="flex justify-end mt-3">
-          <div class="text-right">
-            <span id="total-label" class="text-gray-500 text-xs uppercase">Change order total</span>
-            <div id="total-value" class="text-2xl font-bold text-white">$<span id="grand-total">0.00</span></div>
-            <p class="text-gray-500 text-xs mt-1">New contract total: <span id="new-contract-total" class="text-gray-200">$0.00</span></p>
+        <div class="flex justify-end" style="margin-top:.75rem;">
+          <div style="text-align:right;">
+            <span id="total-label" class="lbl" style="text-transform:uppercase;">Change order total</span>
+            <div id="total-value" style="font-size:1.5rem;font-weight:800;color:var(--ink-900);">$<span id="grand-total">0.00</span></div>
+            <p class="muted" style="margin-top:.25rem;">New contract total: <span id="new-contract-total" style="color:var(--ink-700);">$0.00</span></p>
           </div>
         </div>
       </div>
 
-      <div class="sec mb-5">
-        <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">3 · Billing &amp; notes</p>
-        <label class="flex items-start gap-2 text-sm text-gray-300 mb-4">
-          <input type="checkbox" name="add_as_draw" class="mt-1 rounded border-gray-600 bg-black text-orange-500"
-                 {{ 'checked' if not change_order or change_order.add_as_draw }}/>
+      <div class="sec">
+        <p class="step" style="margin-bottom:.75rem;">3 · Billing &amp; notes</p>
+        <label class="flex items-start gap-2" style="font-size:.9rem;color:var(--ink-700);margin-bottom:1rem;">
+          <input type="checkbox" name="add_as_draw" style="width:auto;margin-top:2px;" {{ 'checked' if not change_order or change_order.add_as_draw }}/>
           <span>Add a positive approved change order to the contract draw schedule.</span>
         </label>
-        <label class="text-gray-500 text-xs">Customer-facing notes</label>
+        <label class="lbl">Customer-facing notes</label>
         <textarea name="notes" rows="3" class="fld">{{ change_order.notes if change_order else '' }}</textarea>
       </div>
     </fieldset>
 
     <div class="flex flex-wrap items-center gap-3">
       {% if not change_order or not change_order.applied_at %}
-      <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg">Save Change Order</button>
+      <button type="submit" class="btn">Save Change Order</button>
       {% endif %}
-      {% if change_order %}
-      <a href="{{ url_for('change_orders.pdf', change_order_id=change_order.id) }}" target="_blank"
-         class="border border-gray-600 text-gray-200 text-sm font-semibold px-5 py-2.5 rounded-lg hover:border-orange-400">Preview PDF</a>
-      {% endif %}
+      {% if change_order %}<a href="{{ url_for('change_orders.pdf', change_order_id=change_order.id) }}" target="_blank" class="obtn">Preview PDF</a>{% endif %}
     </div>
   </form>
 
   {% if change_order %}
-  <div class="sec mt-6">
-    <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">Approval</p>
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="step" style="margin-bottom:.75rem;">Approval</p>
     {% if change_order.applied_at %}
-    <p class="text-green-400 font-semibold">✓ Approved by {{ change_order.signature_name }}</p>
-    <p class="text-gray-500 text-sm mt-1">
-      Contract changed from ${{ '%.2f'|format(change_order.contract_total_before or 0) }}
-      to ${{ '%.2f'|format(change_order.contract_total_after or 0) }}.
-    </p>
+    <p class="c-green" style="font-weight:600;">✓ Approved by {{ change_order.signature_name }}</p>
+    <p class="muted" style="margin-top:.25rem;">Contract changed from ${{ '%.2f'|format(change_order.contract_total_before or 0) }} to ${{ '%.2f'|format(change_order.contract_total_after or 0) }}.</p>
     {% else %}
       {% if change_order.customer.email %}
-      <form method="POST" action="{{ url_for('change_orders.email', change_order_id=change_order.id) }}" class="mb-3">
+      <form method="POST" action="{{ url_for('change_orders.email', change_order_id=change_order.id) }}" style="margin-bottom:.75rem;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg">✉ Email to {{ change_order.customer.email }}</button>
+        <button type="submit" class="btn">✉ Email to {{ change_order.customer.email }}</button>
       </form>
       {% endif %}
       {% if public_link_active %}
       <div class="flex flex-wrap items-center gap-2">
-        <input id="share-link" type="text" readonly class="fld flex-1 min-w-0"
-               value="{{ url_for('change_orders.public_view', token=change_order.public_token, _external=True) }}"/>
-        <button type="button" onclick="copyLink()" class="border border-gray-600 text-gray-200 text-sm px-4 py-2 rounded-lg">Copy</button>
+        <input id="share-link" type="text" readonly class="fld" style="flex:1;min-width:0;" value="{{ url_for('change_orders.public_view', token=change_order.public_token, _external=True) }}"/>
+        <button type="button" onclick="copyLink()" class="obtn">Copy</button>
       </div>
-      <p class="text-gray-600 text-xs mt-2">Expires {{ change_order.public_token_expires_at.strftime('%Y-%m-%d %H:%M') }} UTC</p>
+      <p class="muted" style="margin-top:.5rem;">Expires {{ change_order.public_token_expires_at.strftime('%Y-%m-%d %H:%M') }} UTC</p>
       {% else %}
       <form method="POST" action="{{ url_for('change_orders.send', change_order_id=change_order.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit" class="border border-orange-400 text-orange-400 text-sm px-4 py-2 rounded-lg">Mark as sent &amp; create link</button>
+        <button type="submit" class="obtn accent">Mark as sent &amp; create link</button>
       </form>
       {% endif %}
     {% endif %}
@@ -137,20 +123,20 @@
     document.getElementById('grand-total').textContent = money(Math.abs(total));
     document.getElementById('total-value').firstChild.textContent = total < 0 ? '-$' : '$';
     document.getElementById('total-label').textContent = total < 0 ? 'Deduction / credit' : 'Change order total';
-    document.getElementById('total-value').className = 'text-2xl font-bold ' + (total < 0 ? 'text-red-400' : 'text-white');
+    document.getElementById('total-value').style.color = total < 0 ? 'var(--red-fg)' : 'var(--ink-900)';
     document.getElementById('new-contract-total').textContent = signedMoney(CONTRACT_TOTAL + total);
   }
   function rowTemplate(desc, qty, price) {
     const row = document.createElement('div');
-    row.className = 'item-row bg-gray-950 border border-gray-800 rounded-lg p-3 mb-3';
-    row.innerHTML = `<textarea name="item_description" rows="2" class="fld mb-2 i-desc" placeholder="Describe the change…"></textarea>
+    row.className = 'item-row';
+    row.innerHTML = `<textarea name="item_description" rows="2" class="fld i-desc" style="margin-bottom:.5rem;" placeholder="Describe the change…"></textarea>
       <div class="flex flex-wrap items-end gap-2">
-        <div style="width:90px"><label class="text-gray-500 text-xs">Qty</label><input type="number" step="any" name="item_quantity" class="fld i-qty"/></div>
-        <div style="width:140px"><label class="text-gray-500 text-xs">Unit price</label><input type="number" step="any" name="item_price" class="fld i-price"/></div>
-        <div class="flex-1 text-right"><label class="text-gray-500 text-xs block">Amount</label><span class="i-line text-gray-100 font-semibold">$0.00</span></div>
-        <button type="button" class="i-ai text-orange-400 text-xs border border-orange-400/40 rounded px-2 py-1">✦ Suggest with AI</button>
-        <button type="button" class="i-del text-gray-600 hover:text-red-400 px-2">✕</button>
-      </div><span class="i-ai-status text-xs text-gray-500"></span>`;
+        <div style="width:90px"><label class="lbl">Qty</label><input type="number" step="any" name="item_quantity" class="fld i-qty"/></div>
+        <div style="width:140px"><label class="lbl">Unit price</label><input type="number" step="any" name="item_price" class="fld i-price"/></div>
+        <div class="flex-1" style="text-align:right;"><label class="lbl" style="display:block;">Amount</label><span class="i-line" style="color:var(--ink-900);font-weight:600;">$0.00</span></div>
+        <button type="button" class="i-ai chip accent">✦ Suggest with AI</button>
+        <button type="button" class="i-del linkbtn danger" style="padding:0 .4rem;">✕</button>
+      </div><span class="i-ai-status muted"></span>`;
     row.querySelector('.i-desc').value = desc || '';
     row.querySelector('.i-qty').value = qty ?? 1;
     row.querySelector('.i-price').value = price ?? 0;
@@ -179,6 +165,4 @@
   if (!document.querySelectorAll('.item-row').length) addRow();
   recalc();
 </script>
-</body>
-</html>
 {% endblock %}

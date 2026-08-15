@@ -2,131 +2,89 @@
 {% block title %}{{ 'Edit Invoice' if invoice else 'New Invoice' }}{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
-    .fld { background:#0a0a0a; border:1px solid #2d2d2d; border-radius:0.5rem; color:#e5e7eb; padding:0.5rem 0.75rem; width:100%; }
-    .fld:focus { outline:none; border-color:#ff6b35; }
-    .sec { background:#111827; border:1px solid #374151; border-radius:0.75rem; padding:1.25rem; }
-  </style>
-</head>
-<body class="bg-black">
+<style>
+  .iwrap{max-width:820px;margin:0 auto;}
+  .fld{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-900);padding:.5rem .75rem;width:100%;font-size:.9rem;}
+  .fld:focus{outline:none;border-color:var(--accent);}
+  .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;margin-bottom:1.25rem;}
+  .lbl{color:var(--ink-500);font-size:.72rem;}
+  .step{color:var(--ink-500);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;}
+  .item-row{background:var(--canvas);border:1px solid var(--border);border-radius:var(--r);padding:.75rem;margin-bottom:.75rem;}
+  .chip{font-size:.75rem;border:1px solid var(--border-strong);color:var(--ink-700);border-radius:var(--r-sm);padding:.25rem .5rem;background:none;cursor:pointer;}
+  .chip.accent{border-color:var(--accent);color:var(--accent);}
+</style>
 
-<div class="max-w-3xl mx-auto px-4 py-8">
-
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">
-      {{ 'Edit Invoice' if invoice else 'New Invoice' }}
-      {% if invoice and invoice.number %}<span class="text-gray-500 text-base font-normal">· {{ invoice.number }}</span>{% endif %}
-    </h1>
-    <a href="{{ url_for('invoices.index') }}" class="text-gray-400 hover:text-orange-400 text-sm">← All invoices</a>
+<div class="iwrap">
+  <div class="page-head">
+    <h1>{{ 'Edit Invoice' if invoice else 'New Invoice' }}{% if invoice and invoice.number %} <span class="muted" style="font-size:1rem;font-weight:400;">· {{ invoice.number }}</span>{% endif %}</h1>
+    <a href="{{ url_for('invoices.index') }}" class="lnk">← All invoices</a>
   </div>
 
-  <form method="POST"
-        action="{{ url_for('invoices.edit', invoice_id=invoice.id) if invoice else url_for('invoices.new') }}">
+  <form method="POST" action="{{ url_for('invoices.edit', invoice_id=invoice.id) if invoice else url_for('invoices.new') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-    <!-- 1. Customer & details -->
-    <div class="sec mb-5">
-      <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">1 · Customer &amp; details</p>
+    <div class="sec">
+      <p class="step" style="margin-bottom:.75rem;">1 · Customer &amp; details</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label class="text-gray-500 text-xs">Customer *</label>
+        <div><label class="lbl">Customer *</label>
           <select name="customer_id" class="fld">
             <option value="">— Select customer —</option>
-            {% for c in customers %}
-            <option value="{{ c.id }}" {{ 'selected' if invoice and invoice.customer_id == c.id }}>{{ c.name }}</option>
-            {% endfor %}
+            {% for c in customers %}<option value="{{ c.id }}" {{ 'selected' if invoice and invoice.customer_id == c.id }}>{{ c.name }}</option>{% endfor %}
           </select>
-          <a href="{{ url_for('quotes.customers') }}" class="text-orange-400 text-xs hover:underline">+ Add a customer</a>
-        </div>
-        <div>
-          <label class="text-gray-500 text-xs">Link to job (optional)</label>
+          <a href="{{ url_for('quotes.customers') }}" class="lnk c-accent">+ Add a customer</a></div>
+        <div><label class="lbl">Link to job (optional)</label>
           <select name="project_id" class="fld">
             <option value="">— None —</option>
-            {% for p in projects %}
-            <option value="{{ p.id }}" {{ 'selected' if invoice and invoice.project_id == p.id }}>{{ p.name }}</option>
-            {% endfor %}
+            {% for p in projects %}<option value="{{ p.id }}" {{ 'selected' if invoice and invoice.project_id == p.id }}>{{ p.name }}</option>{% endfor %}
           </select>
-          <p class="text-gray-600 text-xs mt-1">Link a project to record income there when paid.</p>
-        </div>
+          <p class="muted" style="margin-top:.25rem;">Link a job to record income there when paid.</p></div>
       </div>
-      <div class="mt-3">
-        <label class="text-gray-500 text-xs">Title *</label>
-        <input type="text" name="title" class="fld" placeholder="e.g. Backyard fence installation"
-               value="{{ invoice.title if invoice else '' }}"/>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-        <div>
-          <label class="text-gray-500 text-xs">Deposit already collected (optional)</label>
-          <input type="number" step="any" name="deposit" class="fld" placeholder="e.g. 3000"
-                 value="{{ invoice.deposit if invoice and invoice.deposit else '' }}"/>
-          <p class="text-gray-600 text-xs mt-1">Subtracted from the total to show the balance due.</p>
-        </div>
-        <div>
-          <label class="text-gray-500 text-xs">P.O. # (optional)</label>
-          <input type="text" name="po_number" class="fld" placeholder="Purchase order #"
-                 value="{{ invoice.po_number if invoice and invoice.po_number else '' }}"/>
-        </div>
+      <div style="margin-top:.75rem;"><label class="lbl">Title *</label>
+        <input type="text" name="title" class="fld" placeholder="e.g. Backyard fence installation" value="{{ invoice.title if invoice else '' }}"/></div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" style="margin-top:.75rem;">
+        <div><label class="lbl">Deposit already collected (optional)</label>
+          <input type="number" step="any" name="deposit" class="fld" placeholder="e.g. 3000" value="{{ invoice.deposit if invoice and invoice.deposit else '' }}"/>
+          <p class="muted" style="margin-top:.25rem;">Subtracted from the total to show the balance due.</p></div>
+        <div><label class="lbl">P.O. # (optional)</label>
+          <input type="text" name="po_number" class="fld" placeholder="Purchase order #" value="{{ invoice.po_number if invoice and invoice.po_number else '' }}"/></div>
       </div>
     </div>
 
-    <!-- 2. Line items -->
-    <div class="sec mb-5">
+    <div class="sec">
       <div class="flex items-center justify-between mb-3">
-        <p class="text-gray-400 text-xs uppercase tracking-wide">2 · Services / line items</p>
-        <button type="button" onclick="addRow()"
-          class="text-orange-400 text-sm hover:underline">+ Add item</button>
+        <p class="step">2 · Services / line items</p>
+        <button type="button" onclick="addRow()" class="chip accent">+ Add item</button>
       </div>
-
       <div id="items"></div>
-
-      <div class="flex justify-end mt-3">
-        <div class="text-right">
-          <span class="text-gray-500 text-xs uppercase">Total</span>
-          <div class="text-2xl font-bold text-white">$<span id="grand-total">0.00</span></div>
+      <div class="flex justify-end" style="margin-top:.75rem;">
+        <div style="text-align:right;">
+          <span class="lbl" style="text-transform:uppercase;">Total</span>
+          <div style="font-size:1.5rem;font-weight:800;color:var(--ink-900);">$<span id="grand-total">0.00</span></div>
         </div>
       </div>
     </div>
 
-    <!-- 3. Notes -->
-    <div class="sec mb-5">
-      <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">3 · Notes (shown to customer)</p>
+    <div class="sec">
+      <p class="step" style="margin-bottom:.75rem;">3 · Notes (shown to customer)</p>
       <textarea name="notes" rows="3" class="fld" placeholder="Anything the customer should know…">{{ invoice.notes if invoice else '' }}</textarea>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      <button type="submit"
-        class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-5 py-2.5 rounded-lg"
-        style="color:#fff !important;">Save Invoice</button>
-
-      {% if invoice %}
-      <a href="{{ url_for('invoices.pdf', invoice_id=invoice.id) }}" target="_blank"
-        class="border border-gray-600 text-gray-200 text-sm font-semibold px-5 py-2.5 rounded-lg hover:border-orange-400">Preview PDF</a>
-      {% endif %}
+      <button type="submit" class="btn">Save Invoice</button>
+      {% if invoice %}<a href="{{ url_for('invoices.pdf', invoice_id=invoice.id) }}" target="_blank" class="obtn">Preview PDF</a>{% endif %}
     </div>
   </form>
 
   {% if invoice %}
-  <!-- Payment -->
-  <div class="sec mt-6">
-    <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">Payment</p>
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="step" style="margin-bottom:.75rem;">Payment</p>
     {% if invoice.status == 'paid' %}
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="text-green-400 text-sm">
-        ✓ Paid {{ invoice.paid_at.strftime('%Y-%m-%d') if invoice.paid_at }}{% if invoice.payment_method %} via {{ invoice.payment_method }}{% endif %}
-        {% if invoice.income_id %}<span class="text-gray-500">· recorded as income on the linked project</span>{% endif %}
-      </p>
+      <p class="c-green" style="font-size:.9rem;">✓ Paid {{ invoice.paid_at.strftime('%Y-%m-%d') if invoice.paid_at }}{% if invoice.payment_method %} via {{ invoice.payment_method }}{% endif %}{% if invoice.income_id %}<span class="muted"> · recorded as income on the linked job</span>{% endif %}</p>
       {% if current_user.is_owner %}
-      <form method="POST" action="{{ url_for('invoices.unpay', invoice_id=invoice.id) }}"
-            onsubmit="return confirm('Revert this payment?{% if invoice.income_id %} The auto-recorded income will also be removed.{% endif %}');">
+      <form method="POST" action="{{ url_for('invoices.unpay', invoice_id=invoice.id) }}" onsubmit="return confirm('Revert this payment?{% if invoice.income_id %} The auto-recorded income will also be removed.{% endif %}');">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit" class="text-gray-400 hover:text-red-400 text-sm">Revert payment</button>
+        <button type="submit" class="linkbtn danger">Revert payment</button>
       </form>
       {% endif %}
     </div>
@@ -134,87 +92,56 @@
     <form method="POST" action="{{ url_for('invoices.mark_paid', invoice_id=invoice.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label class="text-gray-500 text-xs">Payment method</label>
-          <select name="payment_method" class="fld">
-            {% for m in payment_methods %}
-            <option value="{{ m }}">{{ m }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label class="text-gray-500 text-xs">Payment date</label>
-          <input type="date" name="paid_date" class="fld" value="{{ today }}"/>
-        </div>
+        <div><label class="lbl">Payment method</label>
+          <select name="payment_method" class="fld">{% for m in payment_methods %}<option value="{{ m }}">{{ m }}</option>{% endfor %}</select></div>
+        <div><label class="lbl">Payment date</label><input type="date" name="paid_date" class="fld" value="{{ today }}"/></div>
       </div>
       {% if invoice.project_id %}
-      <label class="flex items-center gap-2 mt-3 text-sm text-gray-300">
-        <input type="checkbox" name="record_income" checked
-               class="rounded border-gray-600 bg-black text-orange-500"/>
-        Also record ${{ '%.2f'|format(invoice.total or 0) }} as income on
-        <span class="text-gray-100">{{ invoice.project.name }}</span>
+      <label class="flex items-center gap-2" style="margin-top:.75rem;font-size:.9rem;color:var(--ink-700);">
+        <input type="checkbox" name="record_income" checked style="width:auto;"/>
+        Also record ${{ '%.2f'|format(invoice.total or 0) }} as income on <span style="color:var(--ink-900);">{{ invoice.project.name }}</span>
       </label>
       {% else %}
-      <p class="text-gray-600 text-xs mt-2">Tip: link a project above to auto-record income when paid.</p>
+      <p class="muted" style="margin-top:.5rem;">Tip: link a job above to auto-record income when paid.</p>
       {% endif %}
-      <button type="submit"
-        class="mt-4 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg">
-        Mark as paid
-      </button>
+      <button type="submit" class="obtn green" style="margin-top:1rem;">Mark as paid</button>
     </form>
     {% endif %}
   </div>
 
-  <!-- Send / share -->
-  <div class="sec mt-6">
-    <p class="text-gray-400 text-xs uppercase tracking-wide mb-3">Send to customer</p>
-    <p class="text-gray-500 text-sm mb-3">
-      Email the invoice (with the PDF attached), or copy a view link to send yourself.
-    </p>
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="step" style="margin-bottom:.75rem;">Send to customer</p>
+    <p class="muted" style="margin-bottom:.75rem;font-size:.9rem;">Email the invoice (with the PDF attached), or copy a view link to send yourself.</p>
 
-    <div class="mb-3">
+    <div style="margin-bottom:.75rem;">
       {% if invoice.customer.email %}
       <form method="POST" action="{{ url_for('invoices.email', invoice_id=invoice.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit"
-          class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-5 py-2.5 rounded-lg"
-          style="color:#fff !important;">✉ Email to {{ invoice.customer.email }}</button>
-        <span class="text-gray-600 text-xs ml-2">Sends the view link + PDF via your Gmail.</span>
+        <button type="submit" class="btn">✉ Email to {{ invoice.customer.email }}</button>
+        <span class="muted" style="margin-left:.5rem;">Sends the view link + PDF via your Gmail.</span>
       </form>
       {% else %}
-      <p class="text-yellow-500/80 text-sm">
-        This customer has no email on file.
-        <a href="{{ url_for('quotes.customers') }}" class="underline hover:text-orange-400">Add one</a>
-        to enable one-click email.
-      </p>
+      <p class="c-amber" style="font-size:.9rem;">This customer has no email on file. <a href="{{ url_for('quotes.customers') }}" class="lnk c-accent" style="text-decoration:underline;">Add one</a> to enable one-click email.</p>
       {% endif %}
     </div>
 
     {% if public_link_active %}
     <div class="flex flex-wrap items-center gap-2">
-      <input id="share-link" type="text" readonly class="fld flex-1 min-w-0"
-             value="{{ url_for('invoices.public_view', token=invoice.public_token, _external=True) }}"/>
-      <button type="button" onclick="copyLink()"
-        class="border border-gray-600 text-gray-200 text-sm px-4 py-2 rounded-lg hover:border-orange-400">Copy</button>
+      <input id="share-link" type="text" readonly class="fld" style="flex:1;min-width:0;" value="{{ url_for('invoices.public_view', token=invoice.public_token, _external=True) }}"/>
+      <button type="button" onclick="copyLink()" class="obtn">Copy</button>
     </div>
-    <div class="flex flex-wrap items-center gap-3 mt-2">
-      <span class="text-gray-600 text-xs">
-        Expires {{ invoice.public_token_expires_at.strftime('%Y-%m-%d %H:%M') }} UTC
-      </span>
-    </div>
+    <p class="muted" style="margin-top:.5rem;">Expires {{ invoice.public_token_expires_at.strftime('%Y-%m-%d %H:%M') }} UTC</p>
     {% else %}
     <div class="flex flex-wrap items-center gap-3">
-      <span class="text-yellow-500/80 text-sm">No active view link yet.</span>
+      <span class="c-amber" style="font-size:.9rem;">No active view link yet.</span>
       <form method="POST" action="{{ url_for('invoices.send', invoice_id=invoice.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit"
-          class="border border-orange-400 text-orange-400 text-sm px-4 py-2 rounded-lg hover:bg-orange-400/10">Mark as sent &amp; create link</button>
+        <button type="submit" class="obtn accent">Mark as sent &amp; create link</button>
       </form>
     </div>
     {% endif %}
   </div>
   {% endif %}
-
 </div>
 
 <script>
@@ -237,27 +164,26 @@
 
   function rowTemplate(desc, qty, price) {
     const wrap = document.createElement('div');
-    wrap.className = 'item-row bg-gray-950 border border-gray-800 rounded-lg p-3 mb-3';
+    wrap.className = 'item-row';
     wrap.innerHTML = `
-      <textarea name="item_description" rows="2" class="fld mb-2 i-desc"
-        placeholder="Describe the service…"></textarea>
+      <textarea name="item_description" rows="2" class="fld i-desc" style="margin-bottom:.5rem;" placeholder="Describe the service…"></textarea>
       <div class="flex flex-wrap items-end gap-2">
         <div style="width:90px">
-          <label class="text-gray-500 text-xs">Qty</label>
+          <label class="lbl">Qty</label>
           <input type="number" step="any" name="item_quantity" class="fld i-qty" value="1"/>
         </div>
         <div style="width:130px">
-          <label class="text-gray-500 text-xs">Unit price</label>
+          <label class="lbl">Unit price</label>
           <input type="number" step="any" name="item_price" class="fld i-price" value="0"/>
         </div>
-        <div class="flex-1 text-right">
-          <label class="text-gray-500 text-xs block">Amount</label>
-          <span class="text-gray-100 font-semibold">$<span class="i-line">0.00</span></span>
+        <div class="flex-1" style="text-align:right;">
+          <label class="lbl" style="display:block;">Amount</label>
+          <span style="color:var(--ink-900);font-weight:600;">$<span class="i-line">0.00</span></span>
         </div>
-        <button type="button" class="i-ai text-orange-400 text-xs border border-orange-400/40 rounded px-2 py-1 hover:bg-orange-400/10">✦ Suggest with AI</button>
-        <button type="button" class="i-del text-gray-600 hover:text-red-400 text-sm px-2 py-1">✕</button>
+        <button type="button" class="i-ai chip accent">✦ Suggest with AI</button>
+        <button type="button" class="i-del linkbtn danger" style="padding:0 .4rem;">✕</button>
       </div>
-      <span class="i-ai-status text-xs text-gray-500"></span>
+      <span class="i-ai-status muted"></span>
     `;
     wrap.querySelector('.i-desc').value = desc || '';
     wrap.querySelector('.i-qty').value = (qty !== undefined && qty !== null) ? qty : 1;
@@ -312,7 +238,4 @@
   {% endif %}
   recalc();
 </script>
-
-</body>
-</html>
 {% endblock %}

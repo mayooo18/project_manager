@@ -2,28 +2,34 @@
 {% block title %}{{ project.name }}{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
-    .card { background:#111827; border:1px solid #374151; border-radius:0.75rem; }
-    .kpi { background:#0b0f17; border:1px solid #1f2937; border-radius:0.6rem; padding:0.75rem 0.9rem; }
-    .sec-title { color:#fff; font-weight:600; font-size:1rem; }
-    .pill { font-size:0.7rem; border-radius:0.3rem; padding:0.05rem 0.4rem; text-transform:uppercase; border:1px solid; }
-    .btn { font-size:0.8rem; font-weight:600; padding:0.35rem 0.7rem; border-radius:0.5rem;
-           border:1px solid #374151; color:#e5e7eb; }
-    .btn:hover { border-color:#f97316; color:#ff8c5a; }
-    .row { display:flex; align-items:center; justify-content:space-between; gap:0.75rem;
-           padding:0.5rem 0; border-top:1px solid #1f2937; }
-    a.lk { color:#e5e7eb; } a.lk:hover { color:#ff8c5a; }
-    .muted { color:#6b7280; font-size:0.75rem; }
-  </style>
-</head>
-<body class="bg-black">
+<style>
+  .hub{max-width:1080px;margin:0 auto;}
+  .hub .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);}
+  .kpi{background:var(--canvas);border:1px solid var(--border);border-radius:.6rem;padding:.75rem .9rem;}
+  .kpi .k{color:var(--ink-500);font-size:.72rem;}
+  .kpi .v{font-size:1.25rem;font-weight:700;color:var(--ink-900);}
+  .kpi .v.sm{font-size:1.05rem;font-weight:600;color:var(--ink-700);}
+  .sec-title{color:var(--ink-900);font-weight:700;font-size:1rem;margin:0;}
+  .pill{font-size:.7rem;border-radius:.3rem;padding:.05rem .45rem;text-transform:uppercase;border:1px solid;}
+  .obtn{font-size:.8rem;font-weight:600;padding:.35rem .7rem;border-radius:var(--r-sm);
+        border:1px solid var(--border-strong);color:var(--ink-700);background:var(--surface);
+        text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;cursor:pointer;}
+  .obtn:hover{border-color:var(--accent);color:var(--accent);}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.5rem 0;border-top:1px solid var(--border);}
+  a.lk{color:var(--ink-700);} a.lk:hover{color:var(--accent);}
+  .muted{color:var(--ink-500);font-size:.75rem;}
+  .fld-sm{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);
+          color:var(--ink-900);padding:.45rem .6rem;font-size:.85rem;}
+  .task-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+  @media(min-width:640px){.task-grid{grid-template-columns:1fr 160px 150px auto;align-items:center;}}
+  .kgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  @media(min-width:640px){.kgrid{grid-template-columns:repeat(4,1fr);}}
+  .catgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  @media(min-width:640px){.catgrid{grid-template-columns:repeat(3,1fr);}}
+  @media(min-width:1024px){.catgrid{grid-template-columns:repeat(5,1fr);}}
+  .twocol{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:1024px){.twocol{grid-template-columns:1fr 1fr;}}
+</style>
 
 {% set status_styles = {
   'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
@@ -34,72 +40,69 @@
   'Finaled':'text-orange-300 border-orange-500','Closed':'text-gray-300 border-gray-500'
 } %}
 
-<div class="max-w-5xl mx-auto px-4 py-8">
+<div class="hub">
 
   <!-- Header -->
-  <a href="{{ url_for('projects') }}" class="muted hover:text-orange-400">← All jobs</a>
-  <div class="flex items-start justify-between gap-4 mt-2 mb-6">
+  <a href="{{ url_for('projects') }}" class="muted">← All jobs</a>
+  <div class="flex items-start justify-between gap-4 mt-2 mb-6 flex-wrap">
     <div>
       <div class="flex items-center gap-3 flex-wrap">
-        <h1 class="text-3xl font-bold text-white">{{ project.name }}</h1>
+        <h1 style="margin-bottom:0;">{{ project.name }}</h1>
         <span class="pill {{ 'text-green-300 border-green-500' if project.status=='Active' else 'text-blue-300 border-blue-500' if project.status=='Completed' else 'text-yellow-300 border-yellow-500' }}">{{ project.status }}</span>
       </div>
-      <p class="text-gray-500 text-sm mt-1">
-        {% if project.customer %}<span class="text-gray-300">{{ project.customer.name }}</span> · {% endif %}
+      <p class="muted" style="margin-top:.35rem;">
+        {% if project.customer %}<span style="color:var(--ink-700);">{{ project.customer.name }}</span> · {% endif %}
         {{ project.address or 'No address' }}
         {% if project.start_date %} · Started {{ project.start_date.strftime('%b %d, %Y') }}{% endif %}
       </p>
     </div>
     <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
-      <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn">Edit job</a>
+      <a href="{{ url_for('edit_project', project_id=project.id) }}" class="obtn">Edit job</a>
       <form method="POST" action="{{ url_for('project_file_documents', project_id=project.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn">File documents</button>
+        <button type="submit" class="obtn">File documents</button>
       </form>
       {% if project.status != 'Completed' %}
       <form method="POST" action="{{ url_for('project_closeout', project_id=project.id) }}"
             onsubmit="return confirm('Close out this job? This generates the completion certificate and final lien waiver, files all documents to the job, and marks the contract + job complete.');">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn" style="border-color:#16a34a; color:#4ade80;">Close out</button>
+        <button type="submit" class="obtn green">Close out</button>
       </form>
       {% endif %}
     </div>
   </div>
 
   <!-- Money snapshot -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-    <div class="kpi"><p class="muted">Contract</p><p class="text-white text-xl font-bold">${{ '{:,.0f}'.format(contract_total) }}</p></div>
-    <div class="kpi"><p class="muted">Billed</p><p class="text-white text-xl font-bold">${{ '{:,.0f}'.format(billed_total) }}</p></div>
-    <div class="kpi"><p class="muted">Paid</p><p class="text-white text-xl font-bold">${{ '{:,.0f}'.format(paid_total) }}</p></div>
-    <div class="kpi"><p class="muted">Profit</p><p class="text-xl font-bold {{ 'text-green-400' if profit >= 0 else 'text-red-400' }}">${{ '{:,.0f}'.format(profit) }}</p></div>
-    <div class="kpi"><p class="muted">Income</p><p class="text-gray-200 text-lg font-semibold">${{ '{:,.0f}'.format(income_total) }}</p></div>
-    <div class="kpi"><p class="muted">Expenses</p><p class="text-gray-200 text-lg font-semibold">${{ '{:,.0f}'.format(expenses_total) }}</p></div>
-    <div class="kpi"><p class="muted">Labor</p><p class="text-gray-200 text-lg font-semibold">${{ '{:,.0f}'.format(labor_total) }}</p></div>
-    <div class="kpi"><p class="muted">Work logs</p><p class="text-gray-200 text-lg font-semibold">{{ work_logs|length }}</p></div>
+  <div class="kgrid" style="margin-bottom:1.5rem;">
+    <div class="kpi"><p class="k">Contract</p><p class="v">${{ '{:,.0f}'.format(contract_total) }}</p></div>
+    <div class="kpi"><p class="k">Billed</p><p class="v">${{ '{:,.0f}'.format(billed_total) }}</p></div>
+    <div class="kpi"><p class="k">Paid</p><p class="v">${{ '{:,.0f}'.format(paid_total) }}</p></div>
+    <div class="kpi"><p class="k">Profit</p><p class="v {{ 'c-green' if profit >= 0 else 'c-red' }}">${{ '{:,.0f}'.format(profit) }}</p></div>
+    <div class="kpi"><p class="k">Income</p><p class="v sm">${{ '{:,.0f}'.format(income_total) }}</p></div>
+    <div class="kpi"><p class="k">Expenses</p><p class="v sm">${{ '{:,.0f}'.format(expenses_total) }}</p></div>
+    <div class="kpi"><p class="k">Labor</p><p class="v sm">${{ '{:,.0f}'.format(labor_total) }}</p></div>
+    <div class="kpi"><p class="k">Work logs</p><p class="v sm">{{ work_logs|length }}</p></div>
   </div>
 
   {% if expense_categories %}
-  <div class="card p-5 mb-6">
-    <p class="sec-title mb-3">Expenses by category</p>
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+  <div class="card" style="padding:1.25rem;margin-bottom:1.5rem;">
+    <p class="sec-title" style="margin-bottom:.85rem;">Expenses by category</p>
+    <div class="catgrid">
       {% for label, amount in expense_categories %}
-      <div class="kpi">
-        <p class="muted">{{ label }}</p>
-        <p class="text-gray-200 text-lg font-semibold">${{ '{:,.0f}'.format(amount) }}</p>
-      </div>
+      <div class="kpi"><p class="k">{{ label }}</p><p class="v sm">${{ '{:,.0f}'.format(amount) }}</p></div>
       {% endfor %}
     </div>
-    <p class="muted mt-3 text-xs">Labor isn't shown here — it's tracked separately under the Labor total above (crew time clock + work logs).</p>
+    <p class="muted" style="margin-top:.85rem;">Labor isn't shown here — it's tracked separately under the Labor total above (crew time clock + work logs).</p>
   </div>
   {% endif %}
 
   <!-- Client portal -->
   {% set portal_active = project.portal_token and not project.portal_token_revoked_at %}
-  <div class="card p-5 mb-4">
+  <div class="card" style="padding:1.25rem;margin-bottom:1rem;">
     <div class="flex items-center justify-between gap-3 flex-wrap">
       <div>
         <p class="sec-title">Client portal</p>
-        <p class="muted mt-1">
+        <p class="muted" style="margin-top:.35rem;">
           {% if portal_active %}A private, read-only link is live for this job.
           {% else %}Share a private link — status, invoices, change orders, and documents. No login for the client.{% endif %}
         </p>
@@ -107,30 +110,29 @@
       <div class="flex items-center gap-2 flex-wrap">
         {% if portal_active %}
         {% set portal_link = url_for('portal.view', token=project.portal_token, _external=True) %}
-        <input id="portal-link" readonly value="{{ portal_link }}"
-               style="min-width:15rem; font-size:0.75rem; background:#0b0f17; border:1px solid #374151; border-radius:0.5rem; color:#e5e7eb; padding:0.4rem 0.6rem;"/>
-        <button type="button" onclick="copyPortal()" class="btn">Copy</button>
-        <a href="{{ portal_link }}" target="_blank" class="btn">Open</a>
+        <input id="portal-link" readonly value="{{ portal_link }}" class="fld-sm" style="min-width:15rem;"/>
+        <button type="button" onclick="copyPortal()" class="obtn">Copy</button>
+        <a href="{{ portal_link }}" target="_blank" class="obtn">Open</a>
         {% if project.customer and project.customer.email %}
         <form method="POST" action="{{ url_for('portal.email', project_id=project.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn" style="border-color:#f97316; color:#ff8c5a;">✉ Email to {{ project.customer.name }}</button>
+          <button type="submit" class="obtn accent">✉ Email to {{ project.customer.name }}</button>
         </form>
         {% endif %}
         <form method="POST" action="{{ url_for('portal.regenerate', project_id=project.id) }}"
               onsubmit="return confirm('Create a new link? The current one will stop working.');">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn">New link</button>
+          <button type="submit" class="obtn">New link</button>
         </form>
         <form method="POST" action="{{ url_for('portal.revoke', project_id=project.id) }}"
               onsubmit="return confirm('Revoke the client link? The client will lose access.');">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn" style="border-color:#7f1d1d; color:#fca5a5;">Revoke</button>
+          <button type="submit" class="obtn red">Revoke</button>
         </form>
         {% else %}
         <form method="POST" action="{{ url_for('portal.enable', project_id=project.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn" style="border-color:#f97316; color:#ff8c5a;">Enable client portal</button>
+          <button type="submit" class="obtn accent">Enable client portal</button>
         </form>
         {% endif %}
       </div>
@@ -148,85 +150,85 @@
     }
   </script>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <div class="twocol">
 
     <!-- Sales & Billing -->
-    <div class="card p-5">
-      <div class="flex items-center justify-between mb-3">
+    <div class="card" style="padding:1.25rem;">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <p class="sec-title">Sales &amp; Billing</p>
-        <div class="flex gap-2">
-          <a href="{{ url_for('quotes.new') }}" class="btn">+ Proposal</a>
-          <a href="{{ url_for('contracts.new') }}" class="btn">+ Contract</a>
-          <a href="{{ url_for('invoices.new') }}" class="btn">+ Invoice</a>
+        <div class="flex gap-2 flex-wrap">
+          <a href="{{ url_for('quotes.new') }}" class="obtn">+ Proposal</a>
+          <a href="{{ url_for('contracts.new') }}" class="obtn">+ Contract</a>
+          <a href="{{ url_for('invoices.new') }}" class="obtn">+ Invoice</a>
         </div>
       </div>
 
-      <p class="muted mt-2">Proposals ({{ proposals|length }})</p>
+      <p class="muted" style="margin-top:.5rem;">Proposals ({{ proposals|length }})</p>
       {% for q in proposals %}
-      <div class="row"><a class="lk text-sm" href="{{ url_for('quotes.edit', quote_id=q.id) }}">{{ q.title }}</a>
-        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(q.status,'text-gray-300 border-gray-500') }}">{{ q.status }}</span><span class="text-gray-200 text-sm">${{ '%.0f'|format(q.total or 0) }}</span></span></div>
-      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('quotes.edit', quote_id=q.id) }}">{{ q.title }}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(q.status,'text-gray-300 border-gray-500') }}">{{ q.status }}</span><span style="color:var(--ink-700);font-size:.88rem;">${{ '%.0f'|format(q.total or 0) }}</span></span></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
 
-      <p class="muted mt-3">Contracts ({{ contracts|length }})</p>
+      <p class="muted" style="margin-top:.85rem;">Contracts ({{ contracts|length }})</p>
       {% for c in contracts %}
-      <div class="row"><a class="lk text-sm" href="{{ url_for('contracts.edit', contract_id=c.id) }}">{{ c.number or ('Contract #' ~ c.id) }}</a>
-        <span class="text-gray-400 text-xs">${{ '%.0f'|format(c.billed_to_date) }} billed / ${{ '%.0f'|format(c.contract_total or 0) }}</span></div>
-      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('contracts.edit', contract_id=c.id) }}">{{ c.number or ('Contract #' ~ c.id) }}</a>
+        <span class="muted">${{ '%.0f'|format(c.billed_to_date) }} billed / ${{ '%.0f'|format(c.contract_total or 0) }}</span></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
 
       {% if change_orders %}
-      <p class="muted mt-3">Change Orders ({{ change_orders|length }})</p>
+      <p class="muted" style="margin-top:.85rem;">Change Orders ({{ change_orders|length }})</p>
       {% for co in change_orders %}
-      <div class="row"><a class="lk text-sm" href="{{ url_for('change_orders.edit', change_order_id=co.id) }}">{{ co.number }} · {{ co.title }}</a>
-        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(co.status,'text-gray-300 border-gray-500') }}">{{ co.status }}</span><span class="text-gray-200 text-sm">${{ '%.0f'|format(co.total or 0) }}</span></span></div>
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('change_orders.edit', change_order_id=co.id) }}">{{ co.number }} · {{ co.title }}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(co.status,'text-gray-300 border-gray-500') }}">{{ co.status }}</span><span style="color:var(--ink-700);font-size:.88rem;">${{ '%.0f'|format(co.total or 0) }}</span></span></div>
       {% endfor %}
       {% endif %}
 
-      <p class="muted mt-3">Invoices ({{ invoices|length }})</p>
+      <p class="muted" style="margin-top:.85rem;">Invoices ({{ invoices|length }})</p>
       {% for inv in invoices %}
-      <div class="row"><a class="lk text-sm" href="{{ url_for('invoices.edit', invoice_id=inv.id) }}">{{ inv.number or ('Invoice #' ~ inv.id) }}</a>
-        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(inv.status,'text-gray-300 border-gray-500') }}">{{ inv.status }}</span><span class="text-gray-200 text-sm">${{ '%.0f'|format(inv.total or 0) }}</span></span></div>
-      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('invoices.edit', invoice_id=inv.id) }}">{{ inv.number or ('Invoice #' ~ inv.id) }}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(inv.status,'text-gray-300 border-gray-500') }}">{{ inv.status }}</span><span style="color:var(--ink-700);font-size:.88rem;">${{ '%.0f'|format(inv.total or 0) }}</span></span></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
     </div>
 
     <!-- Field & Compliance -->
-    <div class="card p-5">
-      <div class="flex items-center justify-between mb-3">
+    <div class="card" style="padding:1.25rem;">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <p class="sec-title">Field &amp; Compliance</p>
-        <div class="flex gap-2">
-          <a href="{{ url_for('permits.add') }}" class="btn">+ Permit</a>
-          <a href="{{ url_for('waivers.new') }}" class="btn">+ Waiver</a>
+        <div class="flex gap-2 flex-wrap">
+          <a href="{{ url_for('permits.add') }}" class="obtn">+ Permit</a>
+          <a href="{{ url_for('waivers.new') }}" class="obtn">+ Waiver</a>
         </div>
       </div>
 
-      <p class="muted mt-2">Permits ({{ permits|length }})</p>
+      <p class="muted" style="margin-top:.5rem;">Permits ({{ permits|length }})</p>
       {% for p in permits %}
-      <div class="row"><a class="lk text-sm" href="{{ url_for('permits.edit', permit_id=p.id) }}">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>
-        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(p.status,'text-gray-300 border-gray-500') }}">{{ p.status }}</span><span class="text-gray-400 text-xs">{{ p.inspections|length }} insp</span></span></div>
-      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('permits.edit', permit_id=p.id) }}">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(p.status,'text-gray-300 border-gray-500') }}">{{ p.status }}</span><span class="muted">{{ p.inspections|length }} insp</span></span></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
 
-      <p class="muted mt-3">Waivers &amp; Certificates ({{ documents|length }})</p>
+      <p class="muted" style="margin-top:.85rem;">Waivers &amp; Certificates ({{ documents|length }})</p>
       {% for d in documents %}
-      <div class="row"><a class="lk text-sm" href="{{ url_for('waivers.edit', doc_id=d.id) }}">{{ d.doc_kind.replace('_',' ')|title }}</a>
-        <a class="text-orange-400 text-xs hover:underline" href="{{ url_for('waivers.pdf', doc_id=d.id) }}" target="_blank">PDF</a></div>
-      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('waivers.edit', doc_id=d.id) }}">{{ d.doc_kind.replace('_',' ')|title }}</a>
+        <a class="c-accent" style="font-size:.75rem;" href="{{ url_for('waivers.pdf', doc_id=d.id) }}" target="_blank">PDF</a></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
 
-      <p class="muted mt-3">Files ({{ files|length }})</p>
+      <p class="muted" style="margin-top:.85rem;">Files ({{ files|length }})</p>
       {% for f in files %}
-      <div class="row"><a class="lk text-sm truncate" href="{{ url_for('static', filename='uploads/' ~ f.filename) }}" target="_blank">{{ f.filename }}</a>
-        <span class="text-gray-500 text-xs">{{ f.category or '' }}</span></div>
-      {% else %}<p class="muted py-1">None yet.</p>{% endfor %}
+      <div class="row"><a class="lk" style="font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" href="{{ url_for('static', filename='uploads/' ~ f.filename) }}" target="_blank">{{ f.filename }}</a>
+        <span class="muted">{{ f.category or '' }}</span></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
 
       <form method="POST" enctype="multipart/form-data"
             action="{{ url_for('upload_file', project_id=project.id) }}"
-            class="mt-4 pt-4 border-t border-gray-800">
+            style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
         {{ file_form.hidden_tag() }}
-        <p class="muted mb-2">Upload a job file</p>
+        <p class="muted" style="margin-bottom:.5rem;">Upload a job file</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {{ file_form.file(class="text-gray-400 text-xs bg-gray-950 border border-gray-700 rounded-lg px-2 py-2", required=true) }}
-          {{ file_form.category(class="bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-2") }}
+          {{ file_form.file(class="fld-sm", required=true) }}
+          {{ file_form.category(class="fld-sm") }}
         </div>
-        {{ file_form.note(class="mt-2 w-full bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-2", placeholder="Optional note", rows="2") }}
-        <button type="submit" class="mt-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-lg">Upload file</button>
+        {{ file_form.note(class="fld-sm", style="margin-top:.5rem;width:100%;", placeholder="Optional note", rows="2") }}
+        <button type="submit" class="obtn accent" style="margin-top:.5rem;">Upload file</button>
       </form>
     </div>
 
@@ -234,49 +236,43 @@
 
   <!-- Crew tasks -->
   {% set tstyle = {'assigned':'text-gray-300 border-gray-500','in_progress':'text-blue-300 border-blue-500','done':'text-green-300 border-green-500'} %}
-  <div class="card p-5 mt-4">
-    <p class="sec-title mb-3">Crew tasks</p>
+  <div class="card" style="padding:1.25rem;margin-top:1rem;">
+    <p class="sec-title" style="margin-bottom:.85rem;">Crew tasks</p>
     {% if tasks %}
-    <div class="mb-4">
+    <div style="margin-bottom:1rem;">
       {% for t in tasks %}
       <div class="row">
-        <div class="min-w-0">
-          <p class="text-gray-200 text-sm {{ 'line-through text-gray-500' if t.status == 'done' }}">{{ t.description }}</p>
+        <div style="min-width:0;">
+          <p style="font-size:.88rem;color:var(--ink-700);{{ 'text-decoration:line-through;color:var(--ink-500);' if t.status == 'done' }}">{{ t.description }}</p>
           <p class="muted">{{ t.worker.name if t.worker else 'Unassigned' }}{% if t.due_date %} · due {{ t.due_date.strftime('%b %d') }}{% endif %}</p>
         </div>
         <span class="flex items-center gap-2 flex-shrink-0">
           <span class="pill {{ tstyle.get(t.status, 'text-gray-300 border-gray-500') }}">{{ t.status.replace('_', ' ') }}</span>
           <form method="POST" action="{{ url_for('delete_task', task_id=t.id) }}" onsubmit="return confirm('Remove this task?');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="text-gray-600 hover:text-red-400 text-xs">✕</button>
+            <button type="submit" class="linkbtn danger" style="font-size:.9rem;">✕</button>
           </form>
         </span>
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <p class="muted mb-4">No tasks yet.</p>
+    <p class="muted" style="margin-bottom:1rem;">No tasks yet.</p>
     {% endif %}
 
-    <form method="POST" action="{{ url_for('add_task', project_id=project.id) }}"
-          class="grid grid-cols-1 sm:grid-cols-[1fr_160px_150px_auto] gap-2 items-center">
+    <form method="POST" action="{{ url_for('add_task', project_id=project.id) }}" class="task-grid">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="text" name="description" placeholder="Task description…" required
-             style="background:#0b0f17;border:1px solid #374151;border-radius:0.5rem;color:#e5e7eb;padding:0.45rem 0.6rem;font-size:0.85rem;"/>
-      <select name="worker_id" style="background:#0b0f17;border:1px solid #374151;border-radius:0.5rem;color:#e5e7eb;padding:0.45rem 0.6rem;font-size:0.85rem;">
+      <input type="text" name="description" placeholder="Task description…" required class="fld-sm"/>
+      <select name="worker_id" class="fld-sm">
         <option value="0">— Assign to —</option>
         {% for w in workers %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
       </select>
-      <input type="date" name="due_date"
-             style="background:#0b0f17;border:1px solid #374151;border-radius:0.5rem;color:#e5e7eb;padding:0.45rem 0.6rem;font-size:0.85rem;"/>
-      <button type="submit" class="btn" style="border-color:#f97316;color:#ff8c5a;">Assign</button>
+      <input type="date" name="due_date" class="fld-sm"/>
+      <button type="submit" class="obtn accent">Assign</button>
     </form>
   </div>
 
-  <p class="muted mt-6">Tip: use the <b>Money</b> and <b>Finance</b> menus to log expenses, income, and labor against this job — they roll up into the profit above.</p>
+  <p class="muted" style="margin-top:1.5rem;">Tip: use the <b>Money</b> menu to log expenses, income, and labor against this job — they roll up into the profit above.</p>
 
 </div>
-
-</body>
-</html>
 {% endblock %}

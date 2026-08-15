@@ -1,159 +1,78 @@
 {% extends 'base.html' %}
+{% block title %}Workers{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Workers</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f3f4f6;
-    }
-  </style>
-</head>
-<body class="bg-gray-100">
-  <div class="container mx-auto p-8">
-    <header class="mb-10">
-      <h1 class="text-4xl font-bold text-gray-800">Workers</h1>
-    </header>
+<style>
+  .money-wrap{max-width:1000px;margin:0 auto;}
+  .field{margin-bottom:1rem;}
+  .field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-700);margin-bottom:.35rem;}
+  .grid2{display:grid;grid-template-columns:1fr;gap:0 1rem;}
+  @media(min-width:640px){.grid2{grid-template-columns:1fr 1fr;}}
+  .actions a, .actions button{display:inline-flex;align-items:center;}
+</style>
 
+<div class="money-wrap">
+  <div class="page-head"><h1>Workers</h1></div>
 
-
-    <!-- Add Worker Form -->
-    <form method="POST" class="space-y-6">
-      <!-- CSRF Token -->
+  <div class="card" style="padding:1.5rem;">
+    <p class="sec-title" style="margin-bottom:1rem;">Add worker</p>
+    <form method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-      <!-- Worker Name -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700" for="name">Worker Name</label>
-        <input name="name" id="name" type="text" required
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+      <div class="grid2">
+        <div class="field"><label for="name">Worker Name</label>
+          <input name="name" id="name" type="text" required /></div>
+        <div class="field"><label for="contact">Contact</label>
+          <input name="contact" id="contact" type="text" /></div>
+        <div class="field"><label for="daily_rate">Daily Rate</label>
+          <input name="daily_rate" id="daily_rate" type="number" step="0.01" required /></div>
+        <div class="field"><label for="phone">Phone (for crew login)</label>
+          <input name="phone" id="phone" type="tel" /></div>
+        <div class="field"><label for="pin">PIN (4–6 digits)</label>
+          <input name="pin" id="pin" type="text" inputmode="numeric" maxlength="6" autocomplete="off" /></div>
       </div>
-
-      <!-- Contact -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700" for="contact">Contact</label>
-        <input name="contact" id="contact" type="text"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-      </div>
-
-      <!-- Daily Rate -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700" for="daily_rate">Daily Rate</label>
-        <input name="daily_rate" id="daily_rate" type="number" step="0.01" required
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-      </div>
-
-      <!-- Crew portal login -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700" for="phone">Phone (for crew login)</label>
-        <input name="phone" id="phone" type="tel"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700" for="pin">PIN (4–6 digits)</label>
-        <input name="pin" id="pin" type="text" inputmode="numeric" maxlength="6" autocomplete="off"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-      </div>
-
-      <!-- Active Status -->
-      <div class="flex items-center">
-        <input name="active" id="active" type="checkbox" value="1" checked
-          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-        <label for="active" class="ml-2 block text-sm text-gray-900">Active</label>
-      </div>
-
-      <!-- Submit -->
-      <div>
-        <button type="submit"
-          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-          Add Worker
-        </button>
-      </div>
+      <label style="display:flex;align-items:center;gap:.5rem;margin:.25rem 0 1rem;color:var(--ink-700);font-size:.9rem;">
+        <input name="active" id="active" type="checkbox" value="1" checked style="width:auto;"> Active
+      </label>
+      <button type="submit" class="btn">Add Worker</button>
     </form>
-
-    <br><br><br>
-
-    <!-- All Workers Section -->
-    <section class="bg-white p-6 rounded-lg shadow-md">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-semibold text-gray-700">All Workers</h2>
-      </div>
-      
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" scope="col">
-                ID
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" scope="col">
-                Name
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" scope="col">
-                Contact
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" scope="col">
-                Daily Rate
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" scope="col">
-                Status
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" scope="col">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            {% for worker in workers %}
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ worker.id }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ worker.name }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ worker.contact or 'N/A' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ "%.2f"|format(worker.daily_rate) }}/day</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {% if worker.active %}
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    Active
-                  </span>
-                {% else %}
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                    Inactive
-                  </span>
-                {% endif %}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <a href="{{ url_for('edit_worker', worker_id=worker.id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">
-                  <span class="material-icons text-base align-middle">edit</span>
-                </a>
-                <a href="{{ url_for('toggle_worker', worker_id=worker.id) }}" class="text-blue-600 hover:text-blue-900 mr-3" title="Toggle Status">
-                  <span class="material-icons text-base align-middle">toggle_on</span>
-                </a>
-                <form method="POST" action="{{ url_for('delete_worker', worker_id=worker.id) }}" class="inline">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button type="submit" class="text-red-600 hover:text-red-900" 
-                          onclick="return confirm('Are you sure you want to delete {{ worker.name }}?')">
-                    <span class="material-icons text-base align-middle">delete</span>
-                  </button>
-                </form>
-              </td>
-            </tr>
-            {% else %}
-            <tr>
-              <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No workers found.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </section>
   </div>
-</body>
-</html>
+
+  <p class="sec-title" style="margin-bottom:.75rem;">All workers</p>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Name</th><th>Contact</th><th>Daily Rate</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for worker in workers %}
+        <tr>
+          <td>{{ worker.id }}</td>
+          <td style="color:var(--ink-900);font-weight:500;">{{ worker.name }}</td>
+          <td>{{ worker.contact or '—' }}</td>
+          <td>${{ "%.2f"|format(worker.daily_rate) }}/day</td>
+          <td>
+            {% if worker.active %}<span class="badge b-green">Active</span>
+            {% else %}<span class="badge b-red">Inactive</span>{% endif %}
+          </td>
+          <td>
+            <span class="actions" style="display:inline-flex;gap:.5rem;align-items:center;">
+              <a href="{{ url_for('edit_worker', worker_id=worker.id) }}" class="c-accent" title="Edit"><span class="material-icons" style="font-size:1.15rem;">edit</span></a>
+              <a href="{{ url_for('toggle_worker', worker_id=worker.id) }}" class="c-blue" title="Toggle status"><span class="material-icons" style="font-size:1.15rem;">toggle_on</span></a>
+              <form method="POST" action="{{ url_for('delete_worker', worker_id=worker.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="linkbtn danger" title="Delete"
+                        onclick="return confirm('Are you sure you want to delete {{ worker.name }}?')">
+                  <span class="material-icons" style="font-size:1.15rem;">delete</span>
+                </button>
+              </form>
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;color:var(--ink-500);">No workers found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

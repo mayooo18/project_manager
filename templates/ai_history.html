@@ -2,172 +2,111 @@
 {% block title %}AI History{% endblock %}
 
 {% block content %}
-<div style="margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
-    <h2 style="color:#ff6b35; font-size:1.4rem; font-weight:700;">AI Action History</h2>
-    <a href="{{ url_for('ai.profile') }}"
-       style="background:#2d2d2d; color:#ff6b35; border:1px solid #ff6b35;
-              padding:0.4rem 0.9rem; border-radius:0.5rem; text-decoration:none;
-              font-size:0.85rem;">
-        📱 SMS Setup
-    </a>
-</div>
+<style>
+  .aibadge{padding:.2rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600;}
+  #detail-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;}
+  #detail-modal .box{background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;padding:1.5rem;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;}
+  #detail-modal .k{color:var(--ink-500);font-size:.72rem;margin-bottom:.25rem;}
+  #detail-modal .msg{color:var(--ink-900);font-size:.875rem;background:var(--canvas);padding:.6rem;border-radius:var(--r-sm);}
+</style>
+<div style="max-width:960px;margin:0 auto;">
+  <div class="page-head">
+    <h1>AI Action History</h1>
+    <a href="{{ url_for('ai.profile') }}" class="obtn accent">📱 SMS Setup</a>
+  </div>
 
-{% if logs %}
-<div style="overflow-x:auto;">
-    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
-        <thead>
-            <tr style="background:#2d2d2d; color:#9ca3af; text-align:left;">
-                <th style="padding:0.6rem 0.75rem;">Date</th>
-                <th style="padding:0.6rem 0.75rem;">Channel</th>
-                <th style="padding:0.6rem 0.75rem;">Message</th>
-                <th style="padding:0.6rem 0.75rem;">Tool</th>
-                <th style="padding:0.6rem 0.75rem;">Status</th>
-                <th style="padding:0.6rem 0.75rem;"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for log in logs %}
-            <tr style="border-bottom:1px solid #2d2d2d; color:#e5e7eb;">
-                <td style="padding:0.6rem 0.75rem; color:#9ca3af; white-space:nowrap;">
-                    {{ log.created_at.strftime('%b %d %Y, %I:%M %p') }}
-                </td>
-                <td style="padding:0.6rem 0.75rem;">
-                    {% if log.channel == 'web' %}
-                        <span style="background:#1e3a5f; color:#60a5fa; padding:0.2rem 0.5rem;
-                                     border-radius:1rem; font-size:0.75rem;">🌐 Web</span>
-                    {% elif log.channel == 'sms' %}
-                        <span style="background:#1f2d1f; color:#4ade80; padding:0.2rem 0.5rem;
-                                     border-radius:1rem; font-size:0.75rem;">📱 SMS</span>
-                    {% else %}
-                        <span style="background:#2d1f3f; color:#c084fc; padding:0.2rem 0.5rem;
-                                     border-radius:1rem; font-size:0.75rem;">🎤 Voice</span>
-                    {% endif %}
-                </td>
-                <td style="padding:0.6rem 0.75rem; max-width:220px; overflow:hidden;
-                           text-overflow:ellipsis; white-space:nowrap;">
-                    {{ log.original_msg[:60] }}{% if log.original_msg|length > 60 %}…{% endif %}
-                </td>
-                <td style="padding:0.6rem 0.75rem; color:#9ca3af;">
-                    {{ log.tool_called.replace('_', ' ').title() if log.tool_called else '—' }}
-                </td>
-                <td style="padding:0.6rem 0.75rem;">
-                    {% if log.status == 'confirmed' %}
-                        <span style="background:#14532d; color:#4ade80; padding:0.2rem 0.6rem;
-                                     border-radius:1rem; font-size:0.75rem; font-weight:600;">
-                            ✓ Confirmed
-                        </span>
-                    {% elif log.status == 'rejected' %}
-                        <span style="background:#450a0a; color:#f87171; padding:0.2rem 0.6rem;
-                                     border-radius:1rem; font-size:0.75rem; font-weight:600;">
-                            ✗ Rejected
-                        </span>
-                    {% else %}
-                        <span style="background:#422006; color:#fbbf24; padding:0.2rem 0.6rem;
-                                     border-radius:1rem; font-size:0.75rem; font-weight:600;">
-                            ⏳ Pending
-                        </span>
-                    {% endif %}
-                </td>
-                <td style="padding:0.6rem 0.75rem;">
-                    <button onclick="openDetail({{ loop.index0 }})"
-                            style="background:#2d2d2d; color:#ff6b35; border:1px solid #ff6b35;
-                                   padding:0.2rem 0.6rem; border-radius:0.4rem; cursor:pointer;
-                                   font-size:0.78rem;">
-                        View
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+  {% if logs %}
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Channel</th><th>Message</th><th>Tool</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="white-space:nowrap;">{{ log.created_at.strftime('%b %d %Y, %I:%M %p') }}</td>
+          <td>
+            {% if log.channel == 'web' %}<span class="aibadge b-blue">🌐 Web</span>
+            {% elif log.channel == 'sms' %}<span class="aibadge b-green">📱 SMS</span>
+            {% else %}<span class="aibadge" style="background:rgba(192,132,252,.16);color:#c084fc;">🎤 Voice</span>{% endif %}
+          </td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ log.original_msg[:60] }}{% if log.original_msg|length > 60 %}…{% endif %}</td>
+          <td>{{ log.tool_called.replace('_', ' ').title() if log.tool_called else '—' }}</td>
+          <td>
+            {% if log.status == 'confirmed' %}<span class="aibadge b-green">✓ Confirmed</span>
+            {% elif log.status == 'rejected' %}<span class="aibadge b-red">✗ Rejected</span>
+            {% else %}<span class="aibadge b-amber">⏳ Pending</span>{% endif %}
+          </td>
+          <td><button onclick="openDetail({{ loop.index0 }})" class="obtn">View</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
+  {% else %}
+  <div class="list-empty"><p class="muted">No AI actions yet. Open the chat widget to get started.</p></div>
+  {% endif %}
 </div>
-{% else %}
-<div style="text-align:center; color:#6b7280; padding:3rem 0;">
-    No AI actions yet. Open the chat widget to get started.
-</div>
-{% endif %}
 
-<!-- Detail Modal -->
-<div id="detail-modal"
-     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
-            z-index:2000; align-items:center; justify-content:center;">
-    <div style="background:#1a1a1a; border:1px solid #2d2d2d; border-radius:1rem;
-                padding:1.5rem; max-width:500px; width:90%; max-height:80vh; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-            <h3 id="modal-title" style="color:#ff6b35; font-weight:700;"></h3>
-            <button onclick="closeDetail()"
-                    style="background:none; border:none; color:#9ca3af; font-size:1.2rem; cursor:pointer;">✕</button>
-        </div>
-        <div style="margin-bottom:0.75rem;">
-            <div style="color:#6b7280; font-size:0.75rem; margin-bottom:0.25rem;">Original Message</div>
-            <div id="modal-msg" style="color:#e5e7eb; font-size:0.875rem; background:#111;
-                                        padding:0.6rem; border-radius:0.5rem;"></div>
-        </div>
-        <div id="modal-data-section" style="margin-bottom:0.75rem;">
-            <div style="color:#6b7280; font-size:0.75rem; margin-bottom:0.25rem;">Extracted Data</div>
-            <div id="modal-data" style="font-size:0.875rem;"></div>
-        </div>
-        <div id="modal-confirmed-section" style="display:none;">
-            <div style="color:#6b7280; font-size:0.75rem; margin-bottom:0.25rem;">Confirmed At</div>
-            <div id="modal-confirmed" style="color:#4ade80; font-size:0.875rem;"></div>
-        </div>
+<div id="detail-modal">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 id="modal-title" style="color:var(--ink-900);font-weight:700;margin:0;"></h3>
+      <button onclick="closeDetail()" class="linkbtn" style="font-size:1.2rem;">✕</button>
     </div>
+    <div style="margin-bottom:.75rem;">
+      <div class="k">Original Message</div>
+      <div id="modal-msg" class="msg"></div>
+    </div>
+    <div id="modal-data-section" style="margin-bottom:.75rem;">
+      <div class="k">Extracted Data</div>
+      <div id="modal-data" style="font-size:.875rem;"></div>
+    </div>
+    <div id="modal-confirmed-section" style="display:none;">
+      <div class="k">Confirmed At</div>
+      <div id="modal-confirmed" class="c-green" style="font-size:.875rem;"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-    const logData = [
-        {% for log in logs %}
-        {
-            title: "{{ log.tool_called.replace('_', ' ').title() if log.tool_called else 'No Tool' }}",
-            msg: {{ log.original_msg | tojson }},
-            data: {{ log.extracted_data | tojson if log.extracted_data else 'null' }},
-            confirmed_at: "{{ log.confirmed_at.strftime('%b %d %Y, %I:%M %p') if log.confirmed_at else '' }}"
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
-    ];
+  const logData = [
+    {% for log in logs %}
+    {
+      title: "{{ log.tool_called.replace('_', ' ').title() if log.tool_called else 'No Tool' }}",
+      msg: {{ log.original_msg | tojson }},
+      data: {{ log.extracted_data | tojson if log.extracted_data else 'null' }},
+      confirmed_at: "{{ log.confirmed_at.strftime('%b %d %Y, %I:%M %p') if log.confirmed_at else '' }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
 
-    function openDetail(index) {
-        const log = logData[index];
-        document.getElementById('modal-title').textContent = log.title;
-        document.getElementById('modal-msg').textContent = log.msg;
+  function openDetail(index) {
+    const log = logData[index];
+    document.getElementById('modal-title').textContent = log.title;
+    document.getElementById('modal-msg').textContent = log.msg;
+    const dataDiv = document.getElementById('modal-data');
+    dataDiv.innerHTML = '';
+    if (log.data) {
+      try {
+        const parsed = JSON.parse(log.data);
+        Object.entries(parsed).forEach(([k, v]) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;padding:.3rem .5rem;border-bottom:1px solid var(--border);';
+          row.innerHTML = `<span style="color:var(--ink-500);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--ink-900);font-weight:500">${v}</span>`;
+          dataDiv.appendChild(row);
+        });
+      } catch(e) { dataDiv.textContent = log.data; }
+    } else { dataDiv.textContent = '—'; }
 
-        const dataDiv = document.getElementById('modal-data');
-        dataDiv.innerHTML = '';
-        if (log.data) {
-            try {
-                const parsed = JSON.parse(log.data);
-                Object.entries(parsed).forEach(([k, v]) => {
-                    const row = document.createElement('div');
-                    row.style.cssText = 'display:flex; justify-content:space-between; ' +
-                                        'padding:0.3rem 0.5rem; border-bottom:1px solid #2d2d2d;';
-                    row.innerHTML = `<span style="color:#9ca3af;text-transform:capitalize">${k.replace(/_/g,' ')}</span>
-                                     <span style="color:#e5e7eb;font-weight:500">${v}</span>`;
-                    dataDiv.appendChild(row);
-                });
-            } catch(e) {
-                dataDiv.textContent = log.data;
-            }
-        } else {
-            dataDiv.textContent = '—';
-        }
-
-        const confirmedSection = document.getElementById('modal-confirmed-section');
-        if (log.confirmed_at) {
-            document.getElementById('modal-confirmed').textContent = log.confirmed_at;
-            confirmedSection.style.display = 'block';
-        } else {
-            confirmedSection.style.display = 'none';
-        }
-
-        document.getElementById('detail-modal').style.display = 'flex';
-    }
-
-    function closeDetail() {
-        document.getElementById('detail-modal').style.display = 'none';
-    }
-
-    document.getElementById('detail-modal').addEventListener('click', function(e) {
-        if (e.target === this) closeDetail();
-    });
+    const confirmedSection = document.getElementById('modal-confirmed-section');
+    if (log.confirmed_at) {
+      document.getElementById('modal-confirmed').textContent = log.confirmed_at;
+      confirmedSection.style.display = 'block';
+    } else { confirmedSection.style.display = 'none'; }
+    document.getElementById('detail-modal').style.display = 'flex';
+  }
+  function closeDetail() { document.getElementById('detail-modal').style.display = 'none'; }
+  document.getElementById('detail-modal').addEventListener('click', function(e) { if (e.target === this) closeDetail(); });
 </script>
 {% endblock %}
