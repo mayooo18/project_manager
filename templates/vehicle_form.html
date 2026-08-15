@@ -2,110 +2,42 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
-  </style>
-</head>
-<body class="bg-black">
-
-<div class="max-w-xl mx-auto px-4 py-8">
-
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">{{ title }}</h1>
-    <a href="{{ url_for('vehicles.index') }}" class="text-sm transition-colors" style="color: #9ca3af;"
-      onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">Cancel</a>
+<div style="max-width:600px;margin:0 auto;">
+  <div class="page-head">
+    <h1>{{ title }}</h1>
+    <a href="{{ url_for('vehicles.index') }}" class="lnk">Cancel</a>
   </div>
 
-  <form method="POST" class="flex flex-col gap-4">
+  <form method="POST" class="card" style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
     {{ form.csrf_token }}
-
     <div class="grid grid-cols-3 gap-3">
-      <div class="col-span-2">
-        {{ form.name.label(class="block text-sm text-gray-400 mb-1") }}
-        {{ form.name(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-      </div>
-      <div>
-        {{ form.vehicle_type.label(class="block text-sm text-gray-400 mb-1") }}
-        {{ form.vehicle_type(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-      </div>
+      <div class="col-span-2">{{ form.name.label(class="lbl") }}{{ form.name(class="fld") }}</div>
+      <div>{{ form.vehicle_type.label(class="lbl") }}{{ form.vehicle_type(class="fld") }}</div>
     </div>
-
     <div class="grid grid-cols-3 gap-3">
-      <div>
-        {{ form.year.label(class="block text-sm text-gray-400 mb-1") }}
-        {{ form.year(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-      </div>
-      <div>
-        {{ form.make.label(class="block text-sm text-gray-400 mb-1") }}
-        {{ form.make(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-      </div>
-      <div>
-        {{ form.model.label(class="block text-sm text-gray-400 mb-1") }}
-        {{ form.model(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-      </div>
+      <div>{{ form.year.label(class="lbl") }}{{ form.year(class="fld") }}</div>
+      <div>{{ form.make.label(class="lbl") }}{{ form.make(class="fld") }}</div>
+      <div>{{ form.model.label(class="lbl") }}{{ form.model(class="fld") }}</div>
     </div>
+    <div>{{ form.vin.label(class="lbl") }}{{ form.vin(class="fld") }}</div>
 
-    <div>
-      {{ form.vin.label(class="block text-sm text-gray-400 mb-1") }}
-      {{ form.vin(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-    </div>
-
-    <hr class="border-gray-800 my-2"/>
-
+    <hr style="border:none;border-top:1px solid var(--border);margin:.25rem 0;"/>
     <div class="grid grid-cols-2 gap-3">
-      <div>
-        {{ form.plate_number.label(class="block text-sm text-gray-400 mb-1") }}
-        {{ form.plate_number(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-      </div>
-      <div>
-        {{ form.plate_expiration.label(class="block text-sm text-gray-400 mb-1") }}
-        {{ form.plate_expiration(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-      </div>
+      <div>{{ form.plate_number.label(class="lbl") }}{{ form.plate_number(class="fld") }}</div>
+      <div>{{ form.plate_expiration.label(class="lbl") }}{{ form.plate_expiration(class="fld") }}</div>
     </div>
+    <div>{{ form.registration_expiration.label(class="lbl") }}{{ form.registration_expiration(class="fld") }}</div>
 
-    <div>
-      {{ form.registration_expiration.label(class="block text-sm text-gray-400 mb-1") }}
-      {{ form.registration_expiration(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-    </div>
-
-    <hr class="border-gray-800 my-2"/>
-
+    <hr style="border:none;border-top:1px solid var(--border);margin:.25rem 0;"/>
     <div class="grid grid-cols-2 gap-3">
-      <div>
-        {{ form.insurance_provider.label(class="block text-sm text-gray-400 mb-1") }}
-        {{ form.insurance_provider(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-      </div>
-      <div>
-        {{ form.insurance_policy_number.label(class="block text-sm text-gray-400 mb-1") }}
-        {{ form.insurance_policy_number(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-      </div>
+      <div>{{ form.insurance_provider.label(class="lbl") }}{{ form.insurance_provider(class="fld") }}</div>
+      <div>{{ form.insurance_policy_number.label(class="lbl") }}{{ form.insurance_policy_number(class="fld") }}</div>
     </div>
-
-    <div>
-      {{ form.insurance_expiration.label(class="block text-sm text-gray-400 mb-1") }}
-      {{ form.insurance_expiration(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500") }}
-    </div>
-
-    <div>
-      {{ form.notes.label(class="block text-sm text-gray-400 mb-1") }}
-      {{ form.notes(class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-orange-500", rows=3) }}
-    </div>
-
-    {{ form.submit(class="mt-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors") }}
+    <div>{{ form.insurance_expiration.label(class="lbl") }}{{ form.insurance_expiration(class="fld") }}</div>
+    <div>{{ form.notes.label(class="lbl") }}{{ form.notes(class="fld", rows=3) }}</div>
+    {{ form.submit(class="btn", style="align-self:flex-start;") }}
   </form>
 
-  <p class="text-gray-600 text-xs mt-4">
-    Reminders will be created automatically at 1 month, 2 weeks, 1 week, and 1 day before each expiration date.
-  </p>
-
+  <p class="muted" style="margin-top:1rem;">Reminders will be created automatically at 1 month, 2 weeks, 1 week, and 1 day before each expiration date.</p>
 </div>
-
-</body>
-</html>
 {% endblock %}

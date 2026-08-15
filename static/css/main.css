@@ -276,6 +276,11 @@ h1{font-size:1.6rem !important;} h2{font-size:1.3rem !important;} h3{font-size:1
 a.lnk{color:var(--ink-500) !important;font-size:.85rem;text-decoration:none;}
 a.lnk:hover{color:var(--accent) !important;}
 
+/* Compact field + label used across form pages */
+.fld{width:100%;background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:.5rem .75rem;color:var(--ink-900);font-size:.875rem;}
+.fld:focus{outline:none;border-color:var(--accent);}
+.lbl{display:block;font-size:.8rem;font-weight:600;color:var(--ink-700);margin-bottom:.3rem;}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width:768px){
   .container,.layout-content-container{padding:1rem !important;}
