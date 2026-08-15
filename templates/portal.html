@@ -4,105 +4,101 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{{ project.name }} — {{ company.name }}</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
-    body { background:#000; font-family: Inter, "Noto Sans", sans-serif; }
-    .card { background:#111827; border:1px solid #374151; border-radius:0.9rem; }
-    .kpi { background:#0b0f17; border:1px solid #1f2937; border-radius:0.6rem; padding:0.7rem 0.8rem; }
-    .muted { color:#6b7280; font-size:0.75rem; }
-    .row { display:flex; align-items:center; justify-content:space-between; gap:0.75rem;
-           padding:0.6rem 0; border-top:1px solid #1f2937; }
-    a.chip { display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem;
-             border:1px solid #374151; border-radius:1rem; padding:0.3rem 0.7rem; color:#e5e7eb; }
-    a.chip:hover { border-color:#f97316; color:#ff8c5a; }
+    :root{
+      --pg:#f4f6f9; --card:#ffffff; --inset:#f8fafc; --ink:#0f172a; --body:#334155; --muted:#64748b;
+      --border:#e2e8f0; --border-strong:#cbd5e1; --accent:#ea6a30;
+      --blue:#1d4ed8; --blue-bg:#dbeafe; --green:#16a34a; --amber:#b45309; --amber-bg:#fef3c7;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--pg);color:var(--body);-webkit-font-smoothing:antialiased;}
+    .wrap{max-width:600px;margin:0 auto;padding:2rem 1rem;}
+    .brand{display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;}
+    .brand .mark{width:40px;height:40px;border-radius:9px;background:var(--ink);display:grid;place-items:center;color:var(--accent);font-weight:800;}
+    .brand .n{color:var(--muted);font-size:.78rem;} .brand .t{color:var(--ink);font-weight:700;}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.08);padding:1.35rem;margin-bottom:1rem;}
+    h1{color:var(--ink);font-size:1.3rem;font-weight:800;}
+    .sub{color:var(--muted);font-size:.88rem;margin-top:.2rem;}
+    .status{display:inline-block;margin-top:.75rem;font-size:.72rem;font-weight:600;padding:.2rem .7rem;border-radius:999px;background:var(--blue-bg);color:var(--blue);}
+    .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-top:1rem;}
+    .kpi{background:var(--inset);border:1px solid var(--border);border-radius:9px;padding:.6rem;}
+    .kpi .k{color:var(--muted);font-size:.68rem;} .kpi .v{color:var(--ink);font-weight:700;font-size:.95rem;margin-top:.15rem;}
+    .alert{display:block;border-radius:12px;padding:1rem;margin-bottom:1rem;background:var(--amber-bg);border:1px solid #fcd34d;text-decoration:none;}
+    .alert .h{color:var(--amber);font-weight:700;font-size:.9rem;} .alert .d{color:#92400e;font-size:.78rem;margin-top:.15rem;}
+    .alert .cta{font-size:.75rem;font-weight:700;padding:.4rem .7rem;border-radius:8px;background:var(--accent);color:#fff;white-space:nowrap;}
+    .label{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.6rem 0;border-top:1px solid var(--border);}
+    .row .t{color:var(--body);font-size:.88rem;}
+    .pdf{color:var(--accent);font-size:.78rem;text-decoration:none;} .pdf:hover{text-decoration:underline;}
+    .chip{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;border:1px solid var(--border-strong);border-radius:999px;padding:.35rem .75rem;color:var(--body);text-decoration:none;}
+    .chip:hover{border-color:var(--accent);color:var(--accent);}
+    .st-paid{color:var(--green);font-size:.75rem;font-weight:600;} .st-due{color:var(--amber);font-size:.75rem;font-weight:600;}
+    .foot{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:.8rem;}
   </style>
 </head>
-<body class="bg-black">
-<div class="max-w-xl mx-auto px-4 py-8">
+<body>
+<div class="wrap">
 
-  <!-- Header -->
-  <div class="flex items-center gap-3 mb-6">
-    <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#7c2d12;">
-      <span style="color:#ff8c5a; font-weight:700;">{{ company.name[:1] }}</span>
-    </div>
-    <div>
-      <p class="text-gray-400 text-xs">{{ company.name }}</p>
-      <p class="text-white font-semibold">Your project</p>
+  <div class="brand">
+    <div class="mark">{{ company.name[:1] }}</div>
+    <div><p class="n">{{ company.name }}</p><p class="t">Your project</p></div>
+  </div>
+
+  <div class="card">
+    <h1>{{ project.name }}</h1>
+    <p class="sub">{{ project.address or '' }}</p>
+    <span class="status">{{ project.status }}</span>
+    <div class="kgrid">
+      <div class="kpi"><p class="k">Contract</p><p class="v">${{ '{:,.0f}'.format(contract_total) }}</p></div>
+      <div class="kpi"><p class="k">Billed</p><p class="v">${{ '{:,.0f}'.format(billed_total) }}</p></div>
+      <div class="kpi"><p class="k">Paid</p><p class="v">${{ '{:,.0f}'.format(paid_total) }}</p></div>
+      <div class="kpi"><p class="k">Due</p><p class="v">${{ '{:,.0f}'.format(due_total) }}</p></div>
     </div>
   </div>
 
-  <!-- Job -->
-  <div class="card p-5 mb-4">
-    <p class="text-white text-xl font-bold">{{ project.name }}</p>
-    <p class="text-gray-500 text-sm mt-1">{{ project.address or '' }}</p>
-    <span class="inline-block mt-3 text-xs px-3 py-1 rounded-full"
-          style="background:#1e3a8a33; color:#93c5fd;">{{ project.status }}</span>
-
-    <div class="grid grid-cols-4 gap-2 mt-4">
-      <div class="kpi"><p class="muted">Contract</p><p class="text-white font-bold">${{ '{:,.0f}'.format(contract_total) }}</p></div>
-      <div class="kpi"><p class="muted">Billed</p><p class="text-white font-bold">${{ '{:,.0f}'.format(billed_total) }}</p></div>
-      <div class="kpi"><p class="muted">Paid</p><p class="text-white font-bold">${{ '{:,.0f}'.format(paid_total) }}</p></div>
-      <div class="kpi"><p class="muted">Due</p><p class="text-white font-bold">${{ '{:,.0f}'.format(due_total) }}</p></div>
-    </div>
-  </div>
-
-  <!-- Action needed: pending change orders -->
   {% for co in pending_cos %}
-  <a href="{{ url_for('change_orders.public_view', token=co.public_token) }}"
-     class="block mb-4 p-4 rounded-xl" style="background:#78350f33; border:1px solid #b45309;">
-    <div class="flex items-center justify-between gap-3">
+  <a href="{{ url_for('change_orders.public_view', token=co.public_token) }}" class="alert">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
       <div>
-        <p class="text-sm font-semibold" style="color:#fbbf24;">Change order needs your approval</p>
-        <p class="text-xs" style="color:#fcd34d;">{{ co.number }} · {{ co.title }} · {{ '+' if (co.total or 0) >= 0 else '' }}${{ '{:,.0f}'.format(co.total or 0) }}</p>
+        <p class="h">Change order needs your approval</p>
+        <p class="d">{{ co.number }} · {{ co.title }} · {{ '+' if (co.total or 0) >= 0 else '' }}${{ '{:,.0f}'.format(co.total or 0) }}</p>
       </div>
-      <span class="text-xs font-semibold px-3 py-2 rounded-lg" style="background:#f59e0b; color:#1c1917;">Review &amp; sign</span>
+      <span class="cta">Review &amp; sign</span>
     </div>
   </a>
   {% endfor %}
 
-  <!-- Invoices -->
-  <div class="card p-5 mb-4">
-    <p class="muted mb-1">Invoices</p>
+  <div class="card">
+    <p class="label">Invoices</p>
     {% for inv in invoices %}
     <div class="row">
-      <span class="text-gray-200 text-sm">{{ inv.number or ('Invoice #' ~ inv.id) }} · {{ inv.title }}</span>
-      <span class="flex items-center gap-3">
-        {% if inv.status == 'paid' %}<span class="text-xs text-green-400">Paid</span>
-        {% else %}<span class="text-xs text-yellow-400">Due</span>{% endif %}
-        <span class="text-gray-200 text-sm font-semibold">${{ '{:,.0f}'.format(inv.total or 0) }}</span>
-        <a class="text-orange-400 text-xs hover:underline" target="_blank"
-           href="{{ url_for('portal.invoice_pdf', token=token, doc_id=inv.id) }}">PDF</a>
+      <span class="t">{{ inv.number or ('Invoice #' ~ inv.id) }} · {{ inv.title }}</span>
+      <span style="display:flex;align-items:center;gap:.75rem;">
+        {% if inv.status == 'paid' %}<span class="st-paid">Paid</span>{% else %}<span class="st-due">Due</span>{% endif %}
+        <span style="color:var(--ink);font-size:.88rem;font-weight:600;">${{ '{:,.0f}'.format(inv.total or 0) }}</span>
+        <a class="pdf" target="_blank" href="{{ url_for('portal.invoice_pdf', token=token, doc_id=inv.id) }}">PDF</a>
       </span>
     </div>
-    {% else %}<p class="muted py-1">No invoices yet.</p>{% endfor %}
+    {% else %}<p class="sub" style="padding:.5rem 0;">No invoices yet.</p>{% endfor %}
   </div>
 
-  <!-- Documents -->
-  <div class="card p-5 mb-6">
-    <p class="muted mb-3">Documents</p>
-    <div class="flex flex-wrap gap-2">
-      {% for q in proposals %}
-      <a class="chip" target="_blank" href="{{ url_for('portal.proposal_pdf', token=token, doc_id=q.id) }}">Proposal</a>
-      {% endfor %}
-      {% for c in contracts %}
-      <a class="chip" target="_blank" href="{{ url_for('portal.contract_pdf', token=token, doc_id=c.id) }}">Contract {{ c.number or '' }}</a>
-      {% endfor %}
-      {% for co in signed_cos %}
-      <a class="chip" target="_blank" href="{{ url_for('change_orders.public_view', token=co.public_token) }}">{{ co.number }}</a>
-      {% endfor %}
-      {% for d in documents %}
-      <a class="chip" target="_blank" href="{{ url_for('portal.document_pdf', token=token, doc_id=d.id) }}">{{ d.doc_kind.replace('_',' ')|title }}</a>
-      {% endfor %}
-      {% if not proposals and not contracts and not signed_cos and not documents %}
-      <p class="muted">No documents yet.</p>
-      {% endif %}
+  <div class="card">
+    <p class="label">Documents</p>
+    <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+      {% for q in proposals %}<a class="chip" target="_blank" href="{{ url_for('portal.proposal_pdf', token=token, doc_id=q.id) }}">Proposal</a>{% endfor %}
+      {% for c in contracts %}<a class="chip" target="_blank" href="{{ url_for('portal.contract_pdf', token=token, doc_id=c.id) }}">Contract {{ c.number or '' }}</a>{% endfor %}
+      {% for co in signed_cos %}<a class="chip" target="_blank" href="{{ url_for('change_orders.public_view', token=co.public_token) }}">{{ co.number }}</a>{% endfor %}
+      {% for d in documents %}<a class="chip" target="_blank" href="{{ url_for('portal.document_pdf', token=token, doc_id=d.id) }}">{{ d.doc_kind.replace('_',' ')|title }}</a>{% endfor %}
+      {% if not proposals and not contracts and not signed_cos and not documents %}<p class="sub">No documents yet.</p>{% endif %}
     </div>
   </div>
 
-  <!-- Contact -->
-  <div class="flex items-center justify-between">
-    <span class="text-gray-500 text-sm">Questions? {{ company.phone }}</span>
-    <span class="muted">Private link</span>
+  <div class="foot">
+    <span>Questions? {{ company.phone }}</span>
+    <span>Private link</span>
   </div>
 
 </div>

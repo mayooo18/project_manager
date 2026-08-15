@@ -4,84 +4,86 @@
   <meta charset="utf-8"/>
   <title>Invoice · {{ invoice.title }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
-    body { background:#0b0f19; font-family: Inter, "Noto Sans", sans-serif; }
-    .card { background:#111827; border:1px solid #374151; border-radius:0.9rem; }
+    :root{
+      --pg:#f4f6f9; --card:#ffffff; --ink:#0f172a; --body:#334155; --muted:#64748b;
+      --border:#e2e8f0; --accent:#ea6a30; --green:#16a34a;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--pg);color:var(--body);-webkit-font-smoothing:antialiased;}
+    .wrap{max-width:680px;margin:0 auto;padding:2.5rem 1rem;}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.08);padding:1.75rem;margin-bottom:1.25rem;}
+    .eyebrow{color:var(--accent);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem;}
+    h1{color:var(--ink);font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.25rem;}
+    .sub{color:var(--muted);font-size:.9rem;}
+    .paid-badge{color:var(--green);border:1px solid #86efac;background:#dcfce7;border-radius:8px;padding:.3rem .7rem;font-size:.8rem;font-weight:700;white-space:nowrap;}
+    .items{margin-top:1.25rem;}
+    .item{display:flex;justify-content:space-between;gap:1rem;padding:.85rem 0;border-top:1px solid var(--border);}
+    .item .d{color:var(--ink);} .item .q{color:var(--muted);font-size:.78rem;margin-top:.15rem;}
+    .item .amt{color:var(--ink);font-weight:600;white-space:nowrap;}
+    .row{display:flex;justify-content:space-between;align-items:center;}
+    .total{border-top:2px solid var(--border);margin-top:.5rem;padding-top:1rem;}
+    .k{color:var(--muted);text-transform:uppercase;font-size:.72rem;letter-spacing:.05em;}
+    .sub-row{display:flex;justify-content:space-between;font-size:.9rem;margin-top:.5rem;}
+    .sub-row .kk{color:var(--muted);} .sub-row .vv{color:var(--body);}
+    .balance{font-size:1.6rem;font-weight:800;color:var(--ink);}
+    .balance.paid{color:var(--green);}
+    .label{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem;display:block;}
+    .dl{color:var(--accent);font-size:.88rem;text-decoration:none;}
+    .dl:hover{text-decoration:underline;}
+    .foot{text-align:center;color:var(--muted);font-size:.78rem;}
   </style>
 </head>
-<body class="text-gray-200">
-
-<div class="max-w-2xl mx-auto px-4 py-10">
-
-  <div class="card p-6 mb-5">
-    <div class="flex items-start justify-between gap-4">
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="row" style="align-items:flex-start;gap:1rem;">
       <div>
-        <p class="text-orange-400 text-xs uppercase tracking-widest mb-1">Invoice {{ invoice.number or '' }}</p>
-        <h1 class="text-2xl font-bold text-white mb-1">{{ invoice.title }}</h1>
-        <p class="text-gray-500 text-sm">
-          Billed to {{ invoice.customer.name }}
-          {% if invoice.created_at %} &middot; {{ invoice.created_at.strftime('%B %d, %Y') }}{% endif %}
-        </p>
+        <p class="eyebrow">Invoice {{ invoice.number or '' }}</p>
+        <h1>{{ invoice.title }}</h1>
+        <p class="sub">Billed to {{ invoice.customer.name }}{% if invoice.created_at %} · {{ invoice.created_at.strftime('%B %d, %Y') }}{% endif %}</p>
       </div>
-      {% if invoice.status == 'paid' %}
-      <span class="text-green-400 border border-green-600 rounded-lg px-3 py-1 text-sm font-semibold whitespace-nowrap">PAID</span>
-      {% endif %}
+      {% if invoice.status == 'paid' %}<span class="paid-badge">PAID</span>{% endif %}
     </div>
 
-    <div class="mt-5 divide-y divide-gray-800">
+    <div class="items">
       {% for item in invoice.items %}
-      <div class="flex justify-between gap-4 py-3">
-        <div>
-          <p class="text-gray-100">{{ item.description }}</p>
-          <p class="text-gray-500 text-xs">{{ '%g'|format(item.quantity or 1) }} × ${{ '%.2f'|format(item.unit_price or 0) }}</p>
-        </div>
-        <div class="text-gray-100 font-medium whitespace-nowrap">${{ '%.2f'|format(item.line_total) }}</div>
+      <div class="item">
+        <div><p class="d">{{ item.description }}</p><p class="q">{{ '%g'|format(item.quantity or 1) }} × ${{ '%.2f'|format(item.unit_price or 0) }}</p></div>
+        <div class="amt">${{ '%.2f'|format(item.line_total) }}</div>
       </div>
       {% endfor %}
     </div>
 
-    <div class="flex justify-between items-center border-t border-gray-700 mt-2 pt-4">
-      <span class="text-gray-400 uppercase text-xs tracking-wide">Total</span>
-      <span class="text-xl font-bold text-white">${{ '%.2f'|format(invoice.total or 0) }}</span>
-    </div>
+    <div class="row total"><span class="k">Total</span><span style="color:var(--ink);font-weight:700;font-size:1.05rem;">${{ '%.2f'|format(invoice.total or 0) }}</span></div>
     {% if invoice.deposit %}
-    <div class="flex justify-between text-sm mt-2">
-      <span class="text-gray-500">Deposit collected</span>
-      <span class="text-gray-300">−${{ '%.2f'|format(invoice.deposit) }}</span>
-    </div>
+    <div class="sub-row"><span class="kk">Deposit collected</span><span class="vv">−${{ '%.2f'|format(invoice.deposit) }}</span></div>
     {% endif %}
-    <div class="flex justify-between items-center mt-2">
-      <span class="text-gray-400 uppercase text-xs tracking-wide">Balance due</span>
-      <span class="text-2xl font-bold {{ 'text-green-400' if invoice.status == 'paid' else 'text-white' }}">
-        ${{ '%.2f'|format(invoice.balance_due) }}
-      </span>
+    <div class="row" style="margin-top:.75rem;">
+      <span class="k">Balance due</span>
+      <span class="balance {{ 'paid' if invoice.status == 'paid' }}">${{ '%.2f'|format(invoice.balance_due) }}</span>
     </div>
 
     {% if invoice.status == 'paid' and invoice.paid_at %}
-    <p class="text-green-400 text-sm mt-3">
-      ✓ Paid in full on {{ invoice.paid_at.strftime('%B %d, %Y') }}{% if invoice.payment_method %} via {{ invoice.payment_method }}{% endif %}.
-    </p>
+    <p style="color:var(--green);font-size:.9rem;margin-top:.75rem;">✓ Paid in full on {{ invoice.paid_at.strftime('%B %d, %Y') }}{% if invoice.payment_method %} via {{ invoice.payment_method }}{% endif %}.</p>
     {% endif %}
 
     {% if invoice.notes %}
-    <div class="mt-5">
-      <p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Notes</p>
-      <p class="text-gray-300 text-sm whitespace-pre-line">{{ invoice.notes }}</p>
+    <div style="margin-top:1.25rem;">
+      <p class="label">Notes</p>
+      <p style="color:var(--body);font-size:.92rem;white-space:pre-line;">{{ invoice.notes }}</p>
     </div>
     {% endif %}
 
-    <div class="mt-5">
-      <a href="{{ url_for('invoices.public_pdf', token=invoice.public_token) }}" target="_blank"
-         class="text-orange-400 text-sm hover:underline">↓ Download PDF</a>
+    <div style="margin-top:1.25rem;">
+      <a href="{{ url_for('invoices.public_pdf', token=invoice.public_token) }}" target="_blank" class="dl">↓ Download PDF</a>
     </div>
   </div>
 
-  <p class="text-center text-gray-600 text-xs">
-    {{ company.name }} &middot; {{ company.phone }} &middot; {{ company.email }}
-  </p>
-
+  <p class="foot">{{ company.name }} · {{ company.phone }} · {{ company.email }}</p>
 </div>
-
 </body>
 </html>

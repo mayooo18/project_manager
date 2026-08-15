@@ -2,86 +2,55 @@
 {% block title %}Contracts{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <style>
-    body { background-color: #000; font-family: Inter, "Noto Sans", sans-serif; }
-  </style>
-</head>
-<body class="bg-black">
-
-<div class="max-w-4xl mx-auto px-4 py-8">
-
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">Contracts</h1>
-    <a href="{{ url_for('contracts.new') }}"
-      class="bg-orange-500 hover:bg-orange-600 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-      style="color: #fff !important;">
-      + New Contract
-    </a>
+<div style="max-width:920px;margin:0 auto;">
+  <div class="page-head">
+    <h1>Contracts</h1>
+    <a href="{{ url_for('contracts.new') }}" class="btn">+ New Contract</a>
   </div>
 
   {% set status_styles = {
-    'draft': 'text-gray-300 border-gray-500',
-    'active': 'text-blue-300 border-blue-500',
-    'completed': 'text-green-300 border-green-500'
-  } %}
+    'draft':'text-gray-300 border-gray-500','active':'text-blue-300 border-blue-500',
+    'completed':'text-green-300 border-green-500'} %}
 
   {% if contracts %}
-  <div class="flex flex-col gap-3">
-    {% for con in contracts %}
-    <div class="bg-gray-900 border border-gray-700 rounded-xl px-5 py-4">
-      <div class="flex items-start justify-between gap-4">
-        <div class="min-w-0">
-          <div class="flex items-center flex-wrap gap-2">
-            <a href="{{ url_for('contracts.edit', contract_id=con.id) }}"
-               class="text-gray-100 font-semibold text-lg hover:text-orange-400">{{ con.title }}</a>
-            <span class="text-xs border rounded px-1.5 py-0.5 uppercase {{ status_styles.get(con.status, 'text-gray-300 border-gray-500') }}">{{ con.status }}</span>
-          </div>
-          <p class="text-gray-500 text-xs mt-1">
-            {{ con.number or '#' ~ con.id }} &middot; {{ con.customer.name }}
-            {% if con.project %} &middot; Project: {{ con.project.name }}{% endif %}
-            {% if con.created_at %} &middot; {{ con.created_at.strftime('%Y-%m-%d') }}{% endif %}
-          </p>
-          <p class="text-gray-500 text-xs mt-1">
-            Billed ${{ '%.0f'|format(con.billed_to_date) }} &middot;
-            Paid <span class="text-green-400/80">${{ '%.0f'|format(con.paid_to_date) }}</span> &middot;
-            Remaining ${{ '%.0f'|format(con.remaining_to_bill) }}
-          </p>
+  {% for con in contracts %}
+  <div class="list-card">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div style="min-width:0;">
+        <div class="flex items-center flex-wrap gap-2">
+          <a href="{{ url_for('contracts.edit', contract_id=con.id) }}" style="color:var(--ink-900);font-weight:600;font-size:1.05rem;text-decoration:none;">{{ con.title }}</a>
+          <span class="pill {{ status_styles.get(con.status, 'text-gray-300 border-gray-500') }}" style="font-size:.65rem;text-transform:uppercase;border:1px solid;border-radius:4px;padding:1px 6px;">{{ con.status }}</span>
         </div>
-        <div class="flex items-center gap-3 flex-shrink-0">
-          <span class="text-gray-100 font-semibold">${{ '%.2f'|format(con.contract_total or 0) }}</span>
-          <a href="{{ url_for('contracts.edit', contract_id=con.id) }}"
-             class="text-sm" style="color:#9ca3af;"
-             onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">Edit</a>
-          <a href="{{ url_for('contracts.pdf', contract_id=con.id) }}" target="_blank"
-             class="text-sm" style="color:#9ca3af;"
-             onmouseover="this.style.color='#ff8c5a'" onmouseout="this.style.color='#9ca3af'">PDF</a>
-          {% if current_user.is_owner %}
-          <form method="POST" action="{{ url_for('contracts.delete', contract_id=con.id) }}"
-                onsubmit="return confirm('Delete this contract? This cannot be undone.');">
-            {{ delete_form.csrf_token }}
-            <button type="submit" class="text-gray-600 hover:text-red-400 text-sm transition-colors">Delete</button>
-          </form>
-          {% endif %}
-        </div>
+        <p class="muted" style="margin-top:.25rem;">
+          {{ con.number or '#' ~ con.id }} · {{ con.customer.name }}
+          {% if con.project %} · Job: {{ con.project.name }}{% endif %}
+          {% if con.created_at %} · {{ con.created_at.strftime('%Y-%m-%d') }}{% endif %}
+        </p>
+        <p class="muted" style="margin-top:.15rem;">
+          Billed ${{ '%.0f'|format(con.billed_to_date) }} ·
+          Paid <span class="c-green">${{ '%.0f'|format(con.paid_to_date) }}</span> ·
+          Remaining ${{ '%.0f'|format(con.remaining_to_bill) }}
+        </p>
+      </div>
+      <div class="flex items-center gap-3 flex-shrink-0 flex-wrap">
+        <span style="color:var(--ink-900);font-weight:600;">${{ '%.2f'|format(con.contract_total or 0) }}</span>
+        <a href="{{ url_for('contracts.edit', contract_id=con.id) }}" class="lnk">Edit</a>
+        <a href="{{ url_for('contracts.pdf', contract_id=con.id) }}" target="_blank" class="lnk">PDF</a>
+        {% if current_user.is_owner %}
+        <form method="POST" action="{{ url_for('contracts.delete', contract_id=con.id) }}" onsubmit="return confirm('Delete this contract? This cannot be undone.');">
+          {{ delete_form.csrf_token }}
+          <button type="submit" class="linkbtn danger">Delete</button>
+        </form>
+        {% endif %}
       </div>
     </div>
-    {% endfor %}
   </div>
+  {% endfor %}
   {% else %}
-  <div class="bg-gray-900 border border-gray-700 rounded-xl px-6 py-10 text-center">
-    <p class="text-gray-400 text-sm">No contracts yet.</p>
-    <p class="text-gray-600 text-xs mt-1">Create one directly, or turn an approved proposal into a contract with a draw schedule.</p>
+  <div class="list-empty">
+    <p style="color:var(--ink-700);">No contracts yet.</p>
+    <p class="muted" style="margin-top:.25rem;">Create one directly, or turn an approved proposal into a contract with a draw schedule.</p>
   </div>
   {% endif %}
-
 </div>
-
-</body>
-</html>
 {% endblock %}
