@@ -111,6 +111,30 @@ button[type="submit"]:hover,.btn:hover,.btn-primary:hover,.btn-accent:hover{
   background-color:var(--surface-2) !important;color:var(--ink-900) !important;
 }
 
+/* Outline buttons (.obtn) — must override the blanket submit-button styling.
+   Base is neutral; add .accent/.green/.red for colored outlines. */
+a.obtn,button.obtn{
+  background:var(--surface) !important;color:var(--ink-700) !important;
+  border:1px solid var(--border-strong) !important;border-radius:var(--r-sm) !important;
+  padding:.4rem .75rem !important;font-size:.82rem !important;font-weight:600 !important;
+  cursor:pointer !important;display:inline-flex !important;align-items:center !important;
+  justify-content:center !important;gap:.3rem !important;text-decoration:none !important;
+  transition:all .15s ease !important;transform:none !important;box-shadow:none !important;
+}
+a.obtn:hover,button.obtn:hover{background:var(--surface-2) !important;border-color:var(--accent) !important;color:var(--accent) !important;transform:none !important;}
+.obtn.accent{color:var(--accent) !important;border-color:var(--accent) !important;}
+.obtn.green{color:var(--green-fg) !important;border-color:var(--green-fg) !important;}
+.obtn.red{color:var(--red-fg) !important;border-color:var(--red-fg) !important;}
+.obtn.accent:hover,.obtn.green:hover,.obtn.red:hover{background:var(--surface-2) !important;}
+
+/* Transparent text/icon button (e.g. a ✕ delete inside a form) — overrides
+   the blanket submit-button styling so it doesn't render as a solid block. */
+button.linkbtn{background:none !important;border:none !important;color:var(--ink-500) !important;
+  padding:0 !important;box-shadow:none !important;transform:none !important;cursor:pointer !important;
+  font-weight:500 !important;}
+button.linkbtn:hover{background:none !important;color:var(--accent) !important;transform:none !important;}
+button.linkbtn.danger:hover{color:var(--red-fg) !important;}
+
 /* ===== TABLES ===== */
 table{
   width:100% !important;
