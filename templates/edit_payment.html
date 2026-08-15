@@ -17,6 +17,7 @@
       <div class="field"><label for="amount">Amount</label>{{ form.amount() }}</div>
       <div class="field"><label for="payment_date">Payment Date</label>{{ form.payment_date() }}</div>
       <div class="field"><label for="method">Method</label>{{ form.method() }}</div>
+      <div class="field"><label for="check_number">Check #</label>{{ form.check_number(placeholder="if by check") }}</div>
       <div class="field">
         <label for="receipt">Receipt</label>
         {% if payment.receipt_filename %}

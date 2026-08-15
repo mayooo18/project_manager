@@ -38,6 +38,8 @@
           <select id="method" name="method">
             <option>Cash</option><option>Credit Card</option><option>Bank Transfer</option><option>Check</option>
           </select></div>
+        <div class="field"><label for="check_number">Check # <span class="muted" style="font-weight:400;">(if by check)</span></label>
+          <input type="text" id="check_number" name="check_number" placeholder="e.g. 1042" maxlength="60" /></div>
         <div class="field col-2"><label for="receipt">Receipt (optional)</label>
           <div class="file-row">
             <label for="receipt-upload" class="file-btn">Take photo / choose file</label>
@@ -61,6 +63,15 @@
             <option value="">All</option>
             {% for worker in workers %}<option value="{{ worker.id }}" {% if request.args.get('worker_id') == worker.id|string %}selected{% endif %}>{{ worker.name }}</option>{% endfor %}
           </select></div>
+        <div class="field"><label for="fmethod">Method</label>
+          <select id="fmethod" name="method">
+            {% set m = request.args.get('method', '') %}
+            <option value="" {{ 'selected' if m == '' }}>All methods</option>
+            <option value="Cash" {{ 'selected' if m == 'Cash' }}>Cash</option>
+            <option value="Check" {{ 'selected' if m == 'Check' }}>Check</option>
+            <option value="Bank Transfer" {{ 'selected' if m == 'Bank Transfer' }}>Bank Transfer</option>
+            <option value="Credit Card" {{ 'selected' if m == 'Credit Card' }}>Credit Card</option>
+          </select></div>
         <div class="field"><label for="start_date">From</label>
           <input type="date" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}" /></div>
         <div class="field"><label for="end_date">To</label>
@@ -81,7 +92,7 @@
   <div style="overflow-x:auto;">
     <table>
       <thead>
-        <tr><th>Worker</th><th>Amount</th><th>Date</th><th>Method</th><th>Receipt</th><th>Note</th><th>Actions</th></tr>
+        <tr><th>Worker</th><th>Amount</th><th>Date</th><th>Method</th><th>Check #</th><th>Receipt</th><th>Note</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for payment in payments %}
@@ -90,6 +101,7 @@
           <td style="font-weight:600;">${{ '%.2f' | format(payment.amount) }}</td>
           <td>{{ payment.payment_date.strftime('%m/%d/%Y') }}</td>
           <td>{{ payment.method or '—' }}</td>
+          <td>{{ payment.check_number or '—' }}</td>
           <td>
             {% if payment.receipt_filename %}
             <a class="c-accent" href="{{ url_for('static', filename='uploads/' ~ payment.receipt_filename) }}" target="_blank">View</a>
@@ -112,7 +124,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="7" style="text-align:center;color:var(--ink-500);">No payments found.</td></tr>
+        <tr><td colspan="8" style="text-align:center;color:var(--ink-500);">No payments found.</td></tr>
         {% endfor %}
       </tbody>
     </table>

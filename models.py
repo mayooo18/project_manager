@@ -116,6 +116,7 @@ class Payment(db.Model):
     amount = db.Column(db.Float, nullable=False)
     payment_date = db.Column(db.Date, nullable=False, index=True)
     method = db.Column(db.String(50))
+    check_number = db.Column(db.String(60))
     note = db.Column(db.Text)
     receipt_filename = db.Column(db.String(200))
     receipt_filepath = db.Column(db.String(300))

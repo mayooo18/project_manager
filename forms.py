@@ -78,6 +78,7 @@ class PaymentForm(FlaskForm):
     amount = FloatField('Amount', validators=[DataRequired()])
     payment_date = DateField('Payment Date', format='%Y-%m-%d', validators=[DataRequired()])
     method = StringField('Method', validators=[Optional()])
+    check_number = StringField('Check #', validators=[Optional(), Length(max=60)])
     note = TextAreaField('Note', validators=[Optional()])
     receipt = FileField('Receipt', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Images and PDFs only')])
     submit = SubmitField('Add Payment')
@@ -85,6 +86,10 @@ class PaymentForm(FlaskForm):
 
 class PaymentFilterForm(FlaskForm):
     worker_id = SelectField('Worker', coerce=int, validators=[Optional()])
+    method = SelectField('Method', choices=[
+        ('', 'All methods'), ('Cash', 'Cash'), ('Check', 'Check'),
+        ('Bank Transfer', 'Bank Transfer'), ('Credit Card', 'Credit Card'),
+    ], validators=[Optional()])
     start_date = DateField('From', format='%Y-%m-%d', validators=[Optional()])
     end_date = DateField('To', format='%Y-%m-%d', validators=[Optional()])
     min_amount = DecimalField('Min Amount', validators=[Optional()])

@@ -1223,6 +1223,7 @@ def payments():
             amount=form.amount.data,
             payment_date=form.payment_date.data,
             method=form.method.data,
+            check_number=form.check_number.data or None,
             note=form.note.data,
             receipt_filename=filename,
             receipt_filepath=filepath
@@ -1238,6 +1239,10 @@ def payments():
     worker_id = request.args.get('worker_id', type=int)
     if worker_id:
         payments_query = payments_query.filter_by(worker_id=worker_id)
+
+    method = request.args.get('method')
+    if method:
+        payments_query = payments_query.filter(Payment.method == method)
 
     start_date = request.args.get('start_date')
     if start_date:
@@ -1282,6 +1287,7 @@ def edit_payment(payment_id):
         payment.amount = form.amount.data
         payment.payment_date = form.payment_date.data
         payment.method = form.method.data
+        payment.check_number = form.check_number.data or None
         payment.note = form.note.data
         
         # Handle new receipt upload
