@@ -1,14 +1,12 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, BooleanField, SubmitField, IntegerField
-from wtforms import TextAreaField, DateField, SelectField, FileField, DecimalField, TextAreaField, PasswordField
+from wtforms import TextAreaField, DateField, SelectField, DecimalField, PasswordField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
-from wtforms_sqlalchemy.fields import QuerySelectField
 from flask_wtf.file import FileAllowed, FileField
 from models import EXPENSE_CATEGORIES
 
 class WorkerForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])
-    contact = StringField('Contact', validators= [Length(max=100)])
     daily_rate = FloatField('Daily Rate', validators= [DataRequired(), NumberRange(min=0)])
     active = BooleanField('Active', default=True)
     phone = StringField('Phone (for crew login)', validators=[Optional(), Length(max=30)])

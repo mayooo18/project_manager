@@ -21,8 +21,6 @@
       <div class="grid2">
         <div class="field"><label for="name">Worker Name</label>
           <input name="name" id="name" type="text" required /></div>
-        <div class="field"><label for="contact">Contact</label>
-          <input name="contact" id="contact" type="text" /></div>
         <div class="field"><label for="daily_rate">Daily Rate</label>
           <input name="daily_rate" id="daily_rate" type="number" step="0.01" required /></div>
         <div class="field"><label for="phone">Phone (for crew login)</label>
@@ -41,14 +39,14 @@
   <div style="overflow-x:auto;">
     <table>
       <thead>
-        <tr><th>ID</th><th>Name</th><th>Contact</th><th>Daily Rate</th><th>Status</th><th>Actions</th></tr>
+        <tr><th>ID</th><th>Name</th><th>Phone</th><th>Daily Rate</th><th>Status</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for worker in workers %}
         <tr>
           <td>{{ worker.id }}</td>
           <td style="color:var(--ink-900);font-weight:500;">{{ worker.name }}</td>
-          <td>{{ worker.contact or '—' }}</td>
+          <td>{{ worker.phone or '—' }}</td>
           <td>${{ "%.2f"|format(worker.daily_rate) }}/day</td>
           <td>
             {% if worker.active %}<span class="badge b-green">Active</span>

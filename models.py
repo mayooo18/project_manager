@@ -1,6 +1,5 @@
 from extensions import db
 from datetime import datetime, timedelta
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
@@ -42,7 +41,6 @@ def summarize_expense_categories(expenses):
 class Worker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-    contact = db.Column(db.String(100))
     daily_rate = db.Column(db.Float)
     active = db.Column(db.Boolean, default=True)
     # Crew portal login (Phase 8): phone (digits only) + hashed PIN.

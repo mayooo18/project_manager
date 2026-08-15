@@ -7,7 +7,6 @@
   <form method="POST" class="card" style="padding:1.5rem;">
     {{ form.hidden_tag() }}
     <div class="field"><label>Name</label>{{ form.name() }}</div>
-    <div class="field"><label>Contact</label>{{ form.contact() }}</div>
     <div class="field"><label>Daily Rate</label>{{ form.daily_rate() }}</div>
     <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:1.1rem;color:var(--ink-700);font-size:.9rem;">
       {{ form.active(style="width:auto;") }} Active

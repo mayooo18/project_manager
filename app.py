@@ -277,7 +277,6 @@ def workers():
             return redirect(url_for('workers'))
         new_worker = Worker(
             name=form.  name.data,
-            contact=form.contact.data,
             daily_rate=form.daily_rate.data,
             active=form.active.data,
             phone=phone,
@@ -305,7 +304,6 @@ def edit_worker(worker_id):
                   'unique phone for crew login.', 'error')
             return redirect(url_for('edit_worker', worker_id=worker.id))
         worker.name = form.name.data
-        worker.contact = form.contact.data
         worker.daily_rate = form.daily_rate.data
         worker.active = form.active.data
         worker.phone = phone

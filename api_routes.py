@@ -151,7 +151,7 @@ def list_workers():
         'id': w.id,
         'name': w.name,
         'daily_rate': w.daily_rate,
-        'contact': w.contact
+        'phone': w.phone
     } for w in workers])
 
 
@@ -165,7 +165,7 @@ def create_worker_api():
     worker = Worker(
         name=data['name'],
         daily_rate=data['daily_rate'],
-        contact=data.get('contact'),
+        phone=Worker.normalize_phone(data.get('phone')),
         active=data.get('active', True)
     )
     db.session.add(worker)
@@ -180,8 +180,8 @@ def update_worker_api(worker_id):
     data = request.get_json()
     if 'daily_rate' in data:
         worker.daily_rate = data['daily_rate']
-    if 'contact' in data:
-        worker.contact = data['contact']
+    if 'phone' in data:
+        worker.phone = Worker.normalize_phone(data['phone'])
     if 'active' in data:
         worker.active = data['active']
     db.session.commit()
@@ -663,7 +663,7 @@ def openapi_spec():
                             "properties": {
                                 "name": {"type": "string"},
                                 "daily_rate": {"type": "number"},
-                                "contact": {"type": "string"}
+                                "phone": {"type": "string"}
                             }
                         }}}
                     },
@@ -673,7 +673,7 @@ def openapi_spec():
             "/api/workers/{worker_id}": {
                 "patch": {
                     "operationId": "updateWorker",
-                    "summary": "Update worker daily rate or contact info",
+                    "summary": "Update worker daily rate, phone, or active status",
                     "parameters": [{"name": "worker_id", "in": "path", "required": True, "schema": {"type": "integer"}}],
                     "requestBody": {
                         "required": True,
@@ -681,7 +681,7 @@ def openapi_spec():
                             "type": "object",
                             "properties": {
                                 "daily_rate": {"type": "number"},
-                                "contact": {"type": "string"},
+                                "phone": {"type": "string"},
                                 "active": {"type": "boolean"}
                             }
                         }}}

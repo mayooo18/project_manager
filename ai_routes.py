@@ -72,7 +72,7 @@ def confirm():
             record = Worker(
                 name=data['name'],
                 daily_rate=data['daily_rate'],
-                contact=data.get('contact'),
+                phone=Worker.normalize_phone(data.get('phone')),
                 active=data.get('active', True)
             )
             db.session.add(record)

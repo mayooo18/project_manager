@@ -13,7 +13,7 @@ You have access to these tools:
 
 1. create_worker — Add a new worker
    Required: name, daily_rate
-   Optional: contact, active (default true)
+   Optional: phone, active (default true)
 
 2. create_work_log — Log days worked
    Required: worker_name, project_name, days_worked, start_date (YYYY-MM-DD)
@@ -64,7 +64,7 @@ TOOLS = [
                 "properties": {
                     "name": {"type": "string"},
                     "daily_rate": {"type": "number"},
-                    "contact": {"type": "string"},
+                    "phone": {"type": "string"},
                     "active": {"type": "boolean"}
                 },
                 "required": ["name", "daily_rate"]
