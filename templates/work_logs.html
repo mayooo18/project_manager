@@ -1,217 +1,85 @@
 {% extends 'base.html' %}
+{% block title %}Work Logs{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Log Work Hours</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
 <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f3f4f6;}
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .card {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        .form-label {
-            font-weight: 500;
-            color: #4b5563;margin-bottom: 6px;
-            display: block;
-        }
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #d1d5db;border-radius: 6px;
-            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none;
-            border-color: #3b82f6;box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-        }
-        .btn {
-            padding: 10px 16px;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-primary {
-            background-color: #3b82f6;color: white;
-        }
-        .btn-primary:hover {
-            background-color: #2563eb;}
-        .btn-secondary {
-            background-color: #e5e7eb;color: #374151;}
-        .btn-secondary:hover {
-            background-color: #d1d5db;}
-        .table-header {
-            background-color: #f9fafb;color: #4b5563;font-weight: 500;
-        }
-        .table-cell {
-            padding: 12px 16px;
-            border-bottom: 1px solid #e5e7eb;color: #374151;}
-        .icon {
-            font-family: 'Material Icons';
-            font-size: 20px;
-            vertical-align: middle;
-        }
-        .section-title {
-            font-size: 1.5rem;font-weight: 600;
-            color: #1f2937;margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e5e7eb;}
-    </style>
-<div class="card">
-    <h2 class="section-title">Log Work Hours</h2>
-    <form method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  .money-wrap{max-width:1040px;margin:0 auto;}
+  .field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-700);margin-bottom:.35rem;}
+  .fgrid{display:grid;grid-template-columns:1fr;gap:1rem;}
+  @media(min-width:768px){.fgrid{grid-template-columns:1fr 1fr;}}
+  @media(min-width:1024px){.fgrid.f4{grid-template-columns:repeat(4,1fr);}}
+  .col-2{grid-column:1/-1;}
+  .chk{display:flex;align-items:flex-start;gap:.5rem;font-size:.85rem;color:var(--ink-500);}
+  .chk input{width:auto;margin-top:.15rem;}
+</style>
+
+<div class="money-wrap">
+  <div class="page-head"><h1>Work Logs</h1></div>
+
+  <div class="card" style="padding:1.5rem;">
+    <p class="sec-title" style="margin-bottom:1rem;">Log work hours</p>
+    <form method="POST">
       {{ form.hidden_tag() }}
-  
-      <div>
-        <label class="form-label" for="worker_id">Worker</label>
-        {{ form.worker_id(class="form-select") }}
+      <div class="fgrid">
+        <div class="field"><label for="worker_id">Worker</label>{{ form.worker_id() }}</div>
+        <div class="field"><label for="project_id">Job</label>{{ form.project_id() }}</div>
+        <div class="field"><label for="start_date">From</label>{{ form.start_date() }}</div>
+        <div class="field"><label for="end_date">To</label>{{ form.end_date() }}</div>
+        <div class="field col-2"><label for="days_worked">Days Worked</label>{{ form.days_worked(placeholder="e.g., 1") }}</div>
+        <div class="field col-2"><label for="note">Note (optional)</label>{{ form.note(rows="3") }}</div>
       </div>
-  
-      <div>
-        <label class="form-label" for="project_id">Project</label>
-        {{ form.project_id(class="form-select") }}
-      </div>
-  
-      <div>
-        <label class="form-label" for="start_date">From</label>
-        {{ form.start_date(class="form-input") }}
-      </div>
-  
-      <div>
-        <label class="form-label" for="end_date">To</label>
-        {{ form.end_date(class="form-input") }}
-      </div>
-  
-      <div class="md:col-span-2">
-        <label class="form-label" for="days_worked">Days Worked</label>
-        {{ form.days_worked(class="form-input", placeholder="e.g., 1") }}
-      </div>
-  
-      <div class="md:col-span-2">
-        <label class="form-label" for="note">Note (optional)</label>
-        {{ form.note(class="form-textarea", rows="4") }}
-      </div>
-  
-      <div class="md:col-span-2 flex items-center justify-between">
-        <label class="flex items-center gap-2 text-sm text-gray-600">
-          {{ form.create_payment() }}
-          Also record a labor payment now — only for workers who <b>don't</b> clock in
-          (the crew time clock records labor automatically)
-        </label>
-        <button class="btn btn-primary" type="submit" name="submit">
-          <span class="material-icons icon mr-2">add_circle_outline</span>
-          Log Work
-        </button>
-      </div>
+      <label class="chk" style="margin:.5rem 0 1rem;">
+        {{ form.create_payment() }}
+        <span>Also record a labor payment now — only for workers who <b style="color:var(--ink-700);">don't</b> clock in (the crew time clock records labor automatically).</span>
+      </label>
+      <button type="submit" class="btn">Log Work</button>
     </form>
   </div>
-  
 
-  <div class="card">
-    <h2 class="section-title">Filter Logs</h2>
-    <form method="POST" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+  <div class="card" style="padding:1.5rem;">
+    <p class="sec-title" style="margin-bottom:1rem;">Filter logs</p>
+    <form method="POST">
       {{ filter_form.hidden_tag() }}
-  
-      <div>
-        <label class="form-label" for="worker_id">Worker</label>
-        {{ filter_form.worker_id(class="form-select") }}
+      <div class="fgrid f4">
+        <div class="field"><label for="worker_id">Worker</label>{{ filter_form.worker_id() }}</div>
+        <div class="field"><label for="project_id">Job</label>{{ filter_form.project_id() }}</div>
+        <div class="field"><label for="start_date">From</label>{{ filter_form.start_date() }}</div>
+        <div class="field"><label for="end_date">To</label>{{ filter_form.end_date() }}</div>
       </div>
-  
-      <div>
-        <label class="form-label" for="project_id">Project</label>
-        {{ filter_form.project_id(class="form-select") }}
-      </div>
-  
-      <div>
-        <label class="form-label" for="start_date">From</label>
-        {{ filter_form.start_date(class="form-input") }}
-      </div>
-  
-      <div>
-        <label class="form-label" for="end_date">To</label>
-        {{ filter_form.end_date(class="form-input") }}
-      </div>
-  
-      <div class="lg:col-span-4 flex justify-end mt-4">
-        <button class="btn btn-primary" type="submit" name="filter">
-          <span class="material-icons icon mr-2">filter_alt</span>
-          Apply Filter
-        </button>
-      </div>
+      <button type="submit" name="filter" class="obtn" style="margin-top:1rem;">Apply Filter</button>
     </form>
   </div>
-  
 
-
-  <div class="card">
-    <h2 class="section-title">All Work Logs</h2>
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="table-header">
-          <tr>
-            <th class="table-cell text-left">Worker</th>
-            <th class="table-cell text-left">Job</th>
-            <th class="table-cell text-left">Date</th>
-            <th class="table-cell text-left">Days Worked</th>
-            <th class="table-cell text-left">Note</th>
-            <th class="table-cell text-left">Total Pay</th>
-            <th class="table-cell text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          {% for log in logs %}
-          <tr>
-            <td class="table-cell">{{ log.worker.name }}</td>
-            <td class="table-cell">{{ log.project.name }}</td>
-            <td class="table-cell">
-              {{ log.start_date.strftime('%m/%d/%Y') }}
-              {% if log.end_date and log.start_date != log.end_date %}
-                – {{ log.end_date.strftime('%m/%d/%Y') }}
-              {% endif %}
-            </td>
-            <td class="table-cell">{{ log.days_worked }}</td>
-            <td class="table-cell">{{ log.note or '-' }}</td>
-            <td class="table-cell">
-              ${{ '%.2f' % (log.days_worked * log.worker.daily_rate) }}
-            </td>
-            <td class="table-cell">
-              <a href="{{ url_for('edit_work_log', log_id=log.id) }}" class="text-blue-500 hover:text-blue-700 mr-2" title="Edit">
-                <span class="material-icons icon">edit</span>
-              </a>
+  <p class="sec-title" style="margin-bottom:.75rem;">All work logs</p>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Worker</th><th>Job</th><th>Date</th><th>Days Worked</th><th>Note</th><th>Total Pay</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="color:var(--ink-900);">{{ log.worker.name }}</td>
+          <td>{{ log.project.name }}</td>
+          <td>{{ log.start_date.strftime('%m/%d/%Y') }}{% if log.end_date and log.start_date != log.end_date %} – {{ log.end_date.strftime('%m/%d/%Y') }}{% endif %}</td>
+          <td>{{ log.days_worked }}</td>
+          <td>{{ log.note or '—' }}</td>
+          <td style="font-weight:600;">${{ '%.2f' % (log.days_worked * log.worker.daily_rate) }}</td>
+          <td>
+            <span style="display:inline-flex;gap:.5rem;align-items:center;">
+              <a href="{{ url_for('edit_work_log', log_id=log.id) }}" class="c-accent" title="Edit"><span class="material-icons" style="font-size:1.15rem;">edit</span></a>
               <form method="POST" action="{{ url_for('delete_work_log', log_id=log.id) }}" style="display:inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="text-red-500 hover:text-red-700" title="Delete" onclick="return confirm('Delete this log?')">
-                  <span class="material-icons icon">delete</span>
-                </button>
+                <button type="submit" class="linkbtn danger" title="Delete" onclick="return confirm('Delete this log?')"><span class="material-icons" style="font-size:1.15rem;">delete</span></button>
               </form>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td class="table-cell text-center" colspan="7">No work logs found.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;color:var(--ink-500);">No work logs found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  {% endblock %}
+</div>
+{% endblock %}
