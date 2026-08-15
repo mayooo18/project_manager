@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Optimal Solutions — Expense & Payment Guide / Guía de Gastos y Pagos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --ink:#000000; --ink2:#1a1a1a; --muted:#555555; --line:#cccccc;
+    --surface:#ffffff; --canvas:#ffffff; --navy:#000000;
+    --accent:#000000; --accent-weak:#f0f0f0;
+    --green:#000000; --green-bg:#f0f0f0; --amber:#000000; --amber-bg:#f0f0f0;
+    --red:#000000; --red-bg:#f0f0f0; --blue:#000000; --blue-bg:#f0f0f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas);color:var(--ink2);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:820px;margin:0 auto;padding:40px 24px 64px;}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:18px;margin-bottom:24px;}
+  .eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:700;}
+  h1{color:var(--ink);font-size:1.75rem;font-weight:800;letter-spacing:-.02em;margin-top:4px;}
+  header.top p{color:var(--muted);font-size:.95rem;margin-top:6px;}
+  h2{color:var(--ink);font-size:1.25rem;font-weight:800;margin:34px 0 6px;letter-spacing:-.01em;}
+  h2 .es{display:block;font-size:.95rem;font-weight:700;color:var(--accent);margin-top:2px;}
+  .en{margin-bottom:4px;}
+  .es-text{color:var(--navy);border-left:3px solid #999999;padding-left:12px;margin:4px 0 12px;font-size:.95rem;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:16px;box-shadow:0 1px 2px rgba(15,23,42,.05);}
+  .step{display:flex;gap:14px;margin-bottom:16px;}
+  .step .num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;font-size:.9rem;display:grid;place-items:center;}
+  .step .body{padding-top:3px;} .step .body b{color:var(--ink);}
+  .fieldname{display:inline-block;background:#f0f0f0;border:1px solid var(--line);border-radius:5px;padding:1px 7px;font-weight:600;color:var(--navy);font-size:.9em;}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.9rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  thead th{background:#f0f0f0;color:var(--navy);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;}
+  .cat{font-weight:700;color:var(--navy);white-space:nowrap;}
+  .note{background:var(--accent-weak);border:1px solid #999999;border-radius:10px;padding:12px 16px;font-size:.9rem;color:#000000;margin:12px 0;}
+  .warn{background:var(--red-bg);border:1px solid #999999;border-radius:10px;padding:12px 16px;font-size:.9rem;color:#000000;margin:12px 0;}
+  .ok{background:var(--green-bg);border:1px solid #999999;border-radius:10px;padding:12px 16px;font-size:.9rem;color:#000000;margin:12px 0;}
+  .path{font-weight:600;color:var(--navy);}
+  ul{margin:6px 0 12px 20px;} li{margin-bottom:4px;}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:640px){.two{grid-template-columns:1fr;}}
+  .do,.dont{border-radius:10px;padding:14px 16px;}
+  .do{background:var(--green-bg);border:1px solid #999999;}
+  .dont{background:var(--red-bg);border:1px solid #999999;}
+  .do h3{color:#000000;} .dont h3{color:#000000;} .do h3,.dont h3{font-size:.95rem;margin-bottom:6px;}
+  .do li,.dont li{font-size:.88rem;}
+  footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem;}
+  @media print{body{background:#fff;}.wrap{max-width:100%;padding:0;}.card,.step,table,.do,.dont{break-inside:avoid;}h2{break-after:avoid;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">Optimal Solutions · Project Manager</div>
+    <h1>Expense &amp; Payment Guide · Guía de Gastos y Pagos</h1>
+    <p>For the person who enters money the company spends — job expenses and worker payments. English + Español. <br>Para quien registra el dinero que gasta la empresa — gastos de trabajos y pagos a trabajadores.</p>
+  </header>
+
+  <!-- WHO -->
+  <h2>Who this is for <span class="es">Para quién es</span></h2>
+  <div class="card">
+    <p class="en">You enter the money the company spends on jobs, so each job's real cost and profit stay accurate. You sign in on the <b>office side</b> with the username and password the owner gave you (an <b>Admin</b> account).</p>
+    <p class="es-text">Usted registra el dinero que la empresa gasta en los trabajos, para que el costo y la ganancia de cada trabajo sean correctos. Entra por el <b>lado de oficina</b> con el usuario y contraseña que le dio el dueño (una cuenta <b>Admin</b>).</p>
+  </div>
+
+  <!-- SIGN IN -->
+  <h2>1 · Sign in and open Expenses <span class="es">Entrar y abrir Gastos</span></h2>
+  <div class="step"><div class="num">1</div><div class="body">
+    <p class="en">Open the app and sign in with your <b>username and password</b>.</p>
+    <p class="es-text">Abra la app e inicie sesión con su <b>usuario y contraseña</b>.</p>
+  </div></div>
+  <div class="step"><div class="num">2</div><div class="body">
+    <p class="en">In the top menu, go to <span class="path">Money → Expenses</span>.</p>
+    <p class="es-text">En el menú de arriba, vaya a <span class="path">Money → Expenses</span> (Dinero → Gastos).</p>
+  </div></div>
+
+  <!-- ADD -->
+  <h2>2 · Add an expense, field by field <span class="es">Agregar un gasto, campo por campo</span></h2>
+  <div class="card">
+    <p class="en">Fill in the <b>Add Expense</b> form at the top of the page:</p>
+    <p class="es-text">Llene el formulario <b>Add Expense</b> (Agregar Gasto) al inicio de la página:</p>
+
+    <div class="step"><div class="num">1</div><div class="body">
+      <p class="en"><span class="fieldname">Project</span> (Job) — <b>Always pick the correct job.</b> This is the most important field: the expense is added to that job's cost. Required.</p>
+      <p class="es-text"><span class="fieldname">Project</span> (Trabajo) — <b>Siempre elija el trabajo correcto.</b> Es el campo más importante: el gasto se suma al costo de ese trabajo. Obligatorio.</p>
+    </div></div>
+
+    <div class="step"><div class="num">2</div><div class="body">
+      <p class="en"><span class="fieldname">Category</span> — choose Materials, Fuel/Gas, Meals/Food, Equipment, or Miscellaneous (see the table below).</p>
+      <p class="es-text"><span class="fieldname">Category</span> (Categoría) — elija Materials, Fuel/Gas, Meals/Food, Equipment o Miscellaneous (vea la tabla abajo).</p>
+    </div></div>
+
+    <div class="step"><div class="num">3</div><div class="body">
+      <p class="en"><span class="fieldname">Description</span> — short note of what it was, e.g. "Home Depot lumber" or "gas for truck."</p>
+      <p class="es-text"><span class="fieldname">Description</span> (Descripción) — nota corta de qué fue, ej. "madera de Home Depot" o "gasolina para la troca."</p>
+    </div></div>
+
+    <div class="step"><div class="num">4</div><div class="body">
+      <p class="en"><span class="fieldname">Amount</span> — the total paid, numbers only (e.g. 124.50).</p>
+      <p class="es-text"><span class="fieldname">Amount</span> (Monto) — el total pagado, solo números (ej. 124.50).</p>
+    </div></div>
+
+    <div class="step"><div class="num">5</div><div class="body">
+      <p class="en"><span class="fieldname">Date</span> — the day of the purchase.</p>
+      <p class="es-text"><span class="fieldname">Date</span> (Fecha) — el día de la compra.</p>
+    </div></div>
+
+    <div class="step"><div class="num">6</div><div class="body">
+      <p class="en"><span class="fieldname">Note</span> — optional extra detail.</p>
+      <p class="es-text"><span class="fieldname">Note</span> (Nota) — detalle extra, opcional.</p>
+    </div></div>
+
+    <div class="step"><div class="num">7</div><div class="body">
+      <p class="en"><span class="fieldname">Receipt photo</span> — optional but recommended. On a phone, tap <b>Take photo / choose file</b> and snap the receipt with the camera. On a computer, choose a photo or PDF.</p>
+      <p class="es-text"><span class="fieldname">Receipt photo</span> (Foto del recibo) — opcional pero recomendado. En el teléfono, toque <b>Take photo / choose file</b> y tome la foto del recibo con la cámara. En computadora, elija una foto o PDF.</p>
+    </div></div>
+
+    <div class="step"><div class="num">8</div><div class="body">
+      <p class="en">Click <b>Add Expense</b>. It appears in the list below and is added to that job.</p>
+      <p class="es-text">Haga clic en <b>Add Expense</b>. Aparece en la lista de abajo y se suma a ese trabajo.</p>
+    </div></div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <h2>3 · What goes in each category <span class="es">Qué va en cada categoría</span></h2>
+  <table>
+    <thead><tr><th>Category / Categoría</th><th>Use it for / Úsela para</th></tr></thead>
+    <tbody>
+      <tr><td class="cat">Materials</td><td>Lumber, wire, pipe, fixtures, hardware — anything built into the job. <br><i>Madera, cable, tubería, accesorios, herrajes — todo lo que se instala en el trabajo.</i></td></tr>
+      <tr><td class="cat">Fuel / Gas</td><td>Gas/diesel for trucks and equipment. <br><i>Gasolina/diésel para trocas y equipo.</i></td></tr>
+      <tr><td class="cat">Meals / Food</td><td>Food and drinks for the crew on the job. <br><i>Comida y bebidas para la cuadrilla en el trabajo.</i></td></tr>
+      <tr><td class="cat">Equipment</td><td>Tool/equipment rental or purchase, machine costs. <br><i>Renta o compra de herramienta/equipo, costos de maquinaria.</i></td></tr>
+      <tr><td class="cat">Miscellaneous</td><td>Anything that doesn't fit above (permit fees, dump fees, small supplies). <br><i>Lo que no encaja arriba (permisos, tiradero, materiales pequeños).</i></td></tr>
+    </tbody>
+  </table>
+  <div class="warn">
+    <b>Do not enter workers' pay / labor as an expense.</b> Labor is handled separately (Time Clock &amp; Payroll). Adding it here would double-count it.<br>
+    <b>No registre el pago de los trabajadores / mano de obra como gasto.</b> La mano de obra se maneja aparte (Reloj y Nómina). Ponerla aquí la contaría dos veces.
+  </div>
+
+  <!-- FIX -->
+  <h2>4 · Fixing a mistake <span class="es">Corregir un error</span></h2>
+  <div class="card">
+    <p class="en">Made a typo or wrong job? In the <b>All Expenses</b> list, click the <b>pencil (edit)</b> icon on that row, fix it, and save.</p>
+    <p class="es-text">¿Se equivocó de número o de trabajo? En la lista <b>All Expenses</b>, haga clic en el ícono del <b>lápiz (editar)</b> en esa fila, corrija y guarde.</p>
+    <div class="warn">
+      You can edit, but <b>only the owner can delete</b> an expense. If something must be removed, ask the owner.<br>
+      Puede editar, pero <b>solo el dueño puede eliminar</b> un gasto. Si hay que borrar algo, pídaselo al dueño.
+    </div>
+  </div>
+
+  <!-- CHECK -->
+  <h2>5 · Check your work <span class="es">Revise su trabajo</span></h2>
+  <div class="card">
+    <p class="en">On the Expenses page, the <b>Spending by category</b> box shows totals per category and a grand total — a quick way to confirm the day's entries look right. Each job's own costs also roll up on its <b>Job Hub</b> (Jobs → open a job).</p>
+    <p class="es-text">En la página de Gastos, el recuadro <b>Spending by category</b> (Gastos por categoría) muestra los totales por categoría y el total general — una forma rápida de confirmar que lo del día se ve bien. Los costos de cada trabajo también se suman en su <b>Job Hub</b> (Jobs → abra un trabajo).</p>
+  </div>
+
+  <!-- PAYMENTS -->
+  <h2>6 · Paying a worker by check <span class="es">Pagar a un trabajador con cheque</span></h2>
+  <div class="card">
+    <p class="en"><b>Worker payments are separate from expenses.</b> Use the Payments page, not the Expenses page.</p>
+    <p class="es-text"><b>Los pagos a trabajadores son distintos de los gastos.</b> Use la página de Pagos, no la de Gastos.</p>
+
+    <div class="step"><div class="num">1</div><div class="body">
+      <p class="en">Go to <span class="path">Money → Payments</span>.</p>
+      <p class="es-text">Vaya a <span class="path">Money → Payments</span> (Dinero → Pagos).</p>
+    </div></div>
+    <div class="step"><div class="num">2</div><div class="body">
+      <p class="en">In <b>Record a payment</b>: choose the <span class="fieldname">Worker</span>, enter the <span class="fieldname">Amount</span> and <span class="fieldname">Payment Date</span>.</p>
+      <p class="es-text">En <b>Record a payment</b> (Registrar un pago): elija el <span class="fieldname">Worker</span> (Trabajador), escriba el <span class="fieldname">Amount</span> (Monto) y la <span class="fieldname">Payment Date</span> (Fecha).</p>
+    </div></div>
+    <div class="step"><div class="num">3</div><div class="body">
+      <p class="en">Set <span class="fieldname">Method</span> to <b>Check</b>, then type the check number in <span class="fieldname">Check #</span> (e.g. 1042).</p>
+      <p class="es-text">Ponga <span class="fieldname">Method</span> (Método) en <b>Check</b> (Cheque), y escriba el número en <span class="fieldname">Check #</span> (ej. 1042).</p>
+    </div></div>
+    <div class="step"><div class="num">4</div><div class="body">
+      <p class="en">Optional: tap <b>Take photo / choose file</b> and snap a photo of the check.</p>
+      <p class="es-text">Opcional: toque <b>Take photo / choose file</b> y tome una foto del cheque.</p>
+    </div></div>
+    <div class="step"><div class="num">5</div><div class="body">
+      <p class="en">Click <b>Add Payment</b>.</p>
+      <p class="es-text">Haga clic en <b>Add Payment</b> (Agregar pago).</p>
+    </div></div>
+    <div class="warn">
+      Don't also enter the same pay as an expense — it would be counted twice.<br>
+      No registre ese mismo pago también como gasto — se contaría dos veces.
+    </div>
+  </div>
+
+  <h2>7 · Looking up a worker's checks <span class="es">Buscar los cheques de un trabajador</span></h2>
+  <div class="card">
+    <div class="step"><div class="num">1</div><div class="body">
+      <p class="en">On the Payments page, go to the <b>Filter payments</b> box.</p>
+      <p class="es-text">En la página de Pagos, vaya al recuadro <b>Filter payments</b> (Filtrar pagos).</p>
+    </div></div>
+    <div class="step"><div class="num">2</div><div class="body">
+      <p class="en">Set <span class="fieldname">Worker</span> to the person and <span class="fieldname">Method</span> to <b>Check</b>, then click <b>Apply Filter</b>.</p>
+      <p class="es-text">Ponga <span class="fieldname">Worker</span> en la persona y <span class="fieldname">Method</span> en <b>Check</b>, y haga clic en <b>Apply Filter</b> (Aplicar filtro).</p>
+    </div></div>
+    <div class="step"><div class="num">3</div><div class="body">
+      <p class="en">The list shows only that worker's checks — each with its <b>Check #</b>, date, amount, and receipt photo.</p>
+      <p class="es-text">La lista muestra solo los cheques de ese trabajador — cada uno con su <b>Check #</b>, fecha, monto y foto del recibo.</p>
+    </div></div>
+    <div class="note">
+      You can also add dates (From / To) to see, for example, all of one worker's checks this year.<br>
+      También puede agregar fechas (From / To) para ver, por ejemplo, todos los cheques de un trabajador este año.
+    </div>
+  </div>
+
+  <!-- DO / DONT -->
+  <h2>Do &amp; Don't <span class="es">Qué sí y qué no</span></h2>
+  <div class="two">
+    <div class="do">
+      <h3>Do / Sí</h3>
+      <ul>
+        <li>Pick the right job every time. <br><i>Elija el trabajo correcto siempre.</i></li>
+        <li>Snap a receipt photo. <br><i>Tome foto del recibo.</i></li>
+        <li>Enter expenses the same day. <br><i>Registre los gastos el mismo día.</i></li>
+        <li>Use the closest category. <br><i>Use la categoría más cercana.</i></li>
+      </ul>
+    </div>
+    <div class="dont">
+      <h3>Don't / No</h3>
+      <ul>
+        <li>Don't enter labor/worker pay here. <br><i>No registre mano de obra aquí.</i></li>
+        <li>Don't guess the job — ask if unsure. <br><i>No adivine el trabajo — pregunte.</i></li>
+        <li>Don't leave the amount blank. <br><i>No deje el monto vacío.</i></li>
+        <li>Don't try to delete — ask the owner. <br><i>No intente eliminar — dígale al dueño.</i></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="ok" style="margin-top:16px;">
+    <b>Quick routine:</b> receipt in hand → Money → Expenses → pick job → category → amount → date → snap photo → Add Expense. Done.<br>
+    <b>Rutina rápida:</b> recibo en mano → Money → Expenses → elija trabajo → categoría → monto → fecha → foto → Add Expense. Listo.
+  </div>
+
+  <footer>
+    Optimal Solutions · Project Manager — Expense Entry Guide / Guía para Registrar Gastos. Print (Ctrl/Cmd + P) · Imprima (Ctrl/Cmd + P).
+  </footer>
+
+</div>
+</body>
+</html>

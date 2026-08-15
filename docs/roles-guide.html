@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Optimal Solutions — Roles & Access Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --ink:#000000; --ink2:#1a1a1a; --muted:#555555; --line:#cccccc; --line2:#999999;
+    --surface:#ffffff; --canvas:#ffffff; --navy:#000000;
+    --accent:#000000; --accent-weak:#f0f0f0;
+    --green:#000000; --green-bg:#f0f0f0; --amber:#000000; --amber-bg:#f0f0f0;
+    --red:#000000; --blue:#000000; --blue-bg:#f0f0f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas);color:var(--ink2);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:860px;margin:0 auto;padding:40px 24px 64px;}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:18px;margin-bottom:32px;}
+  .eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:700;}
+  h1{color:var(--ink);font-size:1.9rem;font-weight:800;letter-spacing:-.02em;margin-top:4px;}
+  header.top p{color:var(--muted);font-size:.95rem;margin-top:6px;}
+  h2{color:var(--ink);font-size:1.3rem;font-weight:800;margin:40px 0 14px;letter-spacing:-.01em;}
+  h3{color:var(--navy);font-size:1.05rem;font-weight:700;margin:22px 0 8px;}
+  p{margin-bottom:10px;}
+  .lead{font-size:1.02rem;color:var(--ink2);}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin-bottom:16px;box-shadow:0 1px 2px rgba(15,23,42,.05);}
+  .role-card{border-left:4px solid var(--accent);}
+  .role-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+  .role-head h3{margin:0;font-size:1.2rem;color:var(--ink);}
+  .tag{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 10px;border-radius:999px;border:1px solid #999999;}
+  .tag.office{background:var(--blue-bg);color:var(--blue);}
+  .tag.field{background:var(--amber-bg);color:var(--amber);}
+  .role-sub{color:var(--muted);font-size:.88rem;margin-bottom:14px;}
+  .can, .cant{list-style:none;margin:6px 0 6px;}
+  .can li, .cant li{position:relative;padding-left:26px;margin-bottom:5px;font-size:.93rem;}
+  .can li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:800;}
+  .cant li::before{content:"✕";position:absolute;left:0;color:var(--red);font-weight:800;}
+  .label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:12px;margin-bottom:2px;}
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:.9rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);}
+  thead th{background:#f0f0f0;color:var(--navy);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;}
+  td.c{text-align:center;font-weight:700;}
+  .yes{color:var(--green);} .no{color:var(--red);}
+  .step{display:flex;gap:14px;margin-bottom:14px;}
+  .step .num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;font-size:.85rem;display:grid;place-items:center;}
+  .step .body{padding-top:2px;}
+  .step .body b{color:var(--ink);}
+  .note{background:var(--accent-weak);border:1px solid #999999;border-radius:10px;padding:12px 16px;font-size:.9rem;color:#000000;margin:10px 0;}
+  code{background:#f0f0f0;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.85em;color:var(--navy);}
+  .path{font-weight:600;color:var(--navy);}
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem;}
+  @media print{
+    body{background:#fff;} .wrap{max-width:100%;padding:0;}
+    .card{break-inside:avoid;box-shadow:none;} h2{break-after:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">Optimal Solutions · Project Manager</div>
+    <h1>Roles &amp; Access Guide</h1>
+    <p>Who can do what in the system, and how to set each person up. Three roles: <b>Owner</b>, <b>Admin / Foreman</b>, and <b>Worker (Crew)</b>.</p>
+  </header>
+
+  <p class="lead">There are <b>two separate ways</b> to get into the system:</p>
+  <div class="card">
+    <p><span class="tag office">Office login</span> &nbsp;A <b>username &amp; password</b> at the main sign-in page. This is for the <b>Owner</b> and <b>Admins/Foremen</b> — the people who run jobs, money, and paperwork.</p>
+    <p style="margin-bottom:0;"><span class="tag field">Crew login</span> &nbsp;A <b>phone number &amp; PIN</b> on the crew portal. This is for <b>Workers</b> in the field. No username, no password — like a digital time clock. Workers never see the office side.</p>
+  </div>
+
+  <!-- ROLES -->
+  <h2>The three roles</h2>
+
+  <div class="card role-card">
+    <div class="role-head"><h3>Owner</h3><span class="tag office">Office login</span></div>
+    <div class="role-sub">You. Full control of the entire system — everything an Admin can do, plus the sensitive actions below.</div>
+    <div class="label">Owner-only powers</div>
+    <ul class="can">
+      <li><b>Manage user accounts</b> — create Admin/Foreman logins, change roles, activate or deactivate people (<span class="path">Tools → Users</span>)</li>
+      <li><b>Delete &amp; void records</b> — delete a job, worker, customer, proposal, contract, invoice, change order, payment, expense, or income</li>
+    </ul>
+    <div class="label">Plus everything an Admin can do</div>
+    <p style="font-size:.9rem;margin-bottom:0;">Create and edit jobs, proposals, contracts, invoices, permits, licenses, subs, waivers; log work and expenses; approve crew time; assign tasks; run the client portal.</p>
+  </div>
+
+  <div class="card role-card">
+    <div class="role-head"><h3>Admin / Foreman</h3><span class="tag office">Office login</span></div>
+    <div class="role-sub">A trusted office/lead user the Owner creates. Runs the day-to-day, but can't delete money records or manage accounts.</div>
+    <div class="label">Can do</div>
+    <ul class="can">
+      <li>See everything — full visibility of jobs, money, and compliance</li>
+      <li>Create &amp; edit jobs, proposals, contracts, invoices, change orders</li>
+      <li>Log work, expenses, income, and payments</li>
+      <li>Approve crew time on the Time Clock (turns hours into labor cost &amp; payroll)</li>
+      <li>Assign tasks to workers; set a worker's phone &amp; PIN</li>
+      <li>Manage permits, licenses, subs, waivers, vehicles, reminders; run the client portal</li>
+    </ul>
+    <div class="label">Cannot do</div>
+    <ul class="cant">
+      <li>Delete or void financial records (payments, expenses, income, invoices, contracts, proposals, change orders)</li>
+      <li>Delete a job, worker, or customer</li>
+      <li>Manage user accounts (create logins, change roles)</li>
+    </ul>
+    <div class="note">If an Admin tries an owner-only action, the system stops them with <i>"That action is owner-only."</i> and sends them home. Nothing is deleted.</div>
+  </div>
+
+  <div class="card role-card">
+    <div class="role-head"><h3>Worker (Crew)</h3><span class="tag field">Crew login</span></div>
+    <div class="role-sub">Your field crew. They use the crew portal on their phone with a phone number + PIN. They only ever see their own work.</div>
+    <div class="label">Can do</div>
+    <ul class="can">
+      <li>Sign in with their phone number and PIN</li>
+      <li>See the tasks assigned to <b>them individually</b></li>
+      <li>Start a task, mark it done, or reopen it</li>
+      <li>Clock in to one assigned job at a time, and clock out</li>
+    </ul>
+    <div class="label">Cannot do</div>
+    <ul class="cant">
+      <li>See other workers' tasks, or any jobs/money/office pages</li>
+      <li>Assign tasks or approve their own time</li>
+      <li>Log in on the office side (no username/password)</li>
+    </ul>
+  </div>
+
+  <!-- COMPARISON -->
+  <h2>Quick comparison</h2>
+  <table>
+    <thead>
+      <tr><th>Action</th><th style="text-align:center;">Owner</th><th style="text-align:center;">Admin / Foreman</th><th style="text-align:center;">Worker</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>View jobs, money &amp; reports</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Create / edit jobs, quotes, invoices</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Log expenses, income, payments</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Approve crew time → payroll</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Assign tasks to workers</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Delete / void money records</td><td class="c yes">✓</td><td class="c no">✕</td><td class="c no">✕</td></tr>
+      <tr><td>Delete jobs / workers / customers</td><td class="c yes">✓</td><td class="c no">✕</td><td class="c no">✕</td></tr>
+      <tr><td>Manage user accounts</td><td class="c yes">✓</td><td class="c no">✕</td><td class="c no">✕</td></tr>
+      <tr><td>See own tasks &amp; clock in/out</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+    </tbody>
+  </table>
+
+  <!-- HOW TO USE -->
+  <h2>How to set people up</h2>
+
+  <h3>Add an Admin / Foreman (Owner only)</h3>
+  <div class="step"><div class="num">1</div><div class="body">Go to <span class="path">Tools → Users</span>.</div></div>
+  <div class="step"><div class="num">2</div><div class="body">Enter a <b>username</b> and a <b>temporary password</b>, then create the account. New office accounts are <b>Admin/Foreman</b> by default.</div></div>
+  <div class="step"><div class="num">3</div><div class="body">Share the username/password with them. They sign in at the main login page. Ask them to change the password.</div></div>
+  <div class="note">Keep <b>Owner</b> to yourself (and maybe one trusted backup). Only the Owner can delete money records or manage accounts.</div>
+
+  <h3>Set up a Worker for crew login</h3>
+  <div class="step"><div class="num">1</div><div class="body">Go to <span class="path">Money → Workers</span> and add the worker (or edit an existing one).</div></div>
+  <div class="step"><div class="num">2</div><div class="body">Fill in their <b>Phone number</b> and a <b>4–6 digit PIN</b>. That phone + PIN is how they sign in — there's no username or password.</div></div>
+  <div class="step"><div class="num">3</div><div class="body">Give them the crew portal link and their PIN. They open it on their phone and sign in with their phone number + PIN.</div></div>
+  <div class="note">Forgot PIN? Any Owner/Admin just re-sets the PIN on the worker's record. The old PIN stops working.</div>
+
+  <h3>Assign work to a crew member</h3>
+  <div class="step"><div class="num">1</div><div class="body">Open the job: <span class="path">Jobs → (pick the job) → Job Hub</span>.</div></div>
+  <div class="step"><div class="num">2</div><div class="body">In the <b>Crew tasks</b> panel, type the task, choose the worker, set a due date (optional), and click <b>Assign</b>.</div></div>
+  <div class="step"><div class="num">3</div><div class="body">The task appears in that worker's crew portal. They Start it and Mark it done from their phone; you see the status update on the Job Hub.</div></div>
+
+  <h2>The daily crew flow</h2>
+  <div class="step"><div class="num">1</div><div class="body"><b>Worker</b> opens the crew portal, signs in with phone + PIN.</div></div>
+  <div class="step"><div class="num">2</div><div class="body"><b>Worker</b> picks the job and taps <b>Clock in</b> (one job at a time). They work through their tasks — Start / Mark done.</div></div>
+  <div class="step"><div class="num">3</div><div class="body"><b>Worker</b> taps <b>Clock out</b> at the end.</div></div>
+  <div class="step"><div class="num">4</div><div class="body"><b>Owner / Admin</b> opens <span class="path">Money → Time Clock</span>, reviews the hours, and clicks <b>Approve</b>. Approving turns those hours into a labor cost on that job — and it shows up in <span class="path">Money → Payroll</span> for the week.</div></div>
+  <div class="note">Labor flows in <b>automatically</b> from approved crew time. The manual "record a labor payment" checkbox on Work Logs is only for traditional workers who don't clock in — so nothing gets counted twice.</div>
+
+  <footer>
+    Optimal Solutions · Project Manager — Roles &amp; Access Guide. Print this page (Ctrl/Cmd + P) to share a copy.
+    Owner-only actions and crew-vs-office separation are enforced by the system, not just by convention.
+  </footer>
+
+</div>
+</body>
+</html>

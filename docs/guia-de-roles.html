@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Optimal Solutions — Guía de Roles y Accesos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --ink:#000000; --ink2:#1a1a1a; --muted:#555555; --line:#cccccc; --line2:#999999;
+    --surface:#ffffff; --canvas:#ffffff; --navy:#000000;
+    --accent:#000000; --accent-weak:#f0f0f0;
+    --green:#000000; --green-bg:#f0f0f0; --amber:#000000; --amber-bg:#f0f0f0;
+    --red:#000000; --red-bg:#f0f0f0; --blue:#000000; --blue-bg:#f0f0f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas);color:var(--ink2);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:880px;margin:0 auto;padding:40px 24px 64px;}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:18px;margin-bottom:28px;}
+  .eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:700;}
+  h1{color:var(--ink);font-size:1.9rem;font-weight:800;letter-spacing:-.02em;margin-top:4px;}
+  header.top p{color:var(--muted);font-size:.95rem;margin-top:6px;}
+  h2{color:var(--ink);font-size:1.3rem;font-weight:800;margin:38px 0 12px;letter-spacing:-.01em;padding-top:8px;}
+  h3{color:var(--navy);font-size:1.08rem;font-weight:700;margin:20px 0 8px;}
+  p{margin-bottom:10px;} ul,ol{margin:6px 0 12px 4px;}
+  .lead{font-size:1.02rem;}
+  .toc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 22px;margin-bottom:20px;}
+  .toc a{color:var(--navy);text-decoration:none;font-size:.9rem;font-weight:500;}
+  .toc a:hover{color:var(--accent);}
+  .toc ol{columns:2;column-gap:32px;margin:4px 0 0 18px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin-bottom:16px;box-shadow:0 1px 2px rgba(15,23,42,.05);}
+  .role-card{border-left:4px solid var(--accent);}
+  .role-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+  .role-head h3{margin:0;font-size:1.25rem;color:var(--ink);}
+  .tag{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 10px;border-radius:999px;border:1px solid #999999;}
+  .tag.office{background:var(--blue-bg);color:var(--blue);}
+  .tag.field{background:var(--amber-bg);color:var(--amber);}
+  .can,.cant{list-style:none;margin:6px 0;}
+  .can li,.cant li{position:relative;padding-left:26px;margin-bottom:5px;font-size:.93rem;}
+  .can li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:800;}
+  .cant li::before{content:"✕";position:absolute;left:0;color:var(--red);font-weight:800;}
+  .label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:14px;margin-bottom:2px;}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.9rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  thead th{background:#f0f0f0;color:var(--navy);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;}
+  td.c{text-align:center;font-weight:700;}
+  .yes{color:var(--green);} .no{color:var(--red);}
+  .step{display:flex;gap:14px;margin-bottom:14px;}
+  .step .num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;font-size:.85rem;display:grid;place-items:center;}
+  .step .body{padding-top:2px;} .step .body b{color:var(--ink);}
+  .note{background:var(--accent-weak);border:1px solid #999999;border-radius:10px;padding:12px 16px;font-size:.9rem;color:#000000;margin:12px 0;}
+  .warn{background:var(--red-bg);border:1px solid #999999;border-radius:10px;padding:12px 16px;font-size:.9rem;color:#000000;margin:12px 0;}
+  .path{font-weight:600;color:var(--navy);}
+  .q{font-weight:700;color:var(--ink);margin-top:14px;}
+  .glossary dt{font-weight:700;color:var(--navy);margin-top:10px;}
+  .glossary dd{margin-left:0;font-size:.92rem;}
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem;}
+  @media print{body{background:#fff;}.wrap{max-width:100%;padding:0;}.card,.step,table{break-inside:avoid;}h2{break-after:avoid;}.toc{display:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">Optimal Solutions · Project Manager</div>
+    <h1>Guía de Roles y Accesos <span style="font-weight:500;color:var(--muted);font-size:1rem;">(detallada)</span></h1>
+    <p>Referencia completa: quién puede hacer qué, por qué existen los límites, cómo dar de alta a cada persona y respuestas a las dudas más comunes.</p>
+  </header>
+
+  <nav class="toc">
+    <div class="label" style="margin-top:0;">Contenido</div>
+    <ol>
+      <li><a href="#access">Dos formas de entrar</a></li>
+      <li><a href="#owner">Dueño (Owner)</a></li>
+      <li><a href="#admin">Admin / Capataz</a></li>
+      <li><a href="#worker">Trabajador (Cuadrilla)</a></li>
+      <li><a href="#compare">Comparación completa</a></li>
+      <li><a href="#setup-admin">Crear un Admin</a></li>
+      <li><a href="#setup-worker">Dar de alta un Trabajador</a></li>
+      <li><a href="#tasks">Asignar tareas</a></li>
+      <li><a href="#daily">Flujo diario de la cuadrilla</a></li>
+      <li><a href="#faq">Preguntas frecuentes</a></li>
+      <li><a href="#glossary">Glosario</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="access">1 · Dos formas de entrar</h2>
+  <p class="lead">El sistema tiene dos entradas totalmente separadas. Cada persona usa una u otra — nunca las dos.</p>
+  <div class="card">
+    <p><span class="tag office">Acceso de oficina</span> &nbsp;Con <b>usuario y contraseña</b> en la página de inicio de sesión. Para el <b>Dueño</b> y los <b>Admins/Capataces</b> — quienes manejan los trabajos, el dinero, las propuestas, las facturas y el papeleo.</p>
+    <p style="margin-bottom:0;"><span class="tag field">Acceso de cuadrilla</span> &nbsp;Con <b>número de teléfono y PIN</b> en el portal de la cuadrilla. Para los <b>Trabajadores</b> en el campo. Sin usuario ni contraseña — funciona como un reloj checador digital. Los trabajadores solo ven sus propias tareas y el reloj; nunca llegan a las páginas de oficina.</p>
+  </div>
+  <div class="note">¿Por qué dos entradas? Mantiene la información de dinero y de clientes fuera de los teléfonos en el campo, y hace que checar la entrada sea muy sencillo para la cuadrilla — solo un teléfono y un PIN.</div>
+
+  <h2 id="owner">2 · Dueño (Owner)</h2>
+  <div class="card role-card">
+    <div class="role-head"><h3>Dueño</h3><span class="tag office">Acceso de oficina</span></div>
+    <p class="role-sub" style="color:var(--muted);font-size:.9rem;">Usted (y opcionalmente un respaldo de confianza). Control total del sistema.</p>
+    <div class="label">Poderes exclusivos del Dueño (nadie más puede hacerlos)</div>
+    <ul class="can">
+      <li><b>Administrar cuentas de usuario</b> — crear accesos de Admin/Capataz, cambiar el rol de alguien, y activar o desactivar cuentas (<span class="path">Tools → Users</span>).</li>
+      <li><b>Eliminar y anular registros</b> — borrar un trabajo, trabajador o cliente, y eliminar cualquier registro de dinero: propuesta, contrato, factura, orden de cambio, pago, gasto o ingreso.</li>
+    </ul>
+    <div class="label">Además, todo lo que puede hacer un Admin</div>
+    <p style="font-size:.9rem;margin-bottom:0;">Crear/editar trabajos, propuestas, contratos, facturas y órdenes de cambio; registrar trabajo, gastos, ingresos y pagos; aprobar el tiempo de la cuadrilla; asignar tareas; administrar permisos, licencias, subcontratistas, exenciones (waivers), vehículos y recordatorios; manejar el portal del cliente.</p>
+  </div>
+  <div class="note">Guarde el acceso de Dueño solo para usted. Como únicamente el Dueño puede eliminar registros de dinero, es imposible que el personal borre algo por error o a propósito — simplemente no tienen ese botón.</div>
+
+  <h2 id="admin">3 · Admin / Capataz</h2>
+  <div class="card role-card">
+    <div class="role-head"><h3>Admin / Capataz</h3><span class="tag office">Acceso de oficina</span></div>
+    <p class="role-sub" style="color:var(--muted);font-size:.9rem;">Una persona de oficina o líder de confianza que crea el Dueño. Maneja el día a día. Las cuentas nuevas de oficina son Admin por defecto.</p>
+    <div class="label">Puede hacer</div>
+    <ul class="can">
+      <li><b>Ver todo</b> — visibilidad completa de trabajos, dinero y cumplimiento.</li>
+      <li><b>Ventas y cobranza</b> — crear y editar propuestas, contratos, facturas y órdenes de cambio; enviarlos a los clientes.</li>
+      <li><b>Dinero</b> — registrar gastos, ingresos y pagos; registrar trabajo.</li>
+      <li><b>Cuadrilla y tiempo</b> — asignar tareas, poner el teléfono y PIN de un trabajador, y <b>aprobar el tiempo de la cuadrilla</b> en el Reloj (esto convierte las horas en costo de mano de obra y nómina).</li>
+      <li><b>Cumplimiento</b> — administrar permisos e inspecciones, licencias, subcontratistas, exenciones/certificados, vehículos y recordatorios.</li>
+      <li><b>Portal del cliente</b> — activar, compartir y revocar el enlace privado del cliente.</li>
+    </ul>
+    <div class="label">No puede hacer</div>
+    <ul class="cant">
+      <li>Eliminar o anular registros financieros (pagos, gastos, ingresos, facturas, contratos, propuestas, órdenes de cambio).</li>
+      <li>Eliminar un trabajo, trabajador o cliente.</li>
+      <li>Administrar cuentas de usuario (crear accesos, cambiar roles, desactivar personas).</li>
+    </ul>
+    <div class="warn">Si un Admin intenta una acción exclusiva del Dueño, el sistema la bloquea con <i>"That action is owner-only."</i> ("Esa acción es solo para el Dueño") y lo regresa al tablero. Nada se cambia ni se elimina — el límite lo hace cumplir el software, no solo la confianza.</div>
+  </div>
+
+  <h2 id="worker">4 · Trabajador (Cuadrilla)</h2>
+  <div class="card role-card">
+    <div class="role-head"><h3>Trabajador (Cuadrilla)</h3><span class="tag field">Acceso de cuadrilla</span></div>
+    <p class="role-sub" style="color:var(--muted);font-size:.9rem;">Su personal de campo. Usan el portal de la cuadrilla en su teléfono con número y PIN.</p>
+    <div class="label">Puede hacer</div>
+    <ul class="can">
+      <li>Iniciar sesión con su <b>número de teléfono + PIN</b>.</li>
+      <li>Ver las tareas asignadas <b>solo a él/ella</b> — no las de los demás.</li>
+      <li>Empezar una tarea, marcarla como terminada, o reabrirla.</li>
+      <li>Checar entrada en <b>un solo trabajo a la vez</b>, y checar salida.</li>
+    </ul>
+    <div class="label">No puede hacer</div>
+    <ul class="cant">
+      <li>Ver las tareas de otros, ni ningún trabajo, dinero o página de oficina.</li>
+      <li>Asignar tareas ni aprobar su propio tiempo.</li>
+      <li>Entrar por el lado de oficina — no tienen usuario ni contraseña.</li>
+    </ul>
+  </div>
+  <div class="note">Un trabajador solo puede checar entrada en un trabajo donde tenga una tarea asignada. Asigne al menos una tarea en el trabajo y ese trabajo aparecerá en su lista de "Clock in".</div>
+
+  <h2 id="compare">5 · Comparación completa</h2>
+  <table>
+    <thead><tr><th>Acción</th><th style="text-align:center;">Dueño</th><th style="text-align:center;">Admin / Capataz</th><th style="text-align:center;">Trabajador</th></tr></thead>
+    <tbody>
+      <tr><td>Ver trabajos, dinero y reportes</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Crear / editar trabajos</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Crear / editar propuestas, contratos, facturas, órdenes de cambio</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Registrar gastos, ingresos, pagos</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Aprobar tiempo de cuadrilla → nómina</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Asignar tareas; poner teléfono/PIN</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Administrar permisos, licencias, subs, vehículos</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td>Manejar el portal del cliente</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+      <tr><td><b>Eliminar / anular registros de dinero</b></td><td class="c yes">✓</td><td class="c no">✕</td><td class="c no">✕</td></tr>
+      <tr><td><b>Eliminar trabajos / trabajadores / clientes</b></td><td class="c yes">✓</td><td class="c no">✕</td><td class="c no">✕</td></tr>
+      <tr><td><b>Administrar cuentas de usuario</b></td><td class="c yes">✓</td><td class="c no">✕</td><td class="c no">✕</td></tr>
+      <tr><td>Ver sus propias tareas y checar entrada/salida</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="setup-admin">6 · Crear un Admin / Capataz (solo el Dueño)</h2>
+  <div class="step"><div class="num">1</div><div class="body">Inicie sesión como Dueño y vaya a <span class="path">Tools → Users</span>.</div></div>
+  <div class="step"><div class="num">2</div><div class="body">Escriba un <b>usuario</b> y una <b>contraseña temporal</b>, y cree la cuenta. Las cuentas nuevas de oficina se crean como <b>Admin/Capataz</b>.</div></div>
+  <div class="step"><div class="num">3</div><div class="body">Entregue a la persona su usuario y contraseña temporal. Inicia sesión en la página principal y debe cambiar la contraseña de inmediato.</div></div>
+  <div class="step"><div class="num">4</div><div class="body">Para quitar el acceso más adelante, <b>desactive</b> la cuenta en la página de Usuarios (no la elimine, para conservar el historial). Las cuentas desactivadas no pueden entrar.</div></div>
+
+  <h2 id="setup-worker">7 · Dar de alta un Trabajador para la cuadrilla</h2>
+  <div class="step"><div class="num">1</div><div class="body">Vaya a <span class="path">Money → Workers</span> y agregue al trabajador (o edite uno existente).</div></div>
+  <div class="step"><div class="num">2</div><div class="body">Escriba su <b>Tarifa diaria (Daily Rate)</b>, <b>Número de teléfono</b> y un <b>PIN de 4 a 6 dígitos</b>. El teléfono + PIN es su acceso — no hay usuario ni contraseña.</div></div>
+  <div class="step"><div class="num">3</div><div class="body">Envíele el enlace del portal de la cuadrilla y dígale su PIN. Lo abre en su teléfono e inicia sesión con teléfono + PIN.</div></div>
+  <div class="note">La tarifa diaria es la base del costo de mano de obra: el sistema usa <b>tarifa diaria ÷ 8</b> como tarifa por hora cuando convierte el tiempo aprobado en costo de mano de obra del trabajo.</div>
+
+  <h2 id="tasks">8 · Asignar trabajo a un miembro de la cuadrilla</h2>
+  <div class="step"><div class="num">1</div><div class="body">Abra el trabajo: <span class="path">Jobs → (elija el trabajo) → Job Hub</span>.</div></div>
+  <div class="step"><div class="num">2</div><div class="body">En el panel <b>Crew tasks</b>, escriba la tarea, elija al trabajador, ponga una fecha límite (opcional) y haga clic en <b>Assign</b>.</div></div>
+  <div class="step"><div class="num">3</div><div class="body">La tarea aparece en el portal del trabajador. Cuando él la empieza (Start) y la marca terminada (Mark done), el estado se actualiza en el Job Hub para que vea el avance.</div></div>
+
+  <h2 id="daily">9 · El flujo diario de la cuadrilla</h2>
+  <div class="step"><div class="num">1</div><div class="body">El <b>Trabajador</b> abre el portal y entra con teléfono + PIN.</div></div>
+  <div class="step"><div class="num">2</div><div class="body">El <b>Trabajador</b> elige el trabajo y toca <b>Clock in</b> (un trabajo a la vez), hace sus tareas, y toca <b>Clock out</b> al final del día.</div></div>
+  <div class="step"><div class="num">3</div><div class="body">El <b>Dueño / Admin</b> abre <span class="path">Money → Time Clock</span>, revisa las horas y hace clic en <b>Approve</b>. Al aprobar, ese tiempo se registra como costo de mano de obra del trabajo.</div></div>
+  <div class="step"><div class="num">4</div><div class="body">La mano de obra aprobada aparece en <span class="path">Money → Payroll</span> por semana (lun–dom), para ver cuánto se le debe a cada quien.</div></div>
+  <div class="note">La mano de obra entra <b>automáticamente</b> del tiempo aprobado de la cuadrilla. La opción manual de "registrar un pago de mano de obra" es solo para trabajadores tradicionales que no checan — así nada se cuenta dos veces.</div>
+
+  <h2 id="faq">10 · Preguntas frecuentes</h2>
+  <p class="q">Un trabajador olvidó su PIN.</p>
+  <p>Cualquier Dueño o Admin abre <span class="path">Money → Workers</span>, edita al trabajador y pone un PIN nuevo. El anterior deja de funcionar de inmediato.</p>
+  <p class="q">El trabajo de un trabajador no aparece al checar entrada.</p>
+  <p>Solo puede checar en trabajos donde tenga una tarea. Asígnele al menos una tarea en ese trabajo (Job Hub → Crew tasks) y aparecerá.</p>
+  <p class="q">Un Admin necesita eliminar un pago o gasto equivocado.</p>
+  <p>Los Admin no pueden eliminar registros de dinero — es solo del Dueño, a propósito. Pida al Dueño que lo elimine, o el Admin puede <b>editar</b> el registro para corregirlo.</p>
+  <p class="q">Alguien dejó la empresa.</p>
+  <p>Personal de oficina: desactive su cuenta (<span class="path">Tools → Users</span>). Cuadrilla: póngalo como Inactivo en la página de Workers — ya no puede checar, y su historial se conserva.</p>
+  <p class="q">¿Un capataz puede ver ganancias y precios?</p>
+  <p>Sí. El Admin/Capataz ve todo de trabajos y dinero. Si no quiere que un líder vea todo, déjelo como Trabajador (cuadrilla) — la cuadrilla solo ve sus tareas y el reloj.</p>
+
+  <h2 id="glossary">11 · Glosario</h2>
+  <dl class="glossary">
+    <dt>Job (Trabajo)</dt><dd>El proyecto que está construyendo. Los trabajos se crean automáticamente cuando una propuesta aprobada se vuelve contrato; todo (dinero, permisos, tareas, archivos) cuelga del "Job Hub".</dd>
+    <dt>Proposal (Propuesta)</dt><dd>Una cotización que envía al cliente para aprobar y firmar electrónicamente.</dd>
+    <dt>Contract (Contrato)</dt><dd>El acuerdo firmado, con un calendario de cobros por etapas (draw schedule).</dd>
+    <dt>Change Order (Orden de cambio)</dt><dd>Un agregado a un contrato firmado, que el cliente aprueba y firma.</dd>
+    <dt>Invoice (Factura)</dt><dd>Una cuenta enviada al cliente; se puede pagar en línea.</dd>
+    <dt>Client Portal (Portal del cliente)</dt><dd>Un enlace web privado, sin contraseña, para que el cliente vea el estado de su trabajo, facturas y documentos.</dd>
+    <dt>Time Punch (Checada)</dt><dd>Una entrada/salida de la cuadrilla. Una vez aprobada, se vuelve costo de mano de obra del trabajo.</dd>
+    <dt>Work Log (Registro de trabajo)</dt><dd>Un registro manual de días trabajados, para quienes no checan en la app.</dd>
+    <dt>Payroll (Nómina)</dt><dd>El total semanal (lun–dom) de lo que se le debe a cada trabajador, formado por el tiempo aprobado y los registros de trabajo.</dd>
+  </dl>
+
+  <footer>
+    Optimal Solutions · Project Manager — Guía de Roles y Accesos. Imprima (Ctrl/Cmd + P) para compartir.
+    Las acciones exclusivas del Dueño y la separación oficina/cuadrilla las hace cumplir el software.
+  </footer>
+
+</div>
+</body>
+</html>
