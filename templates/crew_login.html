@@ -4,44 +4,59 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Crew Sign In</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style> body { background:#000; font-family: Inter, system-ui, sans-serif; } </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --canvas:#0e1520; --surface:#172130; --border:#253243; --border-strong:#37465b;
+      --ink:#eef2f8; --ink2:#c3cddb; --muted:#8a97ab; --accent:#f97316; --accent-hover:#fb8c47;
+      --red-bg:rgba(239,68,68,.16); --red-fg:#f87171;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas);color:var(--ink2);
+         min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:1.5rem;-webkit-font-smoothing:antialiased;}
+    .wrap{max-width:380px;width:100%;margin:0 auto;}
+    .head{text-align:center;margin-bottom:2rem;}
+    .mark{width:56px;height:56px;border-radius:14px;background:var(--accent);display:grid;place-items:center;margin:0 auto .75rem;font-size:1.6rem;}
+    h1{color:var(--ink);font-size:1.5rem;font-weight:800;}
+    .head p{color:var(--muted);font-size:.9rem;margin-top:.2rem;}
+    label{display:block;color:var(--ink2);font-size:.85rem;font-weight:600;margin-bottom:.4rem;}
+    .fld{width:100%;font-size:1.15rem;padding:.85rem 1rem;border-radius:12px;background:var(--surface);border:1px solid var(--border-strong);color:var(--ink);}
+    .fld:focus{outline:none;border-color:var(--accent);}
+    .field{margin-bottom:1rem;}
+    .btn{width:100%;font-size:1.1rem;font-weight:700;padding:.9rem;border-radius:12px;background:var(--accent);color:#fff;border:none;cursor:pointer;}
+    .btn:hover{background:var(--accent-hover);}
+    .flash{border-radius:12px;padding:.75rem;font-size:.9rem;text-align:center;margin-bottom:1rem;background:var(--red-bg);color:var(--red-fg);border:1px solid rgba(248,113,113,.4);}
+    .foot{text-align:center;color:var(--muted);font-size:.78rem;margin-top:1.5rem;}
+  </style>
 </head>
-<body class="bg-black min-h-screen flex flex-col justify-center px-6">
-  <div class="max-w-sm w-full mx-auto">
-    <div class="text-center mb-8">
-      <div class="mx-auto w-14 h-14 rounded-xl flex items-center justify-center mb-3" style="background:#7c2d12;">
-        <span class="text-2xl" style="color:#ff8c5a;">👷</span>
-      </div>
-      <h1 class="text-white text-2xl font-bold">Crew Sign In</h1>
-      <p class="text-gray-500 text-sm mt-1">Enter your phone number and PIN.</p>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div class="mark">👷</div>
+      <h1>Crew Sign In</h1>
+      <p>Enter your phone number and PIN.</p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-      <div class="mb-4 rounded-lg p-3 text-sm text-center border border-red-700 bg-red-900/30 text-red-200">{{ message }}</div>
-      {% endfor %}
+      {% for category, message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
     {% endwith %}
 
-    <form method="POST" action="{{ url_for('crew.login') }}" class="space-y-4">
+    <form method="POST" action="{{ url_for('crew.login') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div>
-        <label class="block text-gray-400 text-sm mb-1">Phone number</label>
-        <input name="phone" type="tel" inputmode="tel" autocomplete="tel" required
-               class="w-full text-lg px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 text-white focus:outline-none focus:border-orange-500"
-               placeholder="(555) 123-4567"/>
+      <div class="field">
+        <label>Phone number</label>
+        <input name="phone" type="tel" inputmode="tel" autocomplete="tel" required class="fld" placeholder="(555) 123-4567"/>
       </div>
-      <div>
-        <label class="block text-gray-400 text-sm mb-1">PIN</label>
-        <input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" required
-               class="w-full text-lg tracking-widest px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 text-white focus:outline-none focus:border-orange-500"
-               placeholder="••••"/>
+      <div class="field">
+        <label>PIN</label>
+        <input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" required class="fld" style="letter-spacing:.3em;" placeholder="••••"/>
       </div>
-      <button type="submit"
-              class="w-full text-lg font-semibold py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">Sign in</button>
+      <button type="submit" class="btn">Sign in</button>
     </form>
 
-    <p class="text-gray-600 text-xs text-center mt-6">Forgot your PIN? Ask your foreman to reset it.</p>
+    <p class="foot">Forgot your PIN? Ask your foreman to reset it.</p>
   </div>
 </body>
 </html>
