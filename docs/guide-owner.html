@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Optimal Solutions — Owner Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root{--ink:#000;--ink2:#1a1a1a;--muted:#555;--line:#ccc;--surface:#fff;--canvas:#fff;--navy:#000;--accent:#000;--soft:#f0f0f0;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas);color:var(--ink2);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:820px;margin:0 auto;padding:40px 24px 64px;}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:18px;margin-bottom:26px;}
+  .eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700;}
+  .role-badge{display:inline-block;border:1px solid #999;border-radius:999px;padding:2px 12px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
+  h1{color:var(--ink);font-size:1.9rem;font-weight:800;letter-spacing:-.02em;}
+  header.top p{color:var(--muted);font-size:.95rem;margin-top:6px;}
+  h2{color:var(--ink);font-size:1.25rem;font-weight:800;margin:32px 0 10px;letter-spacing:-.01em;}
+  p{margin-bottom:10px;} ul{margin:6px 0 12px 20px;} li{margin-bottom:5px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:16px;}
+  .card.hi{border-left:4px solid var(--accent);}
+  .label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 4px;}
+  .can li::marker{content:"✓  ";font-weight:800;}
+  .step{display:flex;gap:14px;margin-bottom:14px;}
+  .step .num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;font-size:.85rem;display:grid;place-items:center;}
+  .step .body{padding-top:2px;} .step .body b{color:var(--ink);}
+  .note{background:var(--soft);border:1px solid #999;border-radius:10px;padding:12px 16px;font-size:.9rem;color:#000;margin:12px 0;}
+  .path{font-weight:600;color:var(--navy);}
+  footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem;}
+  @media print{.wrap{max-width:100%;padding:0;}.card,.step{break-inside:avoid;}h2{break-after:avoid;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Optimal Solutions · Project Manager</div>
+    <span class="role-badge">Owner</span>
+    <h1>Owner Guide</h1>
+    <p>You have full control. This covers the things only you can do, and your regular routine.</p>
+  </header>
+
+  <h2>What only you can do</h2>
+  <div class="card hi">
+    <p>Two powers are reserved for the Owner — no Admin/Foreman has them:</p>
+    <ul class="can">
+      <li><b>Manage user accounts</b> — create Admin/Foreman logins, change roles, and activate/deactivate people (<span class="path">Tools → Users</span>).</li>
+      <li><b>Delete &amp; void records</b> — delete a job, worker, or customer, and delete any money record (payment, expense, income, invoice, contract, proposal, change order).</li>
+    </ul>
+    <p style="margin-bottom:0;">Everything else, you share with your Admins/Foremen: jobs, proposals, contracts, invoices, expenses, payments, time approval, tasks, compliance, and the client portal.</p>
+  </div>
+  <div class="note">Keep your Owner login to yourself. Because only you can delete money records, staff can never remove or alter financial history — they simply don't have the button.</div>
+
+  <h2>Setting up your team</h2>
+  <div class="step"><div class="num">1</div><div class="body"><b>Add an Admin/Foreman:</b> <span class="path">Tools → Users</span> → enter a username + temporary password. New office accounts are Admin by default. Have them change the password.</div></div>
+  <div class="step"><div class="num">2</div><div class="body"><b>Add a worker:</b> <span class="path">Money → Workers</span> → enter their Daily Rate, Phone, and a 4–6 digit PIN. The phone + PIN is how they log into the crew portal on their phone.</div></div>
+  <div class="step"><div class="num">3</div><div class="body"><b>Assign work:</b> open a job (<span class="path">Jobs → Job Hub → Crew tasks</span>), type a task, pick the worker, and Assign. A worker can only clock into jobs they have a task on.</div></div>
+
+  <h2>Your regular routine</h2>
+  <div class="step"><div class="num">1</div><div class="body"><b>Approve time.</b> <span class="path">Money → Time Clock</span> — review each crew day (in/out times and the map pin showing where they punched), then Approve. Approving pays that worker one day at their daily rate and adds it to the job's cost.</div></div>
+  <div class="step"><div class="num">2</div><div class="body"><b>Check payroll.</b> <span class="path">Money → Payroll</span> shows what each worker is owed for the week (days × daily rate).</div></div>
+  <div class="step"><div class="num">3</div><div class="body"><b>Watch the money.</b> The dashboard and each <span class="path">Job Hub</span> show income, expenses, labor, and profit per job.</div></div>
+
+  <div class="note">Workers are paid <b>by the day</b>. The time clock is for attendance — who showed up, when, and where — not for hourly math.</div>
+
+  <footer>Optimal Solutions · Project Manager — Owner Guide. Print with Ctrl/Cmd + P.</footer>
+</div>
+</body>
+</html>

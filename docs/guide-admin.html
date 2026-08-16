@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Optimal Solutions — Admin / Foreman Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root{--ink:#000;--ink2:#1a1a1a;--muted:#555;--line:#ccc;--surface:#fff;--canvas:#fff;--navy:#000;--accent:#000;--soft:#f0f0f0;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas);color:var(--ink2);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:820px;margin:0 auto;padding:40px 24px 64px;}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:18px;margin-bottom:26px;}
+  .eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700;}
+  .role-badge{display:inline-block;border:1px solid #999;border-radius:999px;padding:2px 12px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
+  h1{color:var(--ink);font-size:1.9rem;font-weight:800;letter-spacing:-.02em;}
+  header.top p{color:var(--muted);font-size:.95rem;margin-top:6px;}
+  h2{color:var(--ink);font-size:1.25rem;font-weight:800;margin:32px 0 10px;letter-spacing:-.01em;}
+  p{margin-bottom:10px;} ul{margin:6px 0 12px 20px;} li{margin-bottom:5px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:16px;}
+  .card.hi{border-left:4px solid var(--accent);}
+  .can li::marker{content:"✓  ";font-weight:800;}
+  .cant li::marker{content:"✕  ";font-weight:800;}
+  .label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 4px;}
+  .step{display:flex;gap:14px;margin-bottom:14px;}
+  .step .num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;font-size:.85rem;display:grid;place-items:center;}
+  .step .body{padding-top:2px;} .step .body b{color:var(--ink);}
+  .note{background:var(--soft);border:1px solid #999;border-radius:10px;padding:12px 16px;font-size:.9rem;color:#000;margin:12px 0;}
+  .path{font-weight:600;color:var(--navy);}
+  footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem;}
+  @media print{.wrap{max-width:100%;padding:0;}.card,.step{break-inside:avoid;}h2{break-after:avoid;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Optimal Solutions · Project Manager</div>
+    <span class="role-badge">Admin / Foreman</span>
+    <h1>Admin / Foreman Guide</h1>
+    <p>You run the day-to-day. You can see and do almost everything — except deleting money records and managing accounts.</p>
+  </header>
+
+  <h2>Signing in</h2>
+  <p>Use the <b>username and password</b> the Owner gave you, on the main login page. (That's the office side. The crew phone-and-PIN portal is only for field workers.)</p>
+
+  <h2>What you can do</h2>
+  <div class="card hi">
+    <ul class="can">
+      <li>See everything — jobs, money, and compliance.</li>
+      <li>Create &amp; edit jobs, proposals, contracts, invoices, and change orders; send them to customers.</li>
+      <li>Log expenses, income, and payments.</li>
+      <li>Approve crew time on the Time Clock (turns a clocked day into pay + job cost).</li>
+      <li>Assign tasks to workers, and set a worker's phone &amp; PIN.</li>
+      <li>Manage permits, licenses, subs, waivers, vehicles, and reminders.</li>
+      <li>Enable and share the client portal.</li>
+    </ul>
+  </div>
+
+  <h2>What you can't do</h2>
+  <div class="card">
+    <ul class="cant">
+      <li>Delete or void money records (payments, expenses, income, invoices, contracts, proposals, change orders).</li>
+      <li>Delete a job, worker, or customer.</li>
+      <li>Manage user accounts.</li>
+    </ul>
+    <p style="margin-bottom:0;">Need one of these? Ask the Owner. To fix a mistake, <b>edit</b> the record instead of deleting it.</p>
+  </div>
+  <div class="note">If you try an owner-only action, the app stops you with "That action is owner-only." Nothing is changed.</div>
+
+  <h2>Common tasks</h2>
+  <div class="step"><div class="num">1</div><div class="body"><b>Approve a worker's day:</b> <span class="path">Money → Time Clock</span> → check the in/out times and the map pin (where they punched) → Approve. That pays them one day at their daily rate.</div></div>
+  <div class="step"><div class="num">2</div><div class="body"><b>Assign a task:</b> <span class="path">Jobs → open the job → Job Hub → Crew tasks</span> → type the task, pick the worker, Assign. It shows up on their phone.</div></div>
+  <div class="step"><div class="num">3</div><div class="body"><b>Record an expense:</b> <span class="path">Money → Expenses</span> → pick the job, category, amount, date, snap a receipt photo, Add Expense.</div></div>
+  <div class="step"><div class="num">4</div><div class="body"><b>Record a worker payment (check):</b> <span class="path">Money → Payments</span> → Worker, Amount, Date, Method = Check, Check #, photo, Add Payment.</div></div>
+
+  <div class="note">Workers are paid <b>by the day</b>. The time clock is attendance — who showed up, when, and where — not hourly math.</div>
+
+  <footer>Optimal Solutions · Project Manager — Admin / Foreman Guide. Print with Ctrl/Cmd + P.</footer>
+</div>
+</body>
+</html>
