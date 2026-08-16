@@ -65,14 +65,16 @@ def index():
         if not p.worker:
             continue
         r = bucket(p.worker)
-        rate = (p.worker.daily_rate or 0) / TimePunch.HOURS_PER_DAY
+        # Pay is by the day: each clocked day = one daily rate (not hours-based).
+        # Hours are still summed as an attendance figure.
+        day = round(p.worker.daily_rate or 0, 2)
         h = p.hours or 0
         if p.approved:
             r['appr_hours'] += h
-            r['appr_pay'] += round(h * rate, 2)
+            r['appr_pay'] += day
         else:
             r['pend_hours'] += h
-            r['pend_pay'] += round(h * rate, 2)
+            r['pend_pay'] += day
 
     for lg in logs:
         if not lg.worker:

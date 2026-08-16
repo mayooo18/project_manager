@@ -87,6 +87,18 @@ def home():
                            open_punch=_open_punch(worker), my_jobs=_my_jobs(worker))
 
 
+def _form_latlng():
+    """GPS the crew phone sent with clock in/out. Optional — returns (None, None)
+    if location was blocked or not sent."""
+    try:
+        lat = float(request.form['lat']); lng = float(request.form['lng'])
+    except (KeyError, ValueError, TypeError):
+        return None, None
+    if -90 <= lat <= 90 and -180 <= lng <= 180:
+        return round(lat, 6), round(lng, 6)
+    return None, None
+
+
 @crew_bp.route('/clock-in', methods=['POST'])
 @crew_login_required
 def clock_in():
@@ -100,7 +112,9 @@ def clock_in():
     if not project_id or project_id not in allowed:
         flash('Pick one of your jobs to clock into.', 'error')
         return redirect(url_for('crew.home'))
-    db.session.add(TimePunch(worker_id=worker.id, project_id=project_id))
+    lat, lng = _form_latlng()
+    db.session.add(TimePunch(worker_id=worker.id, project_id=project_id,
+                             clock_in_lat=lat, clock_in_lng=lng))
     db.session.commit()
     flash('Clocked in.')
     return redirect(url_for('crew.home'))
@@ -114,7 +128,10 @@ def clock_out():
     if not punch:
         flash('You are not clocked in.', 'error')
         return redirect(url_for('crew.home'))
+    lat, lng = _form_latlng()
     punch.clock_out = datetime.utcnow()
+    punch.clock_out_lat = lat
+    punch.clock_out_lng = lng
     db.session.commit()
     flash(f'Clocked out — {punch.hours} h.')
     return redirect(url_for('crew.home'))

@@ -70,14 +70,16 @@
       <p class="tpill prog" style="display:inline-block;">Clocked in</p>
       <p style="color:var(--ink);font-size:1.15rem;font-weight:700;margin-top:.5rem;">{{ open_punch.project.name if open_punch.project else 'Job' }}</p>
       <p class="m">Since {{ open_punch.clock_in.strftime('%b %d, %I:%M %p') }} · {{ open_punch.hours }} h so far</p>
-      <form method="POST" action="{{ url_for('crew.clock_out') }}" style="margin-top:1rem;">
+      <form method="POST" action="{{ url_for('crew.clock_out') }}" style="margin-top:1rem;" class="geo-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="lat"><input type="hidden" name="lng">
         <button class="bigbtn red">Clock out</button>
       </form>
       {% elif my_jobs %}
       <p class="lbl">Clock in</p>
-      <form method="POST" action="{{ url_for('crew.clock_in') }}">
+      <form method="POST" action="{{ url_for('crew.clock_in') }}" class="geo-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="lat"><input type="hidden" name="lng">
         <select name="project_id" class="fld" style="margin-bottom:.75rem;">
           {% for p in my_jobs %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
         </select>
@@ -131,5 +133,27 @@
     {% endif %}
 
   </div>
+
+  <script>
+    // Attach the phone's GPS to clock in / clock out. Optional: if the worker
+    // blocks location or GPS is slow, we submit anyway after a short wait.
+    document.querySelectorAll('.geo-form').forEach(function (f) {
+      f.addEventListener('submit', function (e) {
+        if (f.dataset.located) return;           // second pass — let it submit
+        e.preventDefault();
+        var sent = false;
+        var go = function () { if (sent) return; sent = true; f.dataset.located = '1'; f.submit(); };
+        if (!navigator.geolocation) return go();
+        var t = setTimeout(go, 8000);
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          clearTimeout(t);
+          f.querySelector('input[name=lat]').value = pos.coords.latitude;
+          f.querySelector('input[name=lng]').value = pos.coords.longitude;
+          go();
+        }, function () { clearTimeout(t); go(); },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+      });
+    });
+  </script>
 </body>
 </html>

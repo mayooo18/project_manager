@@ -842,15 +842,14 @@ def approve_punch(punch_id):
     p.approved = not p.approved
     extra = ''
     if p.approved:
-        # Approving turns the logged hours into labor cost on the job, so crew
-        # time flows into per-job profit (hours x hourly rate = daily_rate/8).
+        # Approving records one day of pay (workers are paid by the day, not the
+        # hour) as labor cost on the job, so crew days flow into per-job profit.
         if p.payment_id is None and p.clock_out and p.project_id:
-            rate = (p.worker.daily_rate or 0) / TimePunch.HOURS_PER_DAY if p.worker else 0
-            amount = round((p.hours or 0) * rate, 2)
+            amount = round(p.worker.daily_rate or 0, 2) if p.worker else 0
             if amount > 0:
                 pay = Payment(worker_id=p.worker_id, project_id=p.project_id,
                               amount=amount, payment_date=p.clock_out.date(),
-                              method='Labor', note=f'Approved crew time: {p.hours} h')
+                              method='Labor', note=f'Approved day worked ({p.hours} h on site)')
                 db.session.add(pay)
                 db.session.flush()
                 p.payment_id = pay.id

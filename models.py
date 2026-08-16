@@ -381,6 +381,11 @@ class TimePunch(db.Model):
     # crew time flows into per-job cost/profit). Cleared/removed on un-approve.
     payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # GPS captured on the crew phone at clock-in / clock-out (attendance proof).
+    clock_in_lat = db.Column(db.Float)
+    clock_in_lng = db.Column(db.Float)
+    clock_out_lat = db.Column(db.Float)
+    clock_out_lng = db.Column(db.Float)
 
     worker = db.relationship('Worker', backref=db.backref('time_punches', cascade='all, delete-orphan'))
     project = db.relationship('Project', backref=db.backref('time_punches', cascade='all, delete-orphan'))
@@ -398,11 +403,28 @@ class TimePunch(db.Model):
         return round((end - self.clock_in).total_seconds() / 3600.0, 2)
 
     @property
+    def day_pay(self):
+        """What this punch pays: one day at the worker's daily rate. Pay is by
+        the day, not the hour — the clock is for attendance (who showed up,
+        when, and where). Hours are still recorded for the attendance record."""
+        return round(self.worker.daily_rate or 0, 2) if self.worker else 0
+
+    # Back-compat alias used by the approve flow and existing templates.
+    @property
     def labor_cost(self):
-        """Dollar cost of this punch: hours x hourly rate (daily_rate / 8).
-        Mirrors the amount approve_punch posts as a labor Payment."""
-        rate = (self.worker.daily_rate or 0) / self.HOURS_PER_DAY if self.worker else 0
-        return round((self.hours or 0) * rate, 2)
+        return self.day_pay
+
+    @property
+    def clock_in_map_url(self):
+        if self.clock_in_lat is not None and self.clock_in_lng is not None:
+            return f'https://maps.google.com/?q={self.clock_in_lat},{self.clock_in_lng}'
+        return None
+
+    @property
+    def clock_out_map_url(self):
+        if self.clock_out_lat is not None and self.clock_out_lng is not None:
+            return f'https://maps.google.com/?q={self.clock_out_lat},{self.clock_out_lng}'
+        return None
 
 
 class AIActionLog(db.Model):
