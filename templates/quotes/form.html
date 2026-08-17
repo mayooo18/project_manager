@@ -55,15 +55,15 @@
           </select></div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" style="margin-top:.75rem;">
-        <div><label class="lbl">Property address (optional)</label>
-          <select id="q-location" name="location_id" class="fld">
-            <option value="">— Use customer's default address —</option>
-          </select>
-          <p class="muted" style="margin-top:.25rem;">The job created from this proposal will use this address.</p></div>
-        <div><label class="lbl">…or enter a new address</label>
-          <input type="text" id="q-new-address" name="new_address" class="fld" placeholder="e.g. 742 Evergreen Terrace, Springfield IL"/>
-          <p class="muted" style="margin-top:.25rem;">Saved to this customer's properties. Overrides the picker above.</p></div>
+      <div style="margin-top:.75rem;">
+        <label class="lbl">Property address (optional)</label>
+        <select id="q-location" name="location_id" class="fld">
+          <option value="">— Use customer's default address —</option>
+        </select>
+        <input type="text" id="q-new-address" name="new_address" class="fld"
+               style="margin-top:.5rem;display:none;"
+               placeholder="Enter the new property address" autocomplete="off"/>
+        <p class="muted" id="q-address-hint" style="margin-top:.25rem;">Where this job is. Defaults to the customer's address.</p>
       </div>
       <div style="margin-top:.75rem;"><label class="lbl">Title *</label>
         <input type="text" name="title" class="fld" placeholder="e.g. Backyard fence installation" value="{{ quote.title if quote else '' }}"/></div>
@@ -265,6 +265,21 @@
   const LOCATIONS_BY_CUSTOMER = {{ locations_by_customer | tojson }};
   const SELECTED_LOCATION_ID = {{ quote.location_id if quote and quote.location_id else 'null' }};
 
+  const NEW_ADDRESS_VALUE = '__new__';
+
+  // Show the free-text box only when "New address…" is chosen in the dropdown.
+  function toggleNewAddress() {
+    const locSel = document.getElementById('q-location');
+    const newInput = document.getElementById('q-new-address');
+    const hint = document.getElementById('q-address-hint');
+    if (!locSel || !newInput) return;
+    const isNew = locSel.value === NEW_ADDRESS_VALUE;
+    newInput.style.display = isNew ? 'block' : 'none';
+    if (!isNew) newInput.value = '';       // don't submit a stale typed address
+    if (hint) hint.style.display = isNew ? 'none' : 'block';
+    if (isNew) newInput.focus();
+  }
+
   function populateLocations() {
     const custSel = document.getElementById('q-customer');
     const locSel = document.getElementById('q-location');
@@ -279,12 +294,19 @@
       if (SELECTED_LOCATION_ID && loc.id === SELECTED_LOCATION_ID) opt.selected = true;
       locSel.appendChild(opt);
     });
+    const addNew = document.createElement('option');
+    addNew.value = NEW_ADDRESS_VALUE;
+    addNew.textContent = '➕ New address…';
+    locSel.appendChild(addNew);
+    toggleNewAddress();
   }
 
   (function initLocationPicker() {
     const custSel = document.getElementById('q-customer');
+    const locSel = document.getElementById('q-location');
     if (!custSel) return;
     custSel.addEventListener('change', populateLocations);
+    if (locSel) locSel.addEventListener('change', toggleNewAddress);
     populateLocations();  // initial fill for the pre-selected customer
   })();
 </script>
