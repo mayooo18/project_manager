@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Activity Log{% endblock %}
+
+{% block content %}
+<style>
+  .act-wrap{max-width:1100px;margin:0 auto;}
+  .field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-700);margin-bottom:.35rem;}
+  .fgrid{display:grid;grid-template-columns:1fr;gap:1rem;}
+  @media(min-width:768px){.fgrid.f3{grid-template-columns:1fr 1fr 1fr;}}
+  .role-pill{display:inline-block;padding:.1rem .5rem;border-radius:999px;font-size:.72rem;font-weight:600;}
+  .role-owner{background:var(--surface-2);color:var(--ink-900);}
+  .role-admin{background:var(--surface-2);color:var(--ink-700);}
+  .mono{font-variant-numeric:tabular-nums;color:var(--ink-500);font-size:.82rem;}
+</style>
+
+<div class="act-wrap">
+  <div class="page-head"><h1>Activity Log</h1></div>
+  <p class="muted" style="margin-bottom:1rem;">Every action taken by Owner and Admin/Foreman accounts.</p>
+
+  <!-- Filter -->
+  <div class="card" style="padding:1.5rem;">
+    <p class="sec-title" style="margin-bottom:1rem;">Filter</p>
+    <form method="GET">
+      <div class="fgrid f3">
+        <div class="field"><label for="fuser">User</label>
+          <select id="fuser" name="user_id">
+            <option value="">All users</option>
+            {% for u in users %}
+            <option value="{{ u.id }}" {% if sel_user_id == u.id %}selected{% endif %}>{{ u.username }} ({{ u.role }})</option>
+            {% endfor %}
+          </select></div>
+        <div class="field"><label for="start">From</label>
+          <input type="date" id="start" name="start" value="{{ start }}" /></div>
+        <div class="field"><label for="end">To</label>
+          <input type="date" id="end" name="end" value="{{ end }}" /></div>
+      </div>
+      <button type="submit" class="obtn" style="margin-top:1rem;">Apply Filter</button>
+      <a href="{{ url_for('activity.index') }}" class="obtn" style="margin-top:1rem;">Clear</a>
+    </form>
+  </div>
+
+  {% if pagination %}
+  <p class="muted" style="margin-bottom:.75rem;">Showing {{ pagination.first }}–{{ pagination.last }} of {{ pagination.total }}</p>
+  {% endif %}
+
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>When</th><th>User</th><th>Role</th><th>Action</th><th>Record</th><th>IP</th></tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="mono">{{ e.created_at.strftime('%m/%d/%Y %I:%M %p') }}</td>
+          <td style="color:var(--ink-900);font-weight:600;">{{ e.username or '—' }}</td>
+          <td>
+            <span class="role-pill {{ 'role-owner' if e.role == 'owner' else 'role-admin' }}">{{ e.role or '—' }}</span>
+          </td>
+          <td>{{ e.action }}</td>
+          <td>{{ e.target or '—' }}</td>
+          <td class="mono">{{ e.ip_address or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;color:var(--ink-500);">No activity recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination and pagination.pages > 1 %}
+  <div style="display:flex;gap:.75rem;align-items:center;justify-content:flex-end;margin-top:1rem;">
+    {% if pagination.has_prev %}<a class="obtn" href="{{ page_url(pagination.prev_num) }}">Previous</a>{% endif %}
+    <span class="muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}<a class="obtn" href="{{ page_url(pagination.next_num) }}">Next</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

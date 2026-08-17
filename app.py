@@ -35,6 +35,8 @@ from waiver_routes import waiver_bp
 from portal_routes import portal_bp
 from crew_routes import crew_bp
 from payroll_routes import payroll_bp
+from activity_routes import activity_bp
+from activity_log import record_activity
 import re
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -66,6 +68,7 @@ app.register_blueprint(waiver_bp)
 app.register_blueprint(portal_bp)
 app.register_blueprint(crew_bp)
 app.register_blueprint(payroll_bp)
+app.register_blueprint(activity_bp)
 
 # API routes use API key auth — exempt from CSRF
 csrf.exempt(field_api_bp)
@@ -119,6 +122,12 @@ def pagination_helpers():
         args['page'] = page
         return url_for(request.endpoint, **request.view_args, **args)
     return {'page_url': page_url}
+
+
+@app.after_request
+def record_office_activity(response):
+    # Audit trail: log mutating actions by Owner/Admin users. Never raises.
+    return record_activity(request, response)
 
 
 @app.after_request

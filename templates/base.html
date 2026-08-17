@@ -62,6 +62,9 @@
                         <a href="{{ url_for('document_form') }}" class="{{ 'nav-active' if request.endpoint == 'document_form' }}">Legacy Documents</a>
                         <a href="{{ url_for('reminders.index') }}" class="{{ 'nav-active' if request.endpoint == 'reminders.index' }}">Reminders</a>
                         <a href="{{ url_for('vehicles.index') }}" class="{{ 'nav-active' if request.endpoint == 'vehicles.index' }}">Vehicles</a>
+                        {% if current_user.is_authenticated and current_user.role in ['owner', 'admin'] %}
+                        <a href="{{ url_for('activity.index') }}" class="{{ 'nav-active' if request.endpoint == 'activity.index' }}">Activity Log</a>
+                        {% endif %}
                         {% if current_user.is_authenticated and current_user.is_owner %}
                         <a href="{{ url_for('users') }}" class="{{ 'nav-active' if request.endpoint == 'users' }}">Users</a>
                         {% endif %}
