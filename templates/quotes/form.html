@@ -43,7 +43,7 @@
       <p class="step" style="margin-bottom:.75rem;">1 · Customer &amp; details</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div><label class="lbl">Customer *</label>
-          <select name="customer_id" class="fld">
+          <select id="q-customer" name="customer_id" class="fld">
             <option value="">— Select customer —</option>
             {% for c in customers %}<option value="{{ c.id }}" {{ 'selected' if quote and quote.customer_id == c.id }}>{{ c.name }}</option>{% endfor %}
           </select>
@@ -53,6 +53,17 @@
             <option value="">— None —</option>
             {% for p in projects %}<option value="{{ p.id }}" {{ 'selected' if quote and quote.project_id == p.id }}>{{ p.name }}</option>{% endfor %}
           </select></div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" style="margin-top:.75rem;">
+        <div><label class="lbl">Property address (optional)</label>
+          <select id="q-location" name="location_id" class="fld">
+            <option value="">— Use customer's default address —</option>
+          </select>
+          <p class="muted" style="margin-top:.25rem;">The job created from this proposal will use this address.</p></div>
+        <div><label class="lbl">…or enter a new address</label>
+          <input type="text" id="q-new-address" name="new_address" class="fld" placeholder="e.g. 742 Evergreen Terrace, Springfield IL"/>
+          <p class="muted" style="margin-top:.25rem;">Saved to this customer's properties. Overrides the picker above.</p></div>
       </div>
       <div style="margin-top:.75rem;"><label class="lbl">Title *</label>
         <input type="text" name="title" class="fld" placeholder="e.g. Backyard fence installation" value="{{ quote.title if quote else '' }}"/></div>
@@ -247,5 +258,34 @@
     addRow();
   {% endif %}
   recalc();
+
+  // ── Property address picker ──────────────────────────────────────────────
+  // Populate the address dropdown from the selected customer's saved
+  // properties, and repopulate it whenever the customer changes.
+  const LOCATIONS_BY_CUSTOMER = {{ locations_by_customer | tojson }};
+  const SELECTED_LOCATION_ID = {{ quote.location_id if quote and quote.location_id else 'null' }};
+
+  function populateLocations() {
+    const custSel = document.getElementById('q-customer');
+    const locSel = document.getElementById('q-location');
+    if (!custSel || !locSel) return;
+    const custId = custSel.value;
+    const locs = LOCATIONS_BY_CUSTOMER[custId] || [];
+    locSel.innerHTML = '<option value="">— Use customer\'s default address —</option>';
+    locs.forEach(function (loc) {
+      const opt = document.createElement('option');
+      opt.value = loc.id;
+      opt.textContent = loc.address || loc.label;
+      if (SELECTED_LOCATION_ID && loc.id === SELECTED_LOCATION_ID) opt.selected = true;
+      locSel.appendChild(opt);
+    });
+  }
+
+  (function initLocationPicker() {
+    const custSel = document.getElementById('q-customer');
+    if (!custSel) return;
+    custSel.addEventListener('change', populateLocations);
+    populateLocations();  // initial fill for the pre-selected customer
+  })();
 </script>
 {% endblock %}

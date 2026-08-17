@@ -343,18 +343,29 @@ def from_quote(quote_id):
     project_id = quote.project_id
     if not project_id:
         customer = quote.customer
+        # Prefer the proposal's own property address (if the salesperson picked
+        # or typed one); otherwise fall back to the customer's default address.
+        job_address = None
+        job_location_id = None
+        if quote.location_id and quote.location:
+            job_address = quote.location.address
+            job_location_id = quote.location_id
+        elif customer:
+            job_address = customer.address
         project = Project(
             name=quote.title or (f"Job for {customer.name}" if customer else 'New job'),
-            address=customer.address if customer else None,
+            address=job_address,
             status='Active',
             customer_id=quote.customer_id,
         )
         db.session.add(project)
         db.session.flush()
-        loc = find_or_create_location(current_user.id, quote.customer_id,
-                                      customer.address if customer else None)
-        if loc:
-            project.location_id = loc.id
+        if job_location_id:
+            project.location_id = job_location_id
+        else:
+            loc = find_or_create_location(current_user.id, quote.customer_id, job_address)
+            if loc:
+                project.location_id = loc.id
         project_id = project.id
 
     contract = Contract(

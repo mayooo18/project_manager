@@ -476,6 +476,11 @@ class Quote(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False, index=True)
     # Optional link to an internal project, so an approved quote can feed cost/profit tracking.
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True, index=True)
+    # Optional property/site address for this proposal. When the proposal is
+    # converted to a contract, the new Job inherits this location's address
+    # instead of the customer's default address — lets one customer have jobs
+    # at different addresses.
+    location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=True, index=True)
 
     title = db.Column(db.String(200), nullable=False)
     # draft → sent → approved / declined → converted (to invoice, Phase 2)
@@ -504,6 +509,7 @@ class Quote(db.Model):
 
     customer = db.relationship('Customer', back_populates='quotes')
     project = db.relationship('Project', backref='quotes')
+    location = db.relationship('Location')
     items = db.relationship('QuoteItem', back_populates='quote',
                             cascade='all, delete-orphan', order_by='QuoteItem.id')
 

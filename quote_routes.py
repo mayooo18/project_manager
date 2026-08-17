@@ -620,6 +620,8 @@ def _save_quote(quote):
         project_id = request.form.get('project_id', type=int)
         deposit = request.form.get('deposit', type=float)
         po_number = (request.form.get('po_number') or '').strip()
+        location_id = request.form.get('location_id', type=int)
+        new_address = (request.form.get('new_address') or '').strip()
 
         customer = (Customer.query.filter_by(
             id=customer_id, user_id=current_user.id).first()
@@ -639,6 +641,18 @@ def _save_quote(quote):
             quote.project_id = project_id if project_id else None
             quote.deposit = deposit if deposit else None
             quote.po_number = po_number or None
+            # Property/site address: a typed new address wins over the picker.
+            # It's saved as one of the customer's Locations (reused if it exists).
+            if new_address:
+                loc = find_or_create_location(current_user.id, customer_id, new_address)
+                quote.location_id = loc.id if loc else None
+            elif location_id:
+                # Trust only a location that actually belongs to this customer.
+                loc = Location.query.filter_by(
+                    id=location_id, customer_id=customer_id).first()
+                quote.location_id = loc.id if loc else None
+            else:
+                quote.location_id = None
             _apply_items(quote, _parse_items(request.form))
             db.session.commit()
             flash('Proposal saved.', 'success')
@@ -647,8 +661,16 @@ def _save_quote(quote):
     customers = (Customer.query.filter_by(user_id=current_user.id)
                  .order_by(Customer.name.asc()).all())
     projects = Project.query.order_by(Project.name.asc()).all()
+    # Saved properties per customer, so the form can populate the address
+    # picker as the user switches customers (no page reload).
+    locations_by_customer = {}
+    for loc in (Location.query.filter_by(user_id=current_user.id)
+                .order_by(Location.address.asc()).all()):
+        locations_by_customer.setdefault(loc.customer_id, []).append(
+            {'id': loc.id, 'label': loc.label or loc.address, 'address': loc.address})
     return render_template(
         'quotes/form.html', quote=quote, customers=customers, projects=projects,
+        locations_by_customer=locations_by_customer,
         public_link_active=(_public_link_is_active(quote) if quote else False))
 
 
