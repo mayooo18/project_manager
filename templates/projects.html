@@ -39,6 +39,12 @@
         padding:.35rem .8rem;border-radius:var(--r-sm);text-decoration:none;background:transparent;}
   .obtn:hover{background:var(--accent-weak);}
   .empty{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);text-align:center;padding:3.5rem 1.5rem;}
+  .add-job{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1rem 1.25rem;margin-bottom:1.5rem;}
+  .add-job summary{cursor:pointer;font-weight:600;color:var(--accent);list-style:none;}
+  .add-job summary::-webkit-details-marker{display:none;}
+  .ajgrid{display:grid;grid-template-columns:1fr;gap:1rem;}
+  @media(min-width:768px){.ajgrid{grid-template-columns:1fr 1fr 1fr;}}
+  .ajgrid .aj-desc{grid-column:1/-1;}
 </style>
 
 <div class="jobs">
@@ -50,6 +56,52 @@
       <div class="sub">Jobs begin automatically when an approved proposal is converted into a contract.</div>
     </div>
   </div>
+
+  {% if project_form %}
+  <!-- Add an existing / off-pipeline job directly (backfill for jobs you already have) -->
+  <details class="add-job">
+    <summary>+ Add an existing job</summary>
+    <p class="muted" style="margin:.5rem 0 1rem;">Use this to enter jobs you already have that didn't come through a proposal. New sales should still flow through Sales → Proposal → Contract.</p>
+    <form method="POST" action="{{ url_for('projects') }}">
+      {{ project_form.hidden_tag() }}
+      <div class="ajgrid">
+        <div>
+          <label for="aj-name" class="muted">Job name</label>
+          <input id="aj-name" type="text" name="name" class="fld" required placeholder="e.g. Smith kitchen remodel"/>
+        </div>
+        <div>
+          <label for="aj-customer" class="muted">Customer</label>
+          <select id="aj-customer" name="customer_id" class="fld">
+            {% for value, label in project_form.customer_id.choices %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="aj-address" class="muted">Address</label>
+          <input id="aj-address" type="text" name="address" class="fld" placeholder="Property address"/>
+        </div>
+        <div>
+          <label for="aj-start" class="muted">Start date</label>
+          <input id="aj-start" type="date" name="start_date" class="fld"/>
+        </div>
+        <div>
+          <label for="aj-status" class="muted">Status</label>
+          <select id="aj-status" name="status" class="fld">
+            <option value="Active">Active</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <div class="aj-desc">
+          <label for="aj-desc" class="muted">Description (optional)</label>
+          <input id="aj-desc" type="text" name="description" class="fld" placeholder="Scope / notes"/>
+        </div>
+      </div>
+      <button type="submit" name="add_project" value="1" class="btn" style="margin-top:1rem;">Add Job</button>
+    </form>
+  </details>
+  {% endif %}
 
   <!-- Status metrics -->
   <div class="mgrid">

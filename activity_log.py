@@ -48,19 +48,35 @@ _SKIP_ENDPOINTS = {'login', 'logout', 'static'}
 # Key = Flask endpoint name; value = what to show in the log.
 _ACTION_LABELS = {
     # Jobs / projects
-    'create_project': 'Created a job',
+    'projects': 'Added a job',            # POST to /projects creates a job
     'edit_project': 'Edited a job',
     'delete_project': 'Deleted a job',
-    'upload_file': 'Uploaded a file',
     'add_task': 'Added a task',
-    'add_note': 'Added a note',
-    # Workers / time / pay
-    'add_worker': 'Added a worker',
+    'delete_task': 'Deleted a task',
+    'upload_file': 'Uploaded a file',
+    'edit_file': 'Edited a file',
+    'delete_file': 'Deleted a file',
+    'add_project_expense': 'Recorded a job expense',
+    'add_project_payment': 'Recorded a job payment',
+    'add_project_income': 'Recorded job income',
+    # Workers
+    'workers': 'Added a worker',          # POST to /workers creates a worker
     'edit_worker': 'Edited a worker',
-    'add_worklog': 'Logged work',
-    'add_payment': 'Recorded a payment',
-    'add_expense': 'Recorded an expense',
-    'add_income': 'Recorded income',
+    'toggle_worker': 'Activated/deactivated a worker',
+    'delete_worker': 'Deleted a worker',
+    # Time / pay
+    'work_logs': 'Logged work',           # POST to /work_logs adds a log
+    'edit_work_log': 'Edited a work log',
+    'delete_work_log': 'Deleted a work log',
+    'payments': 'Recorded a payment',
+    'edit_payment': 'Edited a payment',
+    'delete_payment': 'Deleted a payment',
+    'expenses': 'Recorded an expense',
+    'edit_expense': 'Edited an expense',
+    'delete_expense': 'Deleted an expense',
+    'income': 'Recorded income',
+    'edit_income': 'Edited income',
+    'delete_income': 'Deleted income',
     # User management
     'users': 'Created an admin account',
     'user_role': 'Changed a user role',

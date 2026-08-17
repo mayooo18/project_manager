@@ -527,6 +527,7 @@ def projects():
 
     return render_template(
         'projects.html', projects=job_rows, dashboard=dashboard,
+        project_form=project_form,
         search=request.args.get('q', ''), status_filter=status_filter)
 
 
