@@ -1085,6 +1085,10 @@ def delete_file(file_id):
 def edit_file(file_id):
     file = ProjectFile.query.get_or_404(file_id)
     form = FileUploadForm(obj=file)
+    # Editing only touches category/note — the file itself is not re-uploaded,
+    # so drop the FileField's "required" validator (otherwise the edit never
+    # validates and silently fails to save).
+    form.file.validators = []
 
     if form.validate_on_submit():
         file.category = form.category.data

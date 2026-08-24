@@ -1,14 +1,49 @@
 {% extends 'base.html' %}
+{% block title %}Edit File{% endblock %}
 
 {% block content %}
-<h2>Edit File: {{ file.filename }}</h2>
+<style>
+  .form-wrap{max-width:640px;margin:0 auto;}
+  .form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.5rem;}
+  .field{margin-bottom:1.1rem;}
+  .field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-700);margin-bottom:.4rem;}
+  .field .hint{font-size:.75rem;color:var(--ink-500);margin-top:.35rem;}
+  .file-name{display:flex;align-items:center;gap:.5rem;font-size:.9rem;color:var(--ink-900);
+             background:var(--canvas);border:1px solid var(--border);border-radius:var(--r-sm);padding:.6rem .8rem;}
+  .form-foot{display:flex;align-items:center;justify-content:space-between;margin-top:1.25rem;}
+</style>
 
-<form method="POST">
+{% set back_url = url_for('project_detail', project_id=file.project_id) if file.project_id else url_for('projects') %}
+
+<div class="form-wrap">
+  <div class="page-head"><h1>Edit File</h1></div>
+
+  <form method="POST" class="form-card">
     {{ form.hidden_tag() }}
-    <p>{{ form.category.label }} {{ form.category() }}</p>
-    <p>{{ form.note.label }} {{ form.note(size=40) }}</p>
-    <p>{{ form.submit(value='Update') }}</p>
-</form>
 
-<p><a href="{{ url_for('projects') }}">Back to Projects</a></p>
+    <div class="field">
+      <label>File</label>
+      <div class="file-name">
+        <span class="material-icons" style="font-size:1.15rem;color:var(--ink-500);">description</span>
+        {{ file.filename }}
+      </div>
+      <p class="hint">The file itself can't be renamed here — only its category and note.</p>
+    </div>
+
+    <div class="field">
+      <label for="category">Category</label>
+      {{ form.category() }}
+    </div>
+
+    <div class="field">
+      <label for="note">Note</label>
+      {{ form.note(placeholder="Optional note") }}
+    </div>
+
+    <div class="form-foot">
+      <a href="{{ back_url }}" class="c-accent" style="font-size:.88rem;">← Cancel</a>
+      <button type="submit" class="btn">Update File</button>
+    </div>
+  </form>
+</div>
 {% endblock %}
