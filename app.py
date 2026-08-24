@@ -1069,11 +1069,14 @@ def delete_project(project_id):
 @login_required
 def delete_file(file_id):
     file = ProjectFile.query.get_or_404(file_id)
+    project_id = file.project_id
     if file.filepath and os.path.exists(file.filepath):
         os.remove(file.filepath)
     db.session.delete(file)
     db.session.commit()
     flash("File deleted.")
+    if project_id:
+        return redirect(url_for('project_detail', project_id=project_id))
     return redirect(url_for('projects'))
 
 
@@ -1088,6 +1091,8 @@ def edit_file(file_id):
         file.note = form.note.data
         db.session.commit()
         flash("File updated.")
+        if file.project_id:
+            return redirect(url_for('project_detail', project_id=file.project_id))
         return redirect(url_for('projects'))
 
     return render_template('edit_file.html', form=form, file=file)
