@@ -202,7 +202,16 @@
           {% if job.start_date %}Started {{ job.start_date.strftime('%b %d, %Y') }} · {% endif %}
           {{ row.file_count }} file{{ '' if row.file_count == 1 else 's' }}
         </p>
-        <a href="{{ url_for('edit_project', project_id=job.id) }}" class="muted" style="text-decoration:none;">Edit job</a>
+        <span class="flex items-center gap-3">
+          <a href="{{ url_for('edit_project', project_id=job.id) }}" class="muted" style="text-decoration:none;">Edit job</a>
+          {% if current_user.is_owner %}
+          <form method="POST" action="{{ url_for('delete_project', project_id=job.id) }}" style="display:inline;"
+                onsubmit="return confirm('Delete {{ job.name }} permanently? This also deletes its work logs, payments, income, expenses, tasks, time punches, notes and files. This cannot be undone.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="linkbtn danger" style="background:none;border:none;padding:0;cursor:pointer;font:inherit;">Delete</button>
+          </form>
+          {% endif %}
+        </span>
       </div>
     </article>
     {% endfor %}

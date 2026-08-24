@@ -74,6 +74,13 @@
         <button type="submit" class="obtn green">Close out</button>
       </form>
       {% endif %}
+      {% if current_user.is_owner %}
+      <form method="POST" action="{{ url_for('delete_project', project_id=project.id) }}"
+            onsubmit="return confirm('Delete this job permanently? This also deletes its work logs, payments, income, expenses, tasks, time punches, notes and uploaded files. This cannot be undone.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="obtn red">Delete job</button>
+      </form>
+      {% endif %}
     </div>
   </div>
 
