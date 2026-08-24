@@ -328,7 +328,17 @@
       <p class="muted" style="margin-top:.85rem;">Files ({{ files|length }})</p>
       {% for f in files %}
       <div class="row"><a class="lk" style="font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" href="{{ url_for('static', filename='uploads/' ~ f.filename) }}" target="_blank">{{ f.filename }}</a>
-        <span class="muted">{{ f.category or '' }}</span></div>
+        <span class="flex items-center gap-2">
+          <span class="muted">{{ f.category or '' }}</span>
+          <a href="{{ url_for('edit_file', file_id=f.id) }}" class="action-btn edit" title="Edit file"><span class="material-icons" style="font-size:1.05rem;">edit</span></a>
+          {% if current_user.is_owner %}
+          <form method="POST" action="{{ url_for('delete_file', file_id=f.id) }}" style="display:inline;"
+                onsubmit="return confirm('Delete this file? This removes it permanently and cannot be undone.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="action-btn delete" title="Delete file"><span class="material-icons" style="font-size:1.05rem;">delete</span></button>
+          </form>
+          {% endif %}
+        </span></div>
       {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
 
       <form method="POST" enctype="multipart/form-data"

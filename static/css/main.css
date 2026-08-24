@@ -215,6 +215,13 @@ table tr:hover{background-color:var(--surface-2) !important;}
 .action-btn.edit:hover{background-color:var(--surface-2) !important;}
 .action-btn.delete{color:var(--red-fg) !important;}
 .action-btn.delete:hover{background-color:var(--red-bg) !important;}
+/* When .action-btn is a submit <button>, out-specify the blanket
+   button[type="submit"] rule (above) so it doesn't render as a solid block. */
+button.action-btn{background:transparent !important;box-shadow:none !important;}
+button.action-btn.edit{color:var(--accent) !important;}
+button.action-btn.delete{color:var(--red-fg) !important;}
+button.action-btn:hover{transform:none !important;}
+button.action-btn.delete:hover{background-color:var(--red-bg) !important;}
 
 /* ===== FILE UPLOAD ===== */
 input[type="file"]{
