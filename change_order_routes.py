@@ -23,6 +23,9 @@ from models import ChangeOrder, ChangeOrderItem, Contract, ContractDraw
 from quote_routes import (
     COMPANY, LOGO_PATH, _parse_items, _pdf_text, _validated_signature_data,
 )
+from signature_audit import (
+    record_signature_event, latest_event, events_for, CONSENT_TEXT,
+)
 
 
 change_order_bp = Blueprint(
@@ -248,6 +251,13 @@ def build_change_order_pdf(change_order):
         client_signature.append(Paragraph(
             f"Client Signature — {_pdf_text(change_order.signature_name, 150)} "
             f"({change_order.signed_at.strftime('%m/%d/%y')})", small))
+        _ev = latest_event('change_order', change_order.id, 'approved')
+        if _ev:
+            client_signature.append(Paragraph(
+                f"Signed electronically on "
+                f"{_ev.created_at.strftime('%m/%d/%y %H:%M UTC')}"
+                + (f" · IP {_pdf_text(_ev.signer_ip, 64)}" if _ev.signer_ip else ""),
+                small))
     else:
         client_signature.extend([
             Spacer(1, 26),
@@ -352,6 +362,8 @@ def _save_change_order(change_order, contract):
                 'change_orders.edit', change_order_id=change_order.id))
     return render_template(
         'change_orders/form.html', change_order=change_order, contract=contract,
+        signature_events=(
+            events_for('change_order', change_order.id) if change_order else []),
         public_link_active=(
             _public_link_is_active(change_order) if change_order else False))
 
@@ -424,7 +436,8 @@ def pdf(change_order_id):
 def public_view(token):
     change_order = _get_public_change_order(token)
     return render_template(
-        'change_orders/public.html', change_order=change_order, company=COMPANY)
+        'change_orders/public.html', change_order=change_order, company=COMPANY,
+        consent_text=CONSENT_TEXT)
 
 
 @change_order_bp.route('/co/<token>/approve', methods=['POST'])
@@ -441,6 +454,11 @@ def public_approve(token):
         (request.form.get('signature_data') or '').strip())
     if not name or len(name) > 150 or signature is None:
         flash('Please type your name and sign before approving.', 'error')
+        return redirect(url_for(
+            'change_orders.public_view', token=change_order.public_token))
+    if not request.form.get('consent'):
+        flash('Please check the box to confirm your electronic signature.',
+              'error')
         return redirect(url_for(
             'change_orders.public_view', token=change_order.public_token))
 
@@ -472,8 +490,30 @@ def public_approve(token):
             amount=change_order.total, status='pending'))
     if contract.status == 'draft':
         contract.status = 'active'
+    record_signature_event(
+        'change_order', change_order.id, 'approved', signer_name=name)
     db.session.commit()
     flash('Thank you — the change order has been approved.', 'success')
+    return redirect(url_for(
+        'change_orders.public_view', token=change_order.public_token))
+
+
+@change_order_bp.route('/co/<token>/decline', methods=['POST'])
+@limiter.limit('5 per minute')
+def public_decline(token):
+    change_order = _get_public_change_order(token, lock=True)
+    if change_order.applied_at is not None or change_order.status == 'approved':
+        flash('This change order has already been approved and cannot be '
+              'declined.', 'error')
+        return redirect(url_for(
+            'change_orders.public_view', token=change_order.public_token))
+
+    reason = (request.form.get('decline_reason') or '').strip()[:2000] or None
+    change_order.status = 'declined'
+    record_signature_event(
+        'change_order', change_order.id, 'declined', decline_reason=reason)
+    db.session.commit()
+    flash('Your response has been recorded — thank you.', 'success')
     return redirect(url_for(
         'change_orders.public_view', token=change_order.public_token))
 

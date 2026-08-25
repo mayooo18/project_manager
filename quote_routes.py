@@ -37,6 +37,9 @@ from models import (
     GcDocument, Location, find_or_create_location,
 )
 from forms import CustomerForm, DeleteForm
+from signature_audit import (
+    record_signature_event, latest_event, events_for, CONSENT_TEXT,
+)
 
 quote_bp = Blueprint('quotes', __name__, url_prefix='/quotes')
 
@@ -361,6 +364,13 @@ def build_quote_pdf(quote):
         sig_left.append(Paragraph(
             f"Client Signature — {_pdf_text(quote.signature_name or c.name, 150)} "
             f"({quote.signed_at.strftime('%m/%d/%y')})", small))
+        _ev = latest_event('quote', quote.id, 'approved')
+        if _ev:
+            sig_left.append(Paragraph(
+                f"Signed electronically on "
+                f"{_ev.created_at.strftime('%m/%d/%y %H:%M UTC')}"
+                + (f" · IP {_pdf_text(_ev.signer_ip, 64)}" if _ev.signer_ip else ""),
+                small))
     else:
         sig_left.append(Spacer(1, 26))
         sig_left.append(Paragraph(
@@ -671,6 +681,7 @@ def _save_quote(quote):
     return render_template(
         'quotes/form.html', quote=quote, customers=customers, projects=projects,
         locations_by_customer=locations_by_customer,
+        signature_events=(events_for('quote', quote.id) if quote else []),
         public_link_active=(_public_link_is_active(quote) if quote else False))
 
 
@@ -816,7 +827,8 @@ def suggest():
 @limiter.limit("60 per minute")
 def public_view(token):
     quote = _get_public_quote(token)
-    return render_template('quotes/public.html', quote=quote)
+    return render_template('quotes/public.html', quote=quote,
+                           consent_text=CONSENT_TEXT)
 
 
 @quote_bp.route('/q/<token>/approve', methods=['POST'])
@@ -833,13 +845,35 @@ def public_approve(token):
     if not name or len(name) > 150 or not signature:
         flash('Please type your name and sign before approving.', 'error')
         return redirect(url_for('quotes.public_view', token=token))
+    if not request.form.get('consent'):
+        flash('Please check the box to confirm your electronic signature.',
+              'error')
+        return redirect(url_for('quotes.public_view', token=token))
 
     quote.signature_name = name
     quote.signature_data = signature
     quote.signed_at = datetime.utcnow()
     quote.status = 'approved'
+    record_signature_event('quote', quote.id, 'approved', signer_name=name)
     db.session.commit()
     flash('Thank you — your approval has been recorded.', 'success')
+    return redirect(url_for('quotes.public_view', token=token))
+
+
+@quote_bp.route('/q/<token>/decline', methods=['POST'])
+@limiter.limit("5 per minute")
+def public_decline(token):
+    quote = _get_public_quote(token)
+    if quote.status in ('approved', 'converted'):
+        flash('This proposal has already been approved and cannot be declined.',
+              'error')
+        return redirect(url_for('quotes.public_view', token=token))
+
+    reason = (request.form.get('decline_reason') or '').strip()[:2000] or None
+    quote.status = 'declined'
+    record_signature_event('quote', quote.id, 'declined', decline_reason=reason)
+    db.session.commit()
+    flash('Your response has been recorded — thank you.', 'success')
     return redirect(url_for('quotes.public_view', token=token))
 
 

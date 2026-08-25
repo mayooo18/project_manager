@@ -94,6 +94,11 @@
     <img src="{{ quote.signature_data }}" alt="Signature" style="margin:1rem auto 0;background:#fff;border:1px solid var(--border);border-radius:8px;padding:.5rem;max-height:120px;"/>
     {% endif %}
   </div>
+  {% elif quote.status == 'declined' %}
+  <div class="card" style="text-align:center;">
+    <p style="color:var(--red);font-size:1.25rem;font-weight:700;">Declined</p>
+    <p class="sub" style="margin-top:.35rem;">You declined this proposal. If this was a mistake, please contact us.</p>
+  </div>
   {% else %}
   <div class="card">
     <p style="color:var(--ink);font-weight:700;margin-bottom:.25rem;">Approve this proposal</p>
@@ -110,8 +115,22 @@
       <canvas id="sigpad"></canvas>
       <input type="hidden" name="signature_data" id="signature_data"/>
 
-      <p style="color:var(--muted);font-size:.78rem;margin-top:.75rem;">By signing, you confirm the work described was proposed to your satisfaction.</p>
+      <label style="display:flex;gap:.6rem;align-items:flex-start;margin-top:1rem;color:var(--body);font-size:.82rem;cursor:pointer;">
+        <input type="checkbox" name="consent" required style="margin-top:.15rem;flex-shrink:0;"/>
+        <span>{{ consent_text }}</span>
+      </label>
       <button type="submit" class="btn" style="margin-top:1rem;">Sign to approve</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <p style="color:var(--ink);font-weight:700;margin-bottom:.25rem;">Not ready to approve?</p>
+    <p class="sub" style="margin-bottom:1rem;">You can decline this proposal and optionally tell us why.</p>
+    <form method="POST" action="{{ url_for('quotes.public_decline', token=quote.public_token) }}" onsubmit="return confirm('Decline this proposal?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <label class="label">Reason (optional)</label>
+      <textarea name="decline_reason" class="fld" rows="3" maxlength="2000" placeholder="Let us know what you'd like to change"></textarea>
+      <button type="submit" class="btn" style="margin-top:1rem;background:#fff;color:var(--red);border:1px solid var(--red);">Decline proposal</button>
     </form>
   </div>
   {% endif %}

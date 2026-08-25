@@ -733,3 +733,20 @@ class ChangeOrderItem(db.Model):
     @property
     def line_total(self):
         return (self.quantity or 0) * (self.unit_price or 0)
+
+
+# ── E-signature audit trail (Feature 8) ──
+
+class SignatureEvent(db.Model):
+    """Immutable audit record of an e-signature action on a customer-facing
+    document (quote or change order). The signature *image* stays on the
+    source record; this captures who / what / when / where + intent-to-sign."""
+    id = db.Column(db.Integer, primary_key=True)
+    doc_type = db.Column(db.String(20), nullable=False, index=True)   # 'quote' | 'change_order'
+    doc_id = db.Column(db.Integer, nullable=False, index=True)
+    action = db.Column(db.String(20), nullable=False)                 # 'approved' | 'declined'
+    signer_name = db.Column(db.String(150))
+    signer_ip = db.Column(db.String(64))
+    consent_text = db.Column(db.Text)        # exact intent-to-sign wording shown at signing
+    decline_reason = db.Column(db.Text)      # nullable; only on declines
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)

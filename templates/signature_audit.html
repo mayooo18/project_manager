@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Signature Log{% endblock %}
+
+{% block content %}
+<style>
+  .aud-wrap{max-width:1100px;margin:0 auto;}
+  .field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-700);margin-bottom:.35rem;}
+  .fgrid{display:grid;grid-template-columns:1fr;gap:1rem;}
+  @media(min-width:768px){.fgrid.f2{grid-template-columns:1fr 1fr;}}
+  .pill{display:inline-block;padding:.1rem .5rem;border-radius:999px;font-size:.72rem;font-weight:600;}
+  .pill-ok{background:var(--surface-2);color:var(--ink-900);}
+  .pill-no{background:var(--surface-2);color:var(--ink-700);}
+  .mono{font-variant-numeric:tabular-nums;color:var(--ink-500);font-size:.82rem;}
+</style>
+
+<div class="aud-wrap">
+  <div class="page-head"><h1>Signature Log</h1></div>
+  <p class="muted" style="margin-bottom:1rem;">Every e-signature approval and decline on your proposals and change orders, with IP and consent captured.</p>
+
+  <!-- Filter -->
+  <div class="card" style="padding:1.5rem;">
+    <p class="sec-title" style="margin-bottom:1rem;">Filter</p>
+    <form method="GET">
+      <div class="fgrid f2">
+        <div class="field"><label for="doc_type">Document</label>
+          <select id="doc_type" name="doc_type">
+            <option value="">All documents</option>
+            <option value="quote" {% if f_type == 'quote' %}selected{% endif %}>Proposals</option>
+            <option value="change_order" {% if f_type == 'change_order' %}selected{% endif %}>Change orders</option>
+          </select></div>
+        <div class="field"><label for="action">Action</label>
+          <select id="action" name="action">
+            <option value="">All actions</option>
+            <option value="approved" {% if f_action == 'approved' %}selected{% endif %}>Approved</option>
+            <option value="declined" {% if f_action == 'declined' %}selected{% endif %}>Declined</option>
+          </select></div>
+      </div>
+      <button type="submit" class="obtn" style="margin-top:1rem;">Apply Filter</button>
+      <a href="{{ url_for('audit.signatures') }}" class="obtn" style="margin-top:1rem;">Clear</a>
+    </form>
+  </div>
+
+  {% if pagination %}
+  <p class="muted" style="margin-bottom:.75rem;">Showing {{ pagination.first }}–{{ pagination.last }} of {{ pagination.total }}</p>
+  {% endif %}
+
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>When (UTC)</th><th>Document</th><th>Action</th><th>Signer</th><th>IP</th><th>Reason</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        {% set e = r.event %}
+        <tr>
+          <td class="mono">{{ e.created_at.strftime('%m/%d/%Y %H:%M') }}</td>
+          <td><a href="{{ url_for(r.endpoint, **r.arg) }}" style="color:var(--ink-900);font-weight:600;">{{ r.kind }}: {{ r.label }}</a></td>
+          <td>
+            {% if e.action == 'approved' %}<span class="pill pill-ok">Approved</span>
+            {% else %}<span class="pill pill-no">Declined</span>{% endif %}
+          </td>
+          <td>{{ e.signer_name or '—' }}</td>
+          <td class="mono">{{ e.signer_ip or '—' }}</td>
+          <td>{{ e.decline_reason or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;color:var(--ink-500);">No signature activity recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination and pagination.pages > 1 %}
+  {% set base_args = {'doc_type': f_type, 'action': f_action} %}
+  <div style="display:flex;gap:.75rem;align-items:center;justify-content:flex-end;margin-top:1rem;">
+    {% if pagination.has_prev %}<a class="obtn" href="{{ url_for('audit.signatures', page=pagination.prev_num, **base_args) }}">Previous</a>{% endif %}
+    <span class="muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}<a class="obtn" href="{{ url_for('audit.signatures', page=pagination.next_num, **base_args) }}">Next</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -46,6 +46,7 @@ def _portal_data(project):
     contracts = list(project.contracts)
     invoices = sorted(project.invoices, key=lambda i: i.id, reverse=True)
     proposals = sorted(project.quotes, key=lambda q: q.id, reverse=True)
+    pending_proposals = [q for q in proposals if q.status == 'sent']
     change_orders = [co for c in contracts for co in c.change_orders]
     pending_cos = [co for co in change_orders if co.status == 'sent']
     signed_cos = [co for co in change_orders if co.status == 'approved']
@@ -58,6 +59,7 @@ def _portal_data(project):
 
     return dict(
         contracts=contracts, invoices=invoices, proposals=proposals,
+        pending_proposals=pending_proposals,
         pending_cos=pending_cos, signed_cos=signed_cos, documents=documents,
         contract_total=contract_total, billed_total=billed_total,
         paid_total=paid_total, due_total=due_total, company=COMPANY,

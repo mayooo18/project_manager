@@ -162,6 +162,34 @@
     <p class="muted" style="margin-top:1rem;">This proposal has already been converted.</p>
     {% endif %}
   </div>
+
+  <div class="card" style="margin-top:1.25rem;">
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:.5rem;">Signature history</h2>
+    {% if signature_events %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:.88rem;">
+        <thead><tr style="text-align:left;color:var(--muted,#64748b);">
+          <th style="padding:.4rem .5rem;">When (UTC)</th><th style="padding:.4rem .5rem;">Action</th>
+          <th style="padding:.4rem .5rem;">Signer</th><th style="padding:.4rem .5rem;">IP</th>
+          <th style="padding:.4rem .5rem;">Reason</th>
+        </tr></thead>
+        <tbody>
+        {% for e in signature_events %}
+          <tr style="border-top:1px solid var(--border,#e2e8f0);">
+            <td style="padding:.4rem .5rem;white-space:nowrap;">{{ e.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td style="padding:.4rem .5rem;">{% if e.action == 'approved' %}<span class="c-green">Approved</span>{% else %}<span class="c-amber">Declined</span>{% endif %}</td>
+            <td style="padding:.4rem .5rem;">{{ e.signer_name or '—' }}</td>
+            <td style="padding:.4rem .5rem;">{{ e.signer_ip or '—' }}</td>
+            <td style="padding:.4rem .5rem;">{{ e.decline_reason or '—' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted" style="font-size:.9rem;">No signature activity yet.</p>
+    {% endif %}
+  </div>
   {% endif %}
 </div>
 

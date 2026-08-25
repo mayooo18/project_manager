@@ -19,7 +19,7 @@
             <img src="{{ url_for('static', filename='images/Optimal.png') }}" alt="Logo" class="h-10 w-auto">
             {% set money_endpoints = ['workers', 'work_logs', 'payments', 'expenses', 'income', 'profitability', 'timeclock', 'add_manual_adjustment', 'payroll.index', 'add_project_expense', 'add_project_payment', 'add_project_income'] %}
             {% set compliance_endpoints = ['permits.index', 'permits.add', 'permits.edit', 'licenses.index', 'licenses.add', 'licenses.edit', 'subcontractors.index', 'subcontractors.add', 'subcontractors.edit', 'waivers.index', 'waivers.new', 'waivers.edit'] %}
-            {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index', 'users'] %}
+            {% set tools_endpoints = ['document_form', 'reminders.index', 'vehicles.index', 'users', 'activity.index', 'audit.signatures'] %}
             {% set sales_endpoints = ['quotes.index', 'quotes.new', 'quotes.edit', 'quotes.customers', 'invoices.index', 'invoices.new', 'invoices.edit', 'contracts.index', 'contracts.new', 'contracts.edit'] %}
             <button id="nav-toggle" type="button" aria-label="Toggle menu" onclick="toggleNav(event)">☰</button>
             <div id="nav-links" class="flex items-center gap-4 relative">
@@ -64,6 +64,7 @@
                         <a href="{{ url_for('vehicles.index') }}" class="{{ 'nav-active' if request.endpoint == 'vehicles.index' }}">Vehicles</a>
                         {% if current_user.is_authenticated and current_user.role in ['owner', 'admin'] %}
                         <a href="{{ url_for('activity.index') }}" class="{{ 'nav-active' if request.endpoint == 'activity.index' }}">Activity Log</a>
+                        <a href="{{ url_for('audit.signatures') }}" class="{{ 'nav-active' if request.endpoint == 'audit.signatures' }}">Signature Log</a>
                         {% endif %}
                         {% if current_user.is_authenticated and current_user.is_owner %}
                         <a href="{{ url_for('users') }}" class="{{ 'nav-active' if request.endpoint == 'users' }}">Users</a>

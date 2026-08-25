@@ -36,6 +36,7 @@ from portal_routes import portal_bp
 from crew_routes import crew_bp
 from payroll_routes import payroll_bp
 from activity_routes import activity_bp
+from audit_routes import audit_bp
 from activity_log import record_activity
 import re
 from docx import Document
@@ -69,6 +70,7 @@ app.register_blueprint(portal_bp)
 app.register_blueprint(crew_bp)
 app.register_blueprint(payroll_bp)
 app.register_blueprint(activity_bp)
+app.register_blueprint(audit_bp)
 
 # API routes use API key auth — exempt from CSRF
 csrf.exempt(field_api_bp)

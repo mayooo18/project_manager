@@ -82,6 +82,11 @@
     <p class="sub" style="margin-top:.35rem;">Signed by {{ change_order.signature_name }} on {{ change_order.signed_at.strftime('%B %d, %Y at %H:%M') }}</p>
     <img src="{{ change_order.signature_data }}" alt="Signature" style="margin:1rem auto 0;background:#fff;border:1px solid var(--border);border-radius:8px;padding:.5rem;max-height:120px;"/>
   </div>
+  {% elif change_order.status == 'declined' %}
+  <div class="card" style="text-align:center;">
+    <p style="color:var(--red);font-size:1.25rem;font-weight:700;">Declined</p>
+    <p class="sub" style="margin-top:.35rem;">You declined this change order. If this was a mistake, please contact us.</p>
+  </div>
   {% else %}
   <div class="card">
     <p style="color:var(--ink);font-weight:700;">Approve this change order</p>
@@ -96,7 +101,22 @@
       </div>
       <canvas id="sigpad"></canvas>
       <input type="hidden" name="signature_data" id="signature_data"/>
+      <label style="display:flex;gap:.6rem;align-items:flex-start;margin-top:1rem;color:var(--body);font-size:.82rem;cursor:pointer;">
+        <input type="checkbox" name="consent" required style="margin-top:.15rem;flex-shrink:0;"/>
+        <span>{{ consent_text }}</span>
+      </label>
       <button type="submit" class="btn" style="margin-top:1rem;">Sign to approve</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <p style="color:var(--ink);font-weight:700;margin-bottom:.25rem;">Not ready to approve?</p>
+    <p class="sub" style="margin-bottom:1rem;">You can decline this change order and optionally tell us why.</p>
+    <form method="POST" action="{{ url_for('change_orders.public_decline', token=change_order.public_token) }}" onsubmit="return confirm('Decline this change order?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <label class="label">Reason (optional)</label>
+      <textarea name="decline_reason" class="fld" rows="3" maxlength="2000" placeholder="Let us know what you'd like to change"></textarea>
+      <button type="submit" class="btn" style="margin-top:1rem;background:#fff;color:var(--red);border:1px solid var(--red);">Decline change order</button>
     </form>
   </div>
   {% endif %}

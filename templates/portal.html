@@ -59,6 +59,18 @@
     </div>
   </div>
 
+  {% for q in pending_proposals %}
+  <a href="{{ url_for('quotes.public_view', token=q.public_token) }}" class="alert">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
+      <div>
+        <p class="h">Proposal needs your approval</p>
+        <p class="d">{{ q.title }} · ${{ '{:,.0f}'.format(q.total or 0) }}</p>
+      </div>
+      <span class="cta">Review &amp; sign</span>
+    </div>
+  </a>
+  {% endfor %}
+
   {% for co in pending_cos %}
   <a href="{{ url_for('change_orders.public_view', token=co.public_token) }}" class="alert">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
