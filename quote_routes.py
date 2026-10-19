@@ -240,6 +240,7 @@ def build_quote_pdf(quote, doc_type='proposal'):
     doc_title = ParagraphStyle('doctitle', parent=styles['Title'],
                                fontSize=22, alignment=TA_RIGHT, spaceAfter=0)
     company_name = ParagraphStyle('coname', parent=normal, fontSize=13,
+                                  leading=16, spaceAfter=3,
                                   fontName='Helvetica-Bold')
     section = ParagraphStyle('section', parent=normal,
                              fontName='Helvetica-Bold', fontSize=10)
