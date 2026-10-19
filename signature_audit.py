@@ -27,16 +27,21 @@ def _client_ip():
 
 
 def record_signature_event(doc_type, doc_id, action, signer_name=None,
-                           decline_reason=None):
+                           decline_reason=None, consent_text=None):
     """Append an immutable audit row. Adds to the session but does not commit —
-    the calling route commits alongside the document status change."""
+    the calling route commits alongside the document status change.
+
+    `consent_text` overrides the default intent-to-sign wording — used for an
+    owner-recorded offline approval, where consent happened on paper rather than
+    through the electronic-signature flow."""
     event = SignatureEvent(
         doc_type=doc_type,
         doc_id=doc_id,
         action=action,
         signer_name=signer_name,
         signer_ip=_client_ip(),
-        consent_text=CONSENT_TEXT if action == 'approved' else None,
+        consent_text=(consent_text if consent_text is not None
+                      else (CONSENT_TEXT if action == 'approved' else None)),
         decline_reason=decline_reason,
     )
     db.session.add(event)

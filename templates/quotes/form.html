@@ -144,6 +144,20 @@
       </form>
     </div>
     {% endif %}
+    {% if current_user.is_owner and quote.status in ['draft', 'sent'] %}
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--line, #e5e7eb);">
+      <p class="muted" style="font-size:.9rem;margin-bottom:.5rem;">Customer signed a printed or PDF copy (no email)? Record their approval here.</p>
+      <form method="POST" action="{{ url_for('quotes.mark_approved', quote_id=quote.id) }}"
+            class="flex flex-wrap items-center gap-2"
+            onsubmit="return confirm('Mark this proposal approved on behalf of the customer who signed offline? This cannot be undone without reopening the proposal.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="text" name="signature_name" required maxlength="150"
+               placeholder="Customer name (as signed)" class="fld" style="min-width:16rem;"
+               value="{{ quote.customer.name }}"/>
+        <button type="submit" class="obtn">Mark approved (signed offline)</button>
+      </form>
+    </div>
+    {% endif %}
     {% if quote.signed_at %}
     <p class="c-green" style="font-size:.9rem;margin-top:.75rem;">✓ Approved by {{ quote.signature_name }} on {{ quote.signed_at.strftime('%Y-%m-%d %H:%M') }}</p>
     {% endif %}

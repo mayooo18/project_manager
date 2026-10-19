@@ -363,27 +363,39 @@ def build_quote_pdf(quote, doc_type='proposal'):
 
     # ── Signatures ──
     sig_left = []
-    if quote.signed_at and quote.signature_data:
-        try:
-            b64 = quote.signature_data.split(',', 1)[1]
-            sig_img = Image(BytesIO(base64.b64decode(b64)))
-            sratio = sig_img.imageHeight / float(sig_img.imageWidth)
-            sig_img.drawWidth = 2.2 * inch
-            sig_img.drawHeight = min(0.8 * inch, 2.2 * inch * sratio)
-            sig_img.hAlign = 'LEFT'
-            sig_left.append(sig_img)
-        except Exception:
+    if quote.signed_at:
+        # A drawn e-signature image renders when present; an offline approval
+        # (owner recorded a customer who signed a printed/PDF copy) has no image
+        # — show the typed name on the signature line instead.
+        if quote.signature_data:
+            try:
+                b64 = quote.signature_data.split(',', 1)[1]
+                sig_img = Image(BytesIO(base64.b64decode(b64)))
+                sratio = sig_img.imageHeight / float(sig_img.imageWidth)
+                sig_img.drawWidth = 2.2 * inch
+                sig_img.drawHeight = min(0.8 * inch, 2.2 * inch * sratio)
+                sig_img.hAlign = 'LEFT'
+                sig_left.append(sig_img)
+            except Exception:
+                sig_left.append(Spacer(1, 26))
+        else:
             sig_left.append(Spacer(1, 26))
         sig_left.append(Paragraph(
             f"Client Signature — {_pdf_text(quote.signature_name or c.name, 150)} "
             f"({quote.signed_at.strftime('%m/%d/%y')})", small))
         _ev = latest_event('quote', quote.id, 'approved')
         if _ev:
-            sig_left.append(Paragraph(
-                f"Signed electronically on "
-                f"{_ev.created_at.strftime('%m/%d/%y %H:%M UTC')}"
-                + (f" · IP {_pdf_text(_ev.signer_ip, 64)}" if _ev.signer_ip else ""),
-                small))
+            if quote.signature_data:
+                sig_left.append(Paragraph(
+                    f"Signed electronically on "
+                    f"{_ev.created_at.strftime('%m/%d/%y %H:%M UTC')}"
+                    + (f" · IP {_pdf_text(_ev.signer_ip, 64)}"
+                       if _ev.signer_ip else ""),
+                    small))
+            else:
+                sig_left.append(Paragraph(
+                    f"Approved offline — recorded by owner on "
+                    f"{_ev.created_at.strftime('%m/%d/%y %H:%M UTC')}", small))
     else:
         sig_left.append(Spacer(1, 26))
         sig_left.append(Paragraph(
@@ -723,6 +735,39 @@ def send(quote_id):
     link = url_for('quotes.public_view', token=quote.public_token, _external=True)
     flash(f'Proposal marked as sent. Share this approval link with the customer: {link}',
           'success')
+    return redirect(url_for('quotes.edit', quote_id=quote.id))
+
+
+@quote_bp.route('/<int:quote_id>/mark-approved', methods=['POST'])
+@login_required
+@owner_required
+def mark_approved(quote_id):
+    """Owner-side offline approval: record that a customer signed a printed/PDF
+    copy (common when they have no email on file), so the proposal can advance
+    to 'approved' and be converted to a contract or invoice — without the
+    customer-facing e-signature flow. No signature image is fabricated."""
+    quote = _owned_quote_or_404(quote_id)
+    if quote.status not in ('draft', 'sent'):
+        flash('Only a draft or sent proposal can be approved offline.', 'error')
+        return redirect(url_for('quotes.edit', quote_id=quote.id))
+
+    name = (request.form.get('signature_name') or '').strip()
+    if not name or len(name) > 150:
+        flash("Enter the customer's name to record the offline approval.",
+              'error')
+        return redirect(url_for('quotes.edit', quote_id=quote.id))
+
+    quote.signature_name = name
+    quote.signature_data = None  # no drawn signature for an offline approval
+    quote.signed_at = datetime.utcnow()
+    quote.status = 'approved'
+    record_signature_event(
+        'quote', quote.id, 'approved', signer_name=name,
+        consent_text=('Recorded offline by the owner — customer signed a '
+                      'printed/PDF copy. No electronic signature was captured.'))
+    db.session.commit()
+    flash(f'Proposal approved offline for {name}. You can now create a '
+          'contract or invoice from it.', 'success')
     return redirect(url_for('quotes.edit', quote_id=quote.id))
 
 
