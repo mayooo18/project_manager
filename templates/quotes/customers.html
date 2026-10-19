@@ -4,6 +4,12 @@
 {% block content %}
 <style>
   .merge-sel{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-700);font-size:.75rem;padding:.25rem .4rem;width:auto;}
+  .row-tools{position:relative;}
+  .row-tools>summary{cursor:pointer;list-style:none;}
+  .row-tools>summary::-webkit-details-marker{display:none;}
+  .row-tools-menu{position:absolute;right:0;top:1.75rem;z-index:10;background:var(--canvas);
+    border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:.6rem;
+    box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:.6rem;min-width:220px;}
 </style>
 <div style="max-width:920px;margin:0 auto;">
   <div class="page-head"><h1>Customers</h1></div>
@@ -32,26 +38,33 @@
         <p class="muted" style="margin-top:.25rem;">{{ c.email or '' }}{% if c.email and c.phone %} · {% endif %}{{ c.phone or '' }}</p>
         {% if c.address %}<p class="muted">{{ c.address }}</p>{% endif %}
       </div>
-      <div class="flex items-center gap-3 flex-shrink-0 flex-wrap">
+      <div class="flex items-center gap-3 flex-shrink-0">
         <span class="muted">{{ c.quotes|length }} proposal{{ '' if c.quotes|length == 1 else 's' }}</span>
-        {% if customers|length > 1 %}
-        <form method="POST" action="{{ url_for('quotes.merge_customer', customer_id=c.id) }}"
-              onsubmit="return confirm('Merge {{ c.name }} into the selected customer? Their jobs and records move over, and {{ c.name }} is deleted. This cannot be undone.');"
-              class="flex items-center gap-1">
-          {{ delete_form.csrf_token }}
-          <select name="survivor_id" required class="merge-sel">
-            <option value="">Merge into…</option>
-            {% for other in customers if other.id != c.id %}<option value="{{ other.id }}">{{ other.name }}</option>{% endfor %}
-          </select>
-          <button type="submit" class="linkbtn">Merge</button>
-        </form>
-        {% endif %}
-        {% if current_user.is_owner %}
-        <form method="POST" action="{{ url_for('quotes.delete_customer', customer_id=c.id) }}"
-              onsubmit="return confirm('Delete {{ c.name }} and their proposals? This cannot be undone.');">
-          {{ delete_form.csrf_token }}
-          <button type="submit" class="linkbtn danger">Delete</button>
-        </form>
+        {% if (customers|length > 1) or current_user.is_owner %}
+        <details class="row-tools">
+          <summary class="linkbtn">Tools</summary>
+          <div class="row-tools-menu">
+            {% if customers|length > 1 %}
+            <form method="POST" action="{{ url_for('quotes.merge_customer', customer_id=c.id) }}"
+                  onsubmit="return confirm('Merge {{ c.name }} into the selected customer? Their jobs and records move over, and {{ c.name }} is deleted. This cannot be undone.');"
+                  class="flex items-center gap-1">
+              {{ delete_form.csrf_token }}
+              <select name="survivor_id" required class="merge-sel">
+                <option value="">Merge into…</option>
+                {% for other in customers if other.id != c.id %}<option value="{{ other.id }}">{{ other.name }}</option>{% endfor %}
+              </select>
+              <button type="submit" class="linkbtn">Merge</button>
+            </form>
+            {% endif %}
+            {% if current_user.is_owner %}
+            <form method="POST" action="{{ url_for('quotes.delete_customer', customer_id=c.id) }}"
+                  onsubmit="return confirm('Delete {{ c.name }} and their proposals? This cannot be undone.');">
+              {{ delete_form.csrf_token }}
+              <button type="submit" class="linkbtn danger">Delete</button>
+            </form>
+            {% endif %}
+          </div>
+        </details>
         {% endif %}
       </div>
     </div>
