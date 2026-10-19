@@ -56,7 +56,7 @@ COMPANY = {
     'address_line2': 'Beecher, Illinois 60401',
     'phone': '708-769-9181',
     'email': 'Office@OptimalSES.com',
-    'doc_title': 'CONTRACT',
+    'doc_title': 'PROPOSAL',
     'footer': 'THANK YOU FOR YOUR BUSINESS!',
 }
 LOGO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -211,8 +211,12 @@ def _apply_items(quote, item_dicts):
     quote.recalculate_total()
 
 
-def build_quote_pdf(quote):
-    """Render a quote as a contract-style PDF matching the Optimal SES template."""
+def build_quote_pdf(quote, doc_type='proposal'):
+    """Render a quote as a PDF matching the Optimal SES template.
+
+    ``doc_type`` selects the document labels (title + number prefix) so the
+    same builder can be reused; quotes are served as proposals.
+    """
     import base64
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
@@ -243,6 +247,14 @@ def build_quote_pdf(quote):
                             fontName='Helvetica-Bold', fontSize=12)
     ink = colors.HexColor('#111111')
 
+    # Document labels keyed by type (title + number prefix).
+    DOC_LABELS = {
+        'proposal': ('PROPOSAL', 'PROPOSAL #'),
+        'contract': ('CONTRACT', 'CONTRACT #'),
+        'invoice': ('INVOICE', 'INVOICE #'),
+    }
+    title_text, number_label = DOC_LABELS.get(doc_type, DOC_LABELS['proposal'])
+
     elems = []
 
     # ── Header: logo + company (left) | doc title + invoice/date (right) ──
@@ -266,9 +278,9 @@ def build_quote_pdf(quote):
 
     date_str = quote.created_at.strftime('%m/%d/%y') if quote.created_at else ''
     right_cell = [
-        Paragraph(COMPANY['doc_title'], doc_title),
+        Paragraph(title_text, doc_title),
         Spacer(1, 8),
-        Paragraph(f"INVOICE # {quote.id}", small_r),
+        Paragraph(f"{number_label} {quote.id}", small_r),
         Paragraph(f"DATE {date_str}", small_r),
     ]
 
@@ -331,7 +343,7 @@ def build_quote_pdf(quote):
     elems.append(items_table)
     elems.append(Spacer(1, 16))
 
-    # ── Payment & Project Schedule (auto deposit sentence + notes) ──
+    # ── Notes (auto deposit sentence + customer notes) ──
     schedule_bits = []
     if quote.deposit:
         balance = (quote.total or 0) - quote.deposit
@@ -343,7 +355,7 @@ def build_quote_pdf(quote):
         schedule_bits.append(_pdf_text(quote.notes, preserve_newlines=True))
 
     if schedule_bits:
-        elems.append(Paragraph('Payment &amp; Project Schedule:', section))
+        elems.append(Paragraph('Notes:', section))
         elems.append(Spacer(1, 4))
         elems.append(Paragraph('<br/><br/>'.join(schedule_bits), small))
         elems.append(Spacer(1, 18))
