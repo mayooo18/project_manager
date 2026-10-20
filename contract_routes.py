@@ -118,6 +118,16 @@ def _apply_draws(contract, draw_dicts):
         seq += 1
 
 
+def _scope_from_quote(quote):
+    """Build a frozen Scope-of-Work snapshot from a proposal's line items.
+
+    Each item's description is kept verbatim (line breaks / bullets intact) and
+    items are separated by a blank line. Returns '' when the quote has no items.
+    """
+    parts = [(item.description or '').strip() for item in quote.items]
+    return '\n\n'.join(p for p in parts if p)
+
+
 def build_contract_pdf(contract):
     """Render a contract with its Schedule of Values as a PDF."""
     import os
@@ -200,6 +210,45 @@ def build_contract_pdf(contract):
     elems.append(billtable)
     elems.append(Spacer(1, 14))
 
+    # Property address (from the linked job), shown above the scope. Hidden when
+    # there's no linked job or the job has no address.
+    prop_address = contract.project.address if contract.project else None
+    if prop_address:
+        elems.append(Paragraph('<b>PROPERTY ADDRESS</b>', small))
+        elems.append(Paragraph(_pdf_text(prop_address, 250), small))
+        elems.append(Spacer(1, 12))
+
+    # Scope of Work — frozen snapshot carried from the source proposal. Rendered
+    # as a numbered table (one row per item); blank lines in the stored text
+    # separate items, matching how the snapshot joins the proposal's line items.
+    # Line breaks / bullets inside an item are preserved. Hidden when empty.
+    scope_items = [blk.strip() for blk
+                   in re.split(r'\n\s*\n', contract.scope_of_work or '')
+                   if blk.strip()]
+    if scope_items:
+        elems.append(Paragraph('Scope of Work', section))
+        elems.append(Spacer(1, 6))
+        scope_data = [[Paragraph('<b>#</b>', small),
+                       Paragraph('<b>Description</b>', small)]]
+        for i, item in enumerate(scope_items, 1):
+            scope_data.append([
+                Paragraph(str(i), small),
+                Paragraph(_pdf_text(item, preserve_newlines=True), small)])
+        scope_table = Table(scope_data, colWidths=[0.4 * inch, 6.6 * inch])
+        scope_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e8e8e8')),
+            ('LINEBELOW', (0, 0), (-1, 0), 0.5, ink),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.HexColor('#dddddd')),
+        ]))
+        elems.append(scope_table)
+        elems.append(Spacer(1, 12))
+
     elems.append(Paragraph('Schedule of Values', section))
     elems.append(Spacer(1, 6))
     data = [[Paragraph('<b>#</b>', small), Paragraph('<b>Milestone / Draw</b>', small),
@@ -236,7 +285,7 @@ def build_contract_pdf(contract):
         elems.append(Spacer(1, 10))
 
     if contract.notes:
-        elems.append(Paragraph('Notes:', section))
+        elems.append(Paragraph('Notes &amp; Exclusions:', section))
         elems.append(Spacer(1, 4))
         elems.append(Paragraph(_pdf_text(contract.notes, preserve_newlines=True), small))
         elems.append(Spacer(1, 12))
@@ -310,6 +359,7 @@ def _save_contract(contract):
             contract.contract_total = _float(request.form.get('contract_total'))
             contract.retainage_percent = _float_or_none(request.form.get('retainage_percent'))
             contract.notes = (request.form.get('notes') or '').strip()
+            contract.scope_of_work = (request.form.get('scope_of_work') or '').strip()
             _apply_draws(contract, _parse_draws(request.form))
             db.session.commit()
             flash('Contract saved.', 'success')
@@ -378,6 +428,7 @@ def from_quote(quote_id):
         title=quote.title,
         contract_total=quote.total or 0,
         notes=quote.notes,
+        scope_of_work=_scope_from_quote(quote),
         status='draft',
     )
     db.session.add(contract)
