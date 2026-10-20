@@ -77,8 +77,14 @@
     </div>
 
     <div class="sec">
-      <p class="step" style="margin-bottom:.75rem;">3 · Notes</p>
-      <textarea name="notes" rows="2" class="fld" placeholder="Scope summary, terms, exclusions…">{{ contract.notes if contract else '' }}</textarea>
+      <p class="step" style="margin-bottom:.75rem;">3 · Scope of Work</p>
+      <p class="muted" style="margin-bottom:.5rem;">Carried over from the proposal when this contract was created. Edit freely — changes here don't affect the original proposal.</p>
+      <textarea name="scope_of_work" rows="10" class="fld" placeholder="Describe the work to be performed. One item per block; blank lines separate items.">{{ contract.scope_of_work if contract else '' }}</textarea>
+    </div>
+
+    <div class="sec">
+      <p class="step" style="margin-bottom:.75rem;">4 · Notes &amp; exclusions</p>
+      <textarea name="notes" rows="2" class="fld" placeholder="Terms, exclusions, special conditions…">{{ contract.notes if contract else '' }}</textarea>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">

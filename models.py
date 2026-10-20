@@ -619,6 +619,10 @@ class Contract(db.Model):
     # draft → active (work under way) → completed
     status = db.Column(db.String(20), default='draft', nullable=False, index=True)
     notes = db.Column(db.Text)
+    # Frozen snapshot of the Scope of Work, taken from the source proposal's
+    # line-item descriptions when the contract is created. Editable afterwards;
+    # later proposal edits never change it, so a signed contract stays fixed.
+    scope_of_work = db.Column(db.Text)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
