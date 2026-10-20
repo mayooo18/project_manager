@@ -17,6 +17,15 @@
   @media(min-width:1024px){.twocol{grid-template-columns:1fr 1fr;}}
   .addprop{display:grid;grid-template-columns:1fr;gap:.5rem;border-top:1px solid var(--border);padding-top:1rem;}
   @media(min-width:640px){.addprop{grid-template-columns:1fr 180px auto;align-items:center;}}
+  .pm-menu{position:relative;}
+  .pm-menu summary{list-style:none;cursor:pointer;color:var(--ink-500);padding:.1rem .45rem;border-radius:.4rem;font-size:1rem;line-height:1;}
+  .pm-menu summary::-webkit-details-marker{display:none;}
+  .pm-menu summary:hover{color:var(--accent);background:var(--canvas);}
+  .pm-menu[open] summary{color:var(--accent);}
+  .pm-pop{position:absolute;right:0;top:calc(100% + 4px);z-index:20;min-width:180px;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-sm);box-shadow:0 8px 24px rgba(0,0,0,.35);padding:.3rem;}
+  .pm-pop a,.pm-pop button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink-700);font-size:.82rem;padding:.4rem .55rem;border-radius:.35rem;cursor:pointer;text-decoration:none;}
+  .pm-pop a:hover,.pm-pop button:hover{background:var(--canvas);color:var(--ink-900);}
+  .pm-pop button.danger:hover{color:#f87171;}
 </style>
 {% set sstyle = {'Active':'text-green-300 border-green-500','On Hold':'text-yellow-300 border-yellow-500','Completed':'text-blue-300 border-blue-500'} %}
 
@@ -85,8 +94,31 @@
     <div class="card" style="padding:1.25rem;">
       <p class="sec-title" style="margin-bottom:.5rem;">Proposals ({{ proposals|length }})</p>
       {% for q in proposals %}
-      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('quotes.edit', quote_id=q.id) }}">{{ q.title }}</a>
-        <span class="muted">{{ q.status }} · ${{ '%.0f'|format(q.total or 0) }}</span></div>
+      <div class="row">
+        <a class="lk" style="font-size:.88rem;min-width:0;" href="{{ url_for('quotes.edit', quote_id=q.id) }}">{{ q.title }}</a>
+        <span class="flex items-center gap-2 flex-shrink-0">
+          <span class="muted">{{ q.status }} · ${{ '%.0f'|format(q.total or 0) }}</span>
+          <details class="pm-menu">
+            <summary title="Actions">⋯</summary>
+            <div class="pm-pop">
+              <a href="{{ url_for('quotes.edit', quote_id=q.id) }}">Edit</a>
+              {% if q.contracts %}
+              <a href="{{ url_for('contracts.edit', contract_id=q.contracts[0].id) }}">View contract</a>
+              {% elif q.status == 'approved' %}
+              <form method="POST" action="{{ url_for('contracts.from_quote', quote_id=q.id) }}" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Convert to contract</button>
+              </form>
+              {% endif %}
+              <form method="POST" action="{{ url_for('quotes.delete', quote_id=q.id) }}" style="margin:0;"
+                    onsubmit="return confirm('Delete this proposal? This cannot be undone.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="danger">Delete</button>
+              </form>
+            </div>
+          </details>
+        </span>
+      </div>
       {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
     </div>
     <div class="card" style="padding:1.25rem;">
