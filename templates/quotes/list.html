@@ -6,7 +6,10 @@
 <div style="max-width:920px;margin:0 auto;">
   <div class="page-head">
     <h1>Proposals</h1>
-    <a href="{{ url_for('quotes.new') }}" class="btn">+ New Proposal</a>
+    <div class="flex items-center gap-3 flex-wrap">
+      <a href="{{ url_for('contracts.combine') }}" class="obtn">Combine Proposals</a>
+      <a href="{{ url_for('quotes.new') }}" class="btn">+ New Proposal</a>
+    </div>
   </div>
   {{ status_tabs('quotes.index', counts, view, q) }}
 

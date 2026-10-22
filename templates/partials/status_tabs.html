@@ -6,7 +6,7 @@
        style="padding:.35rem .9rem;border-radius:999px;text-decoration:none;font-size:.85rem;
               border:1px solid {{ 'transparent' if view == key else 'var(--border-strong)' }};
               background:{{ 'var(--accent)' if view == key else 'var(--surface)' }};
-              color:{{ '#fff' if view == key else 'var(--ink-700)' }};">
+              color:{{ '#fff' if view == key else 'var(--ink-700)' }} !important;">
       {{ label }} <span style="opacity:.65;">({{ counts.get(key, 0) }})</span>
     </a>
     {% endfor %}
