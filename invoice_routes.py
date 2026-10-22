@@ -34,6 +34,7 @@ from models import Invoice, InvoiceItem, Customer, Quote, Project, Income
 from forms import DeleteForm
 from quote_routes import (
     COMPANY, LOGO_PATH, _pdf_text, _parse_items, _new_token as _new_quote_token,
+    safe_filename,
 )
 
 invoice_bp = Blueprint('invoices', __name__, url_prefix='/invoices')
@@ -309,7 +310,9 @@ def send_invoice_email(invoice):
 
     pdf_bytes = build_invoice_pdf(invoice).read()
     attachment = MIMEApplication(pdf_bytes, _subtype='pdf')
-    safe_name = (invoice.number or 'invoice').replace('/', '-')
+    safe_name = safe_filename(invoice.customer.name if invoice.customer else None,
+                              invoice.number or ('Invoice ' + str(invoice.id)),
+                              'Invoice')
     attachment.add_header('Content-Disposition', 'attachment',
                           filename=f'{safe_name}.pdf')
     msg.attach(attachment)
@@ -564,7 +567,7 @@ def pdf(invoice_id):
     buf = build_invoice_pdf(invoice)
     return send_file(buf, mimetype='application/pdf',
                      as_attachment=False,
-                     download_name=f'{invoice.number or invoice.id}.pdf')
+                     download_name=f"{safe_filename(invoice.customer.name if invoice.customer else None, invoice.number or ('Invoice ' + str(invoice.id)), 'Invoice')}.pdf")
 
 
 # ── public view (no login) ─────────────────────────────────────────────────
@@ -583,4 +586,4 @@ def public_pdf(token):
     buf = build_invoice_pdf(invoice)
     return send_file(buf, mimetype='application/pdf',
                      as_attachment=False,
-                     download_name=f'{invoice.number or invoice.id}.pdf')
+                     download_name=f"{safe_filename(invoice.customer.name if invoice.customer else None, invoice.number or ('Invoice ' + str(invoice.id)), 'Invoice')}.pdf")

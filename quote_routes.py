@@ -78,6 +78,19 @@ def _new_token():
             return token
 
 
+def safe_filename(*parts):
+    """Join parts into a descriptive, filesystem-safe PDF base name.
+
+    e.g. safe_filename('Brandon Young', 'Garage', 'Proposal')
+         -> 'Brandon Young - Garage - Proposal'
+    Drops characters illegal in filenames, collapses whitespace, caps length.
+    """
+    name = ' - '.join(str(p).strip() for p in parts if p and str(p).strip())
+    name = re.sub(r'[\\/:*?"<>|]+', '', name)
+    name = re.sub(r'\s+', ' ', name).strip()
+    return (name or 'document')[:120]
+
+
 def _public_link_is_active(quote, now=None):
     now = now or datetime.utcnow()
     return (quote.public_token_revoked_at is None and
@@ -459,7 +472,8 @@ def send_quote_email(quote):
 
     pdf_bytes = build_quote_pdf(quote).read()
     attachment = MIMEApplication(pdf_bytes, _subtype='pdf')
-    safe_name = (quote.title or 'quote').replace('/', '-')
+    safe_name = safe_filename(quote.customer.name if quote.customer else None,
+                              quote.title, 'Proposal')
     attachment.add_header('Content-Disposition', 'attachment',
                           filename=f'{safe_name}.pdf')
     msg.attach(attachment)
@@ -907,7 +921,7 @@ def pdf(quote_id):
     buf = build_quote_pdf(quote)
     return send_file(buf, mimetype='application/pdf',
                      as_attachment=False,
-                     download_name=f'quote-{quote.id}.pdf')
+                     download_name=f"{safe_filename(quote.customer.name if quote.customer else None, quote.title, 'Proposal')}.pdf")
 
 
 # ── AI suggestion (plain language → professional line item + price) ───────
@@ -1011,4 +1025,4 @@ def public_pdf(token):
     buf = build_quote_pdf(quote)
     return send_file(buf, mimetype='application/pdf',
                      as_attachment=False,
-                     download_name=f'quote-{quote.id}.pdf')
+                     download_name=f"{safe_filename(quote.customer.name if quote.customer else None, quote.title, 'Proposal')}.pdf")

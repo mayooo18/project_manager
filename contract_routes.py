@@ -33,7 +33,7 @@ from models import (
     Invoice, InvoiceItem, find_or_create_location,
 )
 from forms import DeleteForm
-from quote_routes import COMPANY, LOGO_PATH, _pdf_text
+from quote_routes import COMPANY, LOGO_PATH, _pdf_text, safe_filename
 from invoice_routes import _new_invoice_token, _next_number
 
 contract_bp = Blueprint('contracts', __name__, url_prefix='/contracts')
@@ -688,4 +688,4 @@ def pdf(contract_id):
     buf = build_contract_pdf(contract)
     return send_file(buf, mimetype='application/pdf',
                      as_attachment=False,
-                     download_name=f'{contract.number or contract.id}.pdf')
+                     download_name=f"{safe_filename(contract.customer.name if contract.customer else None, contract.number or ('Contract ' + str(contract.id)), 'Contract')}.pdf")

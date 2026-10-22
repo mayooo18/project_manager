@@ -39,7 +39,8 @@
         {% if c.address %}<p class="muted">{{ c.address }}</p>{% endif %}
       </div>
       <div class="flex items-center gap-3 flex-shrink-0">
-        <span class="muted">{{ c.quotes|length }} proposal{{ '' if c.quotes|length == 1 else 's' }}</span>
+        {% set open_props = c.quotes | rejectattr('status','equalto','converted') | rejectattr('status','equalto','declined') | list | length %}
+        <span class="muted">{{ open_props }} proposal{{ '' if open_props == 1 else 's' }}{% if c.contracts %} · {{ c.contracts|length }} contract{{ '' if c.contracts|length == 1 else 's' }}{% endif %}</span>
         {% if (customers|length > 1) or current_user.is_owner %}
         <details class="row-tools">
           <summary class="linkbtn">Tools</summary>
