@@ -14,7 +14,8 @@
   {{ status_tabs('contracts.index', counts, view, q) }}
 
   {% set status_styles = {
-    'draft':'text-gray-300 border-gray-500','active':'text-blue-300 border-blue-500',
+    'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
+    'accepted':'text-green-300 border-green-500','active':'text-blue-300 border-blue-500',
     'completed':'text-green-300 border-green-500'} %}
 
   {% if contracts %}
