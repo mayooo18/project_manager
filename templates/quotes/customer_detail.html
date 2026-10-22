@@ -15,6 +15,8 @@
   @media(min-width:640px){.kgrid{grid-template-columns:repeat(4,1fr);}}
   .twocol{display:grid;grid-template-columns:1fr;gap:16px;}
   @media(min-width:1024px){.twocol{grid-template-columns:1fr 1fr;}}
+  .threecol{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:1024px){.threecol{grid-template-columns:repeat(3,1fr);}}
   .addprop{display:grid;grid-template-columns:1fr;gap:.5rem;border-top:1px solid var(--border);padding-top:1rem;}
   @media(min-width:640px){.addprop{grid-template-columns:1fr 180px auto;align-items:center;}}
   .pm-menu{position:relative;}
@@ -90,7 +92,7 @@
     </form>
   </div>
 
-  <div class="twocol">
+  <div class="threecol">
     <div class="card" style="padding:1.25rem;">
       <p class="sec-title" style="margin-bottom:.5rem;">Proposals ({{ proposals|length }})</p>
       {% for q in proposals %}
@@ -118,6 +120,15 @@
             </div>
           </details>
         </span>
+      </div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
+    </div>
+    <div class="card" style="padding:1.25rem;">
+      <p class="sec-title" style="margin-bottom:.5rem;">Contracts ({{ contracts|length }})</p>
+      {% for c in contracts %}
+      <div class="row">
+        <a class="lk" style="font-size:.88rem;min-width:0;" href="{{ url_for('contracts.edit', contract_id=c.id) }}">{{ c.number or ('Contract #' ~ c.id) }}</a>
+        <span class="muted">{{ c.status }} · ${{ '%.0f'|format(c.contract_total or 0) }}</span>
       </div>
       {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
     </div>

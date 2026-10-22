@@ -51,6 +51,28 @@
       </div>
     </div>
 
+    {% if contract and (contract.proposals or contract.quote) %}
+    <div class="sec">
+      <p class="step" style="margin-bottom:.75rem;">Source proposal{{ 's' if contract.proposals|length > 1 }}</p>
+      {% if contract.proposals %}
+        {% for cp in contract.proposals %}
+        <div class="drow">
+          <a class="lnk" href="{{ url_for('quotes.edit', quote_id=cp.quote_id) }}">
+            {% if cp.quote %}{{ cp.quote.title }}{% else %}Proposal{% endif %} <span class="muted">· #{{ cp.quote_id }}</span>
+          </a>
+          <span class="muted">${{ '%.2f'|format(cp.amount or 0) }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="drow">
+          <a class="lnk" href="{{ url_for('quotes.edit', quote_id=contract.quote.id) }}">{{ contract.quote.title }} <span class="muted">· #{{ contract.quote.id }}</span></a>
+          <span class="muted">${{ '%.2f'|format(contract.quote.total or 0) }}</span>
+        </div>
+      {% endif %}
+      <p class="muted" style="margin-top:.4rem;">Scope &amp; total were snapshotted from {{ 'these' if contract.proposals|length > 1 else 'this' }} when the contract was created.</p>
+    </div>
+    {% endif %}
+
     <div class="sec">
       <div class="flex items-center justify-between mb-1">
         <p class="step">2 · Draw schedule</p>

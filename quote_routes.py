@@ -13,6 +13,7 @@ Customer / Quote / QuoteItem tables.
 """
 
 import os
+import re
 import json
 import secrets
 import base64
@@ -28,6 +29,7 @@ from flask import (
     jsonify, send_file, abort, current_app,
 )
 from flask_login import login_required, current_user
+from sqlalchemy import or_
 from sqlalchemy.orm import selectinload
 from permissions import owner_required
 
@@ -45,6 +47,9 @@ quote_bp = Blueprint('quotes', __name__, url_prefix='/quotes')
 
 PAGE_SIZE = 100
 QUOTE_STATUSES = ['draft', 'sent', 'approved', 'declined', 'converted']
+# Status groups for the list filter tabs (Active / All / Archived).
+QUOTE_ACTIVE_STATUSES = ('draft', 'sent', 'approved')
+QUOTE_ARCHIVED_STATUSES = ('converted', 'declined')
 MAX_SIGNATURE_BYTES = 512 * 1024
 MAX_SIGNATURE_DIMENSION = 2048
 PUBLIC_LINK_LIFETIME = timedelta(days=30)
@@ -590,6 +595,7 @@ def customer_detail(customer_id):
         'quotes/customer_detail.html', customer=customer,
         location_groups=location_groups, unlocated=unlocated,
         proposals=sorted(customer.quotes, key=lambda q: q.id, reverse=True),
+        contracts=sorted(customer.contracts, key=lambda c: c.id, reverse=True),
         invoices=sorted(customer.invoices, key=lambda i: i.id, reverse=True),
         total_contract=total_contract, total_paid=total_paid)
 
@@ -617,15 +623,39 @@ def add_location(customer_id):
 @quote_bp.route('/')
 @login_required
 def index():
-    quotes = (Quote.query
-              .filter_by(user_id=current_user.id)
+    view = request.args.get('view', 'active')
+    search = (request.args.get('q') or '').strip()
+
+    base = Quote.query.filter_by(user_id=current_user.id)
+    if search:
+        like = f'%{search}%'
+        base = base.join(Customer).filter(
+            or_(Quote.title.ilike(like), Customer.name.ilike(like)))
+
+    # Tab counts reflect the current search so the numbers stay consistent.
+    status_counts = dict(
+        base.with_entities(Quote.status, db.func.count(Quote.id))
+        .group_by(Quote.status).all())
+    counts = {
+        'active': sum(status_counts.get(s, 0) for s in QUOTE_ACTIVE_STATUSES),
+        'archived': sum(status_counts.get(s, 0) for s in QUOTE_ARCHIVED_STATUSES),
+        'all': sum(status_counts.values()),
+    }
+
+    listing = base
+    if view == 'active':
+        listing = listing.filter(Quote.status.in_(QUOTE_ACTIVE_STATUSES))
+    elif view == 'archived':
+        listing = listing.filter(Quote.status.in_(QUOTE_ARCHIVED_STATUSES))
+
+    quotes = (listing
               .options(selectinload(Quote.customer), selectinload(Quote.project))
               .order_by(Quote.created_at.desc())
               .paginate(page=max(request.args.get('page', 1, type=int) or 1, 1),
                         per_page=PAGE_SIZE, error_out=False))
     return render_template('quotes/list.html', quotes=quotes.items,
-                           pagination=quotes,
-                           delete_form=DeleteForm())
+                           pagination=quotes, view=view, counts=counts,
+                           q=search, delete_form=DeleteForm())
 
 
 # ── quote builder (create / edit) ────────────────────────────────────────
@@ -807,6 +837,45 @@ def reopen(quote_id):
     db.session.commit()
     flash('Proposal reopened for changes. Send a new approval link after saving updates.', 'success')
     return redirect(url_for('quotes.edit', quote_id=quote.id))
+
+
+@quote_bp.route('/<int:quote_id>/revise', methods=['POST'])
+@login_required
+def revise(quote_id):
+    original = _owned_quote_or_404(quote_id)
+
+    # Next number within this proposal's family (the root counts as Rev 1).
+    root = original
+    while root.revision_of is not None:
+        root = root.revision_of
+    count, stack = 0, [root]
+    while stack:
+        node = stack.pop()
+        count += 1
+        stack.extend(node.revisions)
+    base_title = re.sub(r'\s*\(Rev \d+\)\s*$', '', original.title or '').strip()
+
+    rev = Quote(
+        user_id=current_user.id,
+        customer_id=original.customer_id,
+        project_id=original.project_id,
+        location_id=original.location_id,
+        title=f'{base_title} (Rev {count + 1})',
+        status='draft',
+        notes=original.notes,
+        deposit=original.deposit,
+        po_number=original.po_number,
+        public_token=_new_token(),
+        revision_of_id=original.id,
+    )
+    for it in original.items:
+        rev.items.append(QuoteItem(description=it.description,
+                                   quantity=it.quantity, unit_price=it.unit_price))
+    rev.recalculate_total()
+    db.session.add(rev)
+    db.session.commit()
+    flash(f'Created a revision from #{original.id}. Edit the new draft below.', 'success')
+    return redirect(url_for('quotes.edit', quote_id=rev.id))
 
 
 @quote_bp.route('/<int:quote_id>/email', methods=['POST'])

@@ -25,6 +25,7 @@ from flask import (
     send_file,
 )
 from flask_login import login_required, current_user
+from sqlalchemy import or_
 from sqlalchemy.orm import selectinload
 from permissions import owner_required
 
@@ -38,6 +39,9 @@ from quote_routes import (
 invoice_bp = Blueprint('invoices', __name__, url_prefix='/invoices')
 
 PAGE_SIZE = 100
+# Status groups for the list filter tabs (Active / All / Archived).
+INVOICE_ACTIVE_STATUSES = ('draft', 'sent')
+INVOICE_ARCHIVED_STATUSES = ('paid', 'void')
 INVOICE_STATUSES = ['draft', 'sent', 'paid', 'void']
 PAYMENT_METHODS = ['Cash', 'Zelle', 'Check', 'Bank transfer', 'Card', 'Other']
 PUBLIC_LINK_LIFETIME = timedelta(days=30)
@@ -321,15 +325,40 @@ def send_invoice_email(invoice):
 @invoice_bp.route('/')
 @login_required
 def index():
-    invoices = (Invoice.query
-                .filter_by(user_id=current_user.id)
+    view = request.args.get('view', 'active')
+    search = (request.args.get('q') or '').strip()
+
+    base = Invoice.query.filter_by(user_id=current_user.id)
+    if search:
+        like = f'%{search}%'
+        base = base.join(Customer).filter(
+            or_(Invoice.title.ilike(like), Invoice.number.ilike(like),
+                Customer.name.ilike(like)))
+
+    # Tab counts reflect the current search so the numbers stay consistent.
+    status_counts = dict(
+        base.with_entities(Invoice.status, db.func.count(Invoice.id))
+        .group_by(Invoice.status).all())
+    counts = {
+        'active': sum(status_counts.get(s, 0) for s in INVOICE_ACTIVE_STATUSES),
+        'archived': sum(status_counts.get(s, 0) for s in INVOICE_ARCHIVED_STATUSES),
+        'all': sum(status_counts.values()),
+    }
+
+    listing = base
+    if view == 'active':
+        listing = listing.filter(Invoice.status.in_(INVOICE_ACTIVE_STATUSES))
+    elif view == 'archived':
+        listing = listing.filter(Invoice.status.in_(INVOICE_ARCHIVED_STATUSES))
+
+    invoices = (listing
                 .options(selectinload(Invoice.customer), selectinload(Invoice.project))
                 .order_by(Invoice.created_at.desc())
                 .paginate(page=max(request.args.get('page', 1, type=int) or 1, 1),
                           per_page=PAGE_SIZE, error_out=False))
     return render_template('invoices/list.html', invoices=invoices.items,
-                           pagination=invoices,
-                           delete_form=DeleteForm())
+                           pagination=invoices, view=view, counts=counts,
+                           q=search, delete_form=DeleteForm())
 
 
 # ── builder (create / edit) ────────────────────────────────────────────────

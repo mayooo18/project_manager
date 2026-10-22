@@ -2,11 +2,13 @@
 {% block title %}Proposals{% endblock %}
 
 {% block content %}
+{% from 'partials/status_tabs.html' import status_tabs %}
 <div style="max-width:920px;margin:0 auto;">
   <div class="page-head">
     <h1>Proposals</h1>
     <a href="{{ url_for('quotes.new') }}" class="btn">+ New Proposal</a>
   </div>
+  {{ status_tabs('quotes.index', counts, view, q) }}
 
   {% set status_styles = {
     'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
@@ -26,6 +28,8 @@
           #{{ q.id }} · {{ q.customer.name }}
           {% if q.created_at %} · {{ q.created_at.strftime('%Y-%m-%d') }}{% endif %}
           {% if q.project %} · Job: {{ q.project.name }}{% endif %}
+          {% if q.revision_of_id %} · <a href="{{ url_for('quotes.edit', quote_id=q.revision_of_id) }}" class="lnk">↳ Rev of #{{ q.revision_of_id }}</a>{% endif %}
+          {% if q.revisions %} · {{ q.revisions|length }} revision{{ 's' if q.revisions|length > 1 }}{% endif %}
         </p>
       </div>
       <div class="flex items-center gap-3 flex-shrink-0 flex-wrap">
@@ -58,7 +62,7 @@
   {% endfor %}
   {% else %}
   <div class="list-empty">
-    <p style="color:var(--ink-700);">No proposals yet.</p>
+    <p style="color:var(--ink-700);">No proposals in this view.</p>
     <p class="muted" style="margin-top:.25rem;">Create a proposal, then send the customer a link to approve and e-sign it.</p>
   </div>
   {% endif %}

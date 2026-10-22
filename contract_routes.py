@@ -24,13 +24,13 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from permissions import owner_required
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
 from extensions import db
 from models import (
-    Contract, ContractDraw, Customer, Quote, Project, Invoice, InvoiceItem,
-    find_or_create_location,
+    Contract, ContractDraw, ContractProposal, Customer, Quote, Project,
+    Invoice, InvoiceItem, find_or_create_location,
 )
 from forms import DeleteForm
 from quote_routes import COMPANY, LOGO_PATH, _pdf_text
@@ -39,6 +39,9 @@ from invoice_routes import _new_invoice_token, _next_number
 contract_bp = Blueprint('contracts', __name__, url_prefix='/contracts')
 
 PAGE_SIZE = 100
+# Status groups for the list filter tabs (Active / All / Archived).
+CONTRACT_ACTIVE_STATUSES = ('draft', 'active')
+CONTRACT_ARCHIVED_STATUSES = ('completed',)
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
@@ -126,6 +129,54 @@ def _scope_from_quote(quote):
     """
     parts = [(item.description or '').strip() for item in quote.items]
     return '\n\n'.join(p for p in parts if p)
+
+
+def _scope_from_quotes(quotes):
+    """Combined Scope-of-Work snapshot across several merged proposals.
+
+    Each proposal's items are grouped under a heading naming that proposal, so
+    the contract's scope shows which work came from which quote.
+    """
+    blocks = []
+    for q in quotes:
+        header = (q.title or f'Proposal #{q.id}').strip()
+        body = _scope_from_quote(q)
+        blocks.append(f'=== {header} ===\n\n{body}' if body else f'=== {header} ===')
+    return '\n\n'.join(blocks)
+
+
+def _ensure_project_for_quote(quote):
+    """Return a Job id for a signed proposal, creating one if needed.
+
+    Mirrors the job-creation used when converting a single proposal, so a
+    combined contract still ends up tied to one Job. (from_quote keeps its own
+    copy untouched.)
+    """
+    if quote.project_id:
+        return quote.project_id
+    customer = quote.customer
+    job_address = None
+    job_location_id = None
+    if quote.location_id and quote.location:
+        job_address = quote.location.address
+        job_location_id = quote.location_id
+    elif customer:
+        job_address = customer.address
+    project = Project(
+        name=quote.title or (f"Job for {customer.name}" if customer else 'New job'),
+        address=job_address,
+        status='Active',
+        customer_id=quote.customer_id,
+    )
+    db.session.add(project)
+    db.session.flush()
+    if job_location_id:
+        project.location_id = job_location_id
+    else:
+        loc = find_or_create_location(current_user.id, quote.customer_id, job_address)
+        if loc:
+            project.location_id = loc.id
+    return project.id
 
 
 def build_contract_pdf(contract):
@@ -307,8 +358,32 @@ def build_contract_pdf(contract):
 @contract_bp.route('/')
 @login_required
 def index():
-    contracts = (Contract.query
-                 .filter_by(user_id=current_user.id)
+    view = request.args.get('view', 'active')
+    search = (request.args.get('q') or '').strip()
+
+    base = Contract.query.filter_by(user_id=current_user.id)
+    if search:
+        like = f'%{search}%'
+        base = base.join(Customer).filter(
+            or_(Contract.title.ilike(like), Customer.name.ilike(like)))
+
+    # Tab counts reflect the current search so the numbers stay consistent.
+    status_counts = dict(
+        base.with_entities(Contract.status, db.func.count(Contract.id))
+        .group_by(Contract.status).all())
+    counts = {
+        'active': sum(status_counts.get(s, 0) for s in CONTRACT_ACTIVE_STATUSES),
+        'archived': sum(status_counts.get(s, 0) for s in CONTRACT_ARCHIVED_STATUSES),
+        'all': sum(status_counts.values()),
+    }
+
+    listing = base
+    if view == 'active':
+        listing = listing.filter(Contract.status.in_(CONTRACT_ACTIVE_STATUSES))
+    elif view == 'archived':
+        listing = listing.filter(Contract.status.in_(CONTRACT_ARCHIVED_STATUSES))
+
+    contracts = (listing
                  .options(
                      selectinload(Contract.customer),
                      selectinload(Contract.project),
@@ -318,8 +393,8 @@ def index():
                  .paginate(page=max(request.args.get('page', 1, type=int) or 1, 1),
                            per_page=PAGE_SIZE, error_out=False))
     return render_template('contracts/list.html', contracts=contracts.items,
-                           pagination=contracts,
-                           delete_form=DeleteForm())
+                           pagination=contracts, view=view, counts=counts,
+                           q=search, delete_form=DeleteForm())
 
 
 # ── builder (create / edit) ─────────────────────────────────────────────────
@@ -449,6 +524,89 @@ def from_quote(quote_id):
     db.session.commit()
     flash('Contract created from proposal. Set up the draw schedule below.', 'success')
     return redirect(url_for('contracts.edit', contract_id=contract.id))
+
+
+# ── combine several approved proposals into one contract ────────────────────
+
+@contract_bp.route('/combine', methods=['GET', 'POST'])
+@login_required
+def combine():
+    if request.method == 'POST':
+        ids = request.form.getlist('quote_ids', type=int)
+        if not ids:
+            flash('Select at least one approved proposal.', 'error')
+            return redirect(url_for('contracts.combine'))
+
+        quotes = (Quote.query
+                  .filter(Quote.id.in_(ids), Quote.user_id == current_user.id)
+                  .options(selectinload(Quote.items), selectinload(Quote.customer))
+                  .all())
+        if len(quotes) != len(set(ids)):
+            flash('One or more proposals could not be found.', 'error')
+            return redirect(url_for('contracts.combine'))
+        if any(q.status != 'approved' for q in quotes):
+            flash('Only approved proposals can be combined.', 'error')
+            return redirect(url_for('contracts.combine'))
+        if len({q.customer_id for q in quotes}) != 1:
+            flash('All proposals must belong to the same customer.', 'error')
+            return redirect(url_for('contracts.combine'))
+
+        # Stable order (by id) so the "primary" proposal and the scope read
+        # predictably.
+        quotes.sort(key=lambda q: q.id)
+        primary = quotes[0]
+        project_id = _ensure_project_for_quote(primary)
+
+        contract = Contract(
+            user_id=current_user.id,
+            customer_id=primary.customer_id,
+            project_id=project_id,
+            quote_id=primary.id,
+            number=_next_contract_number(),
+            title=(primary.title if len(quotes) == 1
+                   else f'Contract for {primary.customer.name}'),
+            contract_total=sum(q.total or 0 for q in quotes),
+            notes=primary.notes,
+            scope_of_work=_scope_from_quotes(quotes),
+            status='draft',
+        )
+        db.session.add(contract)
+        db.session.flush()
+
+        # Record every proposal rolled in (primary included) for traceability,
+        # snapshotting each total at merge time.
+        for q in quotes:
+            contract.proposals.append(
+                ContractProposal(quote_id=q.id, amount=q.total or 0))
+
+        # Seed a draw schedule: summed deposits up front, then the balance.
+        deposit = sum(q.deposit or 0 for q in quotes)
+        seq = 0
+        if deposit:
+            contract.draws.append(ContractDraw(
+                sequence=seq, description='Deposit', amount=deposit,
+                status='pending'))
+            seq += 1
+            balance = (contract.contract_total or 0) - deposit
+            if balance > 0:
+                contract.draws.append(ContractDraw(
+                    sequence=seq, description='Balance on completion',
+                    amount=balance, status='pending'))
+
+        for q in quotes:
+            q.status = 'converted'
+        db.session.commit()
+        flash(f'Contract created from {len(quotes)} proposal(s). '
+              'Review the draw schedule below.', 'success')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
+
+    # GET — approved, not-yet-converted proposals, grouped by customer.
+    quotes = (Quote.query
+              .filter_by(user_id=current_user.id, status='approved')
+              .options(selectinload(Quote.customer))
+              .order_by(Quote.customer_id.asc(), Quote.created_at.asc())
+              .all())
+    return render_template('contracts/combine.html', quotes=quotes)
 
 
 # ── delete ──────────────────────────────────────────────────────────────────

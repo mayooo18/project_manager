@@ -481,6 +481,10 @@ class Quote(db.Model):
     # instead of the customer's default address — lets one customer have jobs
     # at different addresses.
     location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=True, index=True)
+    # Links a revised proposal back to the one it supersedes, so #12→#14→#15
+    # read as one family instead of three unrelated rows.
+    revision_of_id = db.Column(db.Integer, db.ForeignKey('quote.id'),
+                               nullable=True, index=True)
 
     title = db.Column(db.String(200), nullable=False)
     # draft → sent → approved / declined → converted (to invoice, Phase 2)
@@ -512,6 +516,9 @@ class Quote(db.Model):
     location = db.relationship('Location')
     items = db.relationship('QuoteItem', back_populates='quote',
                             cascade='all, delete-orphan', order_by='QuoteItem.id')
+    # Self-reference: `revision_of` points to the superseded proposal;
+    # `revisions` is the list of proposals that revise this one.
+    revision_of = db.relationship('Quote', remote_side=[id], backref='revisions')
 
     def recalculate_total(self):
         self.total = sum((item.line_total or 0) for item in self.items)
@@ -632,6 +639,11 @@ class Contract(db.Model):
     draws = db.relationship('ContractDraw', back_populates='contract',
                             cascade='all, delete-orphan',
                             order_by='ContractDraw.sequence')
+    # Every approved proposal rolled into this contract (beyond the primary
+    # quote_id). Additive — single-proposal contracts simply have none here.
+    proposals = db.relationship('ContractProposal', back_populates='contract',
+                                cascade='all, delete-orphan',
+                                order_by='ContractProposal.id')
 
     @property
     def scheduled_total(self):
@@ -676,6 +688,34 @@ class ContractDraw(db.Model):
     @property
     def is_paid(self):
         return self.invoice is not None and self.invoice.status == 'paid'
+
+
+class ContractProposal(db.Model):
+    """Links a contract to each approved proposal merged into it.
+
+    The contract still keeps its primary `quote_id` (the first proposal it was
+    created from). This table records every proposal rolled into the contract,
+    so the signed total and scope can always be traced back to the quotes they
+    came from. Purely additive — it changes nothing about how single-proposal
+    contracts behave.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'),
+                            nullable=False, index=True)
+    quote_id = db.Column(db.Integer, db.ForeignKey('quote.id'),
+                         nullable=False, index=True)
+    # Snapshot of the proposal's total when it was merged, so later edits to the
+    # quote never silently change the contract's recorded breakdown.
+    amount = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('contract_id', 'quote_id',
+                            name='uq_contract_proposal'),
+    )
+
+    contract = db.relationship('Contract', back_populates='proposals')
+    quote = db.relationship('Quote')
 
 
 # ── Change Orders (Phase 4) ──

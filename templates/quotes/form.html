@@ -19,6 +19,18 @@
     <h1>{{ 'Edit Proposal' if quote else 'New Proposal' }}{% if quote %} <span class="muted" style="font-size:1rem;font-weight:400;">· {{ quote.status }}</span>{% endif %}</h1>
     <a href="{{ url_for('quotes.index') }}" class="lnk">← All proposals</a>
   </div>
+  {% if quote %}
+  <div class="flex items-center justify-between flex-wrap gap-2" style="margin-top:-.25rem;margin-bottom:1rem;">
+    <p class="muted" style="margin:0;">
+      {% if quote.revision_of_id %}Revision of <a class="lnk" href="{{ url_for('quotes.edit', quote_id=quote.revision_of_id) }}">#{{ quote.revision_of_id }}</a>{% endif %}
+      {% if quote.revisions %}{% if quote.revision_of_id %} · {% endif %}Revised by {% for r in quote.revisions %}<a class="lnk" href="{{ url_for('quotes.edit', quote_id=r.id) }}">#{{ r.id }}</a>{{ ', ' if not loop.last }}{% endfor %}{% endif %}
+    </p>
+    <form method="POST" action="{{ url_for('quotes.revise', quote_id=quote.id) }}" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="chip accent">Create revision</button>
+    </form>
+  </div>
+  {% endif %}
   {% set locked = quote and quote.status in ['approved', 'converted'] %}
   {% if locked %}
   <div class="sec">
