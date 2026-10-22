@@ -2,11 +2,13 @@
 {% block title %}Invoices{% endblock %}
 
 {% block content %}
+{% from 'partials/status_tabs.html' import status_tabs %}
 <div style="max-width:920px;margin:0 auto;">
   <div class="page-head">
     <h1>Invoices</h1>
     <a href="{{ url_for('invoices.new') }}" class="btn">+ New Invoice</a>
   </div>
+  {{ status_tabs('invoices.index', counts, view, q) }}
 
   {% set status_styles = {
     'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
@@ -44,7 +46,7 @@
   {% endfor %}
   {% else %}
   <div class="list-empty">
-    <p style="color:var(--ink-700);">No invoices yet.</p>
+    <p style="color:var(--ink-700);">No invoices in this view.</p>
     <p class="muted" style="margin-top:.25rem;">Create one directly, or convert an approved proposal into an invoice.</p>
   </div>
   {% endif %}

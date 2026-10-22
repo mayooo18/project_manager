@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Combine Proposals{% endblock %}
+
+{% block content %}
+<div style="max-width:720px;margin:0 auto;">
+  <div class="page-head">
+    <h1>Combine Proposals into One Contract</h1>
+    <a href="{{ url_for('contracts.index') }}" class="obtn">Cancel</a>
+  </div>
+
+  {% if quotes %}
+  <p class="muted" style="margin-bottom:1rem;">
+    Pick the approved proposals to roll into a single contract. They must all
+    belong to the same customer; totals are summed and each proposal's scope is
+    carried over.
+  </p>
+  <form method="POST" action="{{ url_for('contracts.combine') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for q in quotes %}
+    <label class="list-card" style="display:flex;gap:.75rem;align-items:flex-start;cursor:pointer;">
+      <input type="checkbox" name="quote_ids" value="{{ q.id }}"
+             data-customer="{{ q.customer_id }}"
+             style="margin-top:.3rem;" onchange="syncCombine()">
+      <span style="min-width:0;">
+        <span style="color:var(--ink-900);font-weight:600;">{{ q.title }}</span>
+        <span class="muted" style="display:block;margin-top:.2rem;">
+          {{ q.customer.name }} · ${{ '%.2f'|format(q.total or 0) }}
+          {% if q.created_at %} · {{ q.created_at.strftime('%Y-%m-%d') }}{% endif %}
+        </span>
+      </span>
+    </label>
+    {% endfor %}
+    <p id="combine-warn" class="muted" style="color:var(--danger,#b91c1c);display:none;margin:.5rem 0;">
+      All selected proposals must belong to the same customer.
+    </p>
+    <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center;">
+      <button type="submit" id="combine-submit" class="btn" disabled>Create Contract</button>
+      <span id="combine-count" class="muted"></span>
+    </div>
+  </form>
+  {% else %}
+  <div class="list-empty">
+    <p style="color:var(--ink-700);">No approved proposals available.</p>
+    <p class="muted" style="margin-top:.25rem;">Only approved, not-yet-converted proposals can be combined.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function syncCombine() {
+  var boxes = Array.from(document.querySelectorAll('input[name="quote_ids"]:checked'));
+  var customers = new Set(boxes.map(function (b) { return b.dataset.customer; }));
+  var sameCustomer = customers.size <= 1;
+  document.getElementById('combine-warn').style.display =
+    (!sameCustomer) ? 'block' : 'none';
+  document.getElementById('combine-submit').disabled =
+    (boxes.length === 0 || !sameCustomer);
+  document.getElementById('combine-count').textContent =
+    boxes.length ? boxes.length + ' selected' : '';
+}
+</script>
+{% endblock %}

@@ -2,11 +2,16 @@
 {% block title %}Contracts{% endblock %}
 
 {% block content %}
+{% from 'partials/status_tabs.html' import status_tabs %}
 <div style="max-width:920px;margin:0 auto;">
   <div class="page-head">
     <h1>Contracts</h1>
-    <a href="{{ url_for('contracts.new') }}" class="btn">+ New Contract</a>
+    <div class="flex items-center gap-3 flex-wrap">
+      <a href="{{ url_for('contracts.combine') }}" class="obtn">Combine Proposals</a>
+      <a href="{{ url_for('contracts.new') }}" class="btn">+ New Contract</a>
+    </div>
   </div>
+  {{ status_tabs('contracts.index', counts, view, q) }}
 
   {% set status_styles = {
     'draft':'text-gray-300 border-gray-500','active':'text-blue-300 border-blue-500',
@@ -48,7 +53,7 @@
   {% endfor %}
   {% else %}
   <div class="list-empty">
-    <p style="color:var(--ink-700);">No contracts yet.</p>
+    <p style="color:var(--ink-700);">No contracts in this view.</p>
     <p class="muted" style="margin-top:.25rem;">Create one directly, or turn an approved proposal into a contract with a draw schedule.</p>
   </div>
   {% endif %}
