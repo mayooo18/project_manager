@@ -19,7 +19,9 @@
 
 <div class="cwrap">
   <div class="page-head">
-    <h1>{{ 'Edit Contract' if contract else 'New Contract' }}{% if contract and contract.number %} <span class="muted" style="font-size:1rem;font-weight:400;">· {{ contract.number }}</span>{% endif %}</h1>
+    <h1>{{ 'Edit Contract' if contract else 'New Contract' }}{% if contract and contract.number %} <span class="muted" style="font-size:1rem;font-weight:400;">· {{ contract.number }}</span>{% endif %}
+      {% if contract %}{% set sp = {'draft':'muted','sent':'c-blue','accepted':'c-green','active':'c-blue','completed':'c-green'} %}<span class="spill {{ sp.get(contract.status, 'muted') }}" style="margin-left:.5rem;border-color:var(--border-strong);">{{ contract.status }}</span>{% endif %}
+    </h1>
     <a href="{{ url_for('contracts.index') }}" class="lnk">← All contracts</a>
   </div>
 
@@ -116,6 +118,26 @@
       {% endif %}
     </div>
   </form>
+
+  {% if contract and contract.status in ['draft','sent','accepted'] %}
+  <div class="sec" style="margin-top:1.25rem;">
+    <p class="step" style="margin-bottom:.75rem;">Customer acceptance</p>
+    {% if contract.signed_at %}
+    <p class="c-green" style="font-weight:600;">✓ Accepted by {{ contract.signature_name }} on {{ contract.signed_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    {% else %}
+    <div class="flex flex-wrap items-center gap-3">
+      <form method="POST" action="{{ url_for('contracts.send', contract_id=contract.id) }}" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="obtn accent">{{ 'Resend for signature' if contract.sent_at else 'Send for signature' }}</button>
+      </form>
+      {% if contract.public_token and not contract.public_token_revoked_at %}
+      <a href="{{ url_for('contracts.public_view', token=contract.public_token) }}" target="_blank" class="lnk">View acceptance page ↗</a>
+      {% endif %}
+    </div>
+    <p class="muted" style="margin-top:.5rem;">Sends the customer a link to review and e-sign the full contract — scope, total, and payment schedule.</p>
+    {% endif %}
+  </div>
+  {% endif %}
 
   {% if contract %}
   <div class="sec" style="margin-top:1.5rem;">

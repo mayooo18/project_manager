@@ -26,6 +26,26 @@ with app.app_context():
     else:
         print(" Column quote.revision_of_id already present")
 
+    # Contract e-sign / acceptance columns (token stays null until sent, so no
+    # backfill is needed). Each ADD is skipped once the column exists.
+    contract_cols = {c['name'] for c in insp.get_columns('contract')}
+    for col, ddl in [
+        ('public_token', 'VARCHAR(64)'),
+        ('public_token_expires_at', 'TIMESTAMP'),
+        ('public_token_revoked_at', 'TIMESTAMP'),
+        ('signature_name', 'VARCHAR(150)'),
+        ('signature_data', 'TEXT'),
+        ('signed_at', 'TIMESTAMP'),
+        ('sent_at', 'TIMESTAMP'),
+    ]:
+        if col not in contract_cols:
+            db.session.execute(text(f'ALTER TABLE contract ADD COLUMN {col} {ddl}'))
+            print(f" Added column contract.{col}")
+    db.session.execute(text(
+        'CREATE UNIQUE INDEX IF NOT EXISTS ix_contract_public_token '
+        'ON contract (public_token)'))
+    db.session.commit()
+
     # Seed an admin user if missing
     username = "admin"
 

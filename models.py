@@ -623,13 +623,25 @@ class Contract(db.Model):
     title = db.Column(db.String(200), nullable=False)
     contract_total = db.Column(db.Float, default=0.0)
     retainage_percent = db.Column(db.Float)  # optional % held back (informational)
-    # draft → active (work under way) → completed
+    # draft → sent → accepted → active → completed
     status = db.Column(db.String(20), default='draft', nullable=False, index=True)
     notes = db.Column(db.Text)
     # Frozen snapshot of the Scope of Work, taken from the source proposal's
     # line-item descriptions when the contract is created. Editable afterwards;
     # later proposal edits never change it, so a signed contract stays fixed.
     scope_of_work = db.Column(db.Text)
+
+    # Customer-facing acceptance (mirrors proposals / change orders): a tokenized
+    # public link + captured e-signature, so the customer accepts the full terms —
+    # including the draw schedule — that aren't on the signed proposal. The
+    # signature is retained permanently so the signed contract can be reproduced.
+    public_token = db.Column(db.String(64), unique=True)   # null until sent
+    public_token_expires_at = db.Column(db.DateTime)
+    public_token_revoked_at = db.Column(db.DateTime)
+    signature_name = db.Column(db.String(150))
+    signature_data = db.Column(db.Text)      # base64 data-URL of the drawn signature
+    signed_at = db.Column(db.DateTime)
+    sent_at = db.Column(db.DateTime)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 

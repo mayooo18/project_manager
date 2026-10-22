@@ -15,7 +15,9 @@ Builds on Phases 1-2 without modifying them.
 """
 
 import re
-from datetime import datetime
+import base64
+import secrets
+from datetime import datetime, timedelta
 from io import BytesIO
 
 from flask import (
@@ -27,13 +29,16 @@ from permissions import owner_required
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
-from extensions import db
+from extensions import db, limiter
 from models import (
     Contract, ContractDraw, ContractProposal, Customer, Quote, Project,
     Invoice, InvoiceItem, find_or_create_location,
 )
 from forms import DeleteForm
-from quote_routes import COMPANY, LOGO_PATH, _pdf_text, safe_filename
+from quote_routes import (
+    COMPANY, LOGO_PATH, _pdf_text, safe_filename, _validated_signature_data,
+)
+from signature_audit import record_signature_event, CONSENT_TEXT
 from invoice_routes import _new_invoice_token, _next_number
 
 contract_bp = Blueprint('contracts', __name__, url_prefix='/contracts')
@@ -68,6 +73,31 @@ def _next_contract_number():
     numbers = [c.number for c in
                Contract.query.filter_by(user_id=current_user.id).all()]
     return f"CON-{_max_trailing_int(numbers) + 1:04d}"
+
+
+PUBLIC_LINK_LIFETIME = timedelta(days=30)
+
+
+def _new_contract_token():
+    """A URL-safe token unique among existing contracts."""
+    while True:
+        token = secrets.token_urlsafe(16)
+        if not Contract.query.filter_by(public_token=token).first():
+            return token
+
+
+def _contract_link_is_active(contract, now=None):
+    now = now or datetime.utcnow()
+    return bool(contract.public_token
+                and contract.public_token_revoked_at is None
+                and contract.public_token_expires_at is not None
+                and contract.public_token_expires_at > now)
+
+
+def _refresh_contract_link(contract):
+    contract.public_token = _new_contract_token()
+    contract.public_token_expires_at = datetime.utcnow() + PUBLIC_LINK_LIFETIME
+    contract.public_token_revoked_at = None
 
 
 def _float(raw, default=0.0):
@@ -342,10 +372,29 @@ def build_contract_pdf(contract):
         elems.append(Spacer(1, 12))
 
     elems.append(Spacer(1, 18))
-    sig = Table([[Paragraph('Owner _____________________________', small),
+    owner_cell = []
+    if contract.signed_at and contract.signature_data:
+        # Customer e-signed: render the drawn signature image + name + date.
+        try:
+            b64 = contract.signature_data.split(',', 1)[1]
+            sig_img = Image(BytesIO(base64.b64decode(b64)))
+            sratio = sig_img.imageHeight / float(sig_img.imageWidth)
+            sig_img.drawWidth = 2.2 * inch
+            sig_img.drawHeight = min(0.8 * inch, 2.2 * inch * sratio)
+            sig_img.hAlign = 'LEFT'
+            owner_cell.append(sig_img)
+        except Exception:  # noqa: BLE001 — a bad image must not break the PDF
+            owner_cell.append(Spacer(1, 26))
+        owner_cell.append(Paragraph(
+            f"Accepted by {_pdf_text(contract.signature_name or '', 150)} "
+            f"({contract.signed_at.strftime('%m/%d/%y')})", small))
+    else:
+        owner_cell.append(Paragraph('Owner _____________________________', small))
+    sig = Table([[owner_cell,
                   Paragraph('Contractor _____________________________', small)]],
                 colWidths=[3.5 * inch, 3.5 * inch])
-    sig.setStyle(TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0)]))
+    sig.setStyle(TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0),
+                             ('VALIGN', (0, 0), (-1, -1), 'BOTTOM')]))
     elems.append(sig)
 
     doc.build(elems)
@@ -609,6 +658,70 @@ def combine():
     return render_template('contracts/combine.html', quotes=quotes)
 
 
+# ── send for signature + public acceptance view ─────────────────────────────
+
+@contract_bp.route('/<int:contract_id>/send', methods=['POST'])
+@login_required
+def send(contract_id):
+    contract = _owned_contract_or_404(contract_id)
+    if contract.status in ('active', 'completed'):
+        flash('This contract is already under way.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
+    if not _contract_link_is_active(contract):
+        _refresh_contract_link(contract)
+    if contract.status == 'draft':
+        contract.status = 'sent'
+    if not contract.sent_at:
+        contract.sent_at = datetime.utcnow()
+    db.session.commit()
+    link = url_for('contracts.public_view', token=contract.public_token,
+                   _external=True)
+    flash(f'Contract marked as sent. Share this acceptance link with the '
+          f'customer: {link}', 'success')
+    return redirect(url_for('contracts.edit', contract_id=contract.id))
+
+
+@contract_bp.route('/c/<token>')
+@limiter.limit("60 per minute")
+def public_view(token):
+    contract = Contract.query.filter_by(public_token=token).first_or_404()
+    if not _contract_link_is_active(contract):
+        abort(404)
+    return render_template('contracts/public.html', contract=contract,
+                           company=COMPANY, consent_text=CONSENT_TEXT)
+
+
+@contract_bp.route('/c/<token>/accept', methods=['POST'])
+@limiter.limit("5 per minute")
+def public_accept(token):
+    contract = Contract.query.filter_by(public_token=token).first_or_404()
+    if not _contract_link_is_active(contract):
+        abort(404)
+    if contract.signed_at:
+        flash('This contract has already been accepted.', 'success')
+        return redirect(url_for('contracts.public_view', token=token))
+
+    name = (request.form.get('signature_name') or '').strip()
+    signature = _validated_signature_data(
+        (request.form.get('signature_data') or '').strip())
+    if not name or len(name) > 150 or not signature:
+        flash('Please type your name and sign before accepting.', 'error')
+        return redirect(url_for('contracts.public_view', token=token))
+    if not request.form.get('consent'):
+        flash('Please check the box to confirm your electronic signature.', 'error')
+        return redirect(url_for('contracts.public_view', token=token))
+
+    contract.signature_name = name
+    contract.signature_data = signature
+    contract.signed_at = datetime.utcnow()
+    if contract.status in ('draft', 'sent'):
+        contract.status = 'accepted'
+    record_signature_event('contract', contract.id, 'approved', signer_name=name)
+    db.session.commit()
+    flash('Thank you — your acceptance has been recorded.', 'success')
+    return redirect(url_for('contracts.public_view', token=token))
+
+
 # ── delete ──────────────────────────────────────────────────────────────────
 
 @contract_bp.route('/<int:contract_id>/delete', methods=['POST'])
@@ -654,6 +767,14 @@ def bill_draw(contract_id, draw_id):
         flash('That draw has already been billed.', 'error')
         return redirect(url_for('contracts.edit', contract_id=contract.id))
 
+    # Gate billing on acceptance: a contract that was sent for signature
+    # shouldn't be billed until the customer accepts. A never-sent 'draft'
+    # contract stays billable (handshake deals).
+    if contract.status == 'sent':
+        flash('This contract is awaiting customer acceptance — bill it once the '
+              'customer has signed.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
+
     n = len(contract.draws)
     inv = Invoice(
         user_id=current_user.id,
@@ -674,7 +795,7 @@ def bill_draw(contract_id, draw_id):
 
     draw.invoice_id = inv.id
     draw.status = 'invoiced'
-    if contract.status == 'draft':
+    if contract.status in ('draft', 'accepted'):
         contract.status = 'active'
     db.session.commit()
     flash(f'Draw billed as invoice {inv.number}. Send it to the customer below.', 'success')

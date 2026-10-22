@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Contract · {{ contract.title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --pg:#f4f6f9; --card:#ffffff; --ink:#0f172a; --body:#334155; --muted:#64748b;
+      --border:#e2e8f0; --border-strong:#cbd5e1; --accent:#ea6a30; --green:#16a34a;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--pg);color:var(--body);-webkit-font-smoothing:antialiased;}
+    .wrap{max-width:680px;margin:0 auto;padding:2.5rem 1rem;}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.08);padding:1.75rem;margin-bottom:1.25rem;}
+    .eyebrow{color:var(--accent);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem;}
+    h1{color:var(--ink);font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.25rem;}
+    h2{color:var(--ink);font-size:1rem;font-weight:700;margin-bottom:.6rem;}
+    .sub{color:var(--muted);font-size:.9rem;}
+    .scope{white-space:pre-wrap;color:var(--body);font-size:.92rem;line-height:1.5;}
+    .row{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 0;border-top:1px solid var(--border);}
+    .row .d{color:var(--ink);} .row .amt{color:var(--ink);font-weight:600;white-space:nowrap;}
+    .total{display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--border);margin-top:.5rem;padding-top:1rem;}
+    .total .k{color:var(--muted);text-transform:uppercase;font-size:.72rem;letter-spacing:.05em;}
+    .total .v{color:var(--ink);font-size:1.6rem;font-weight:800;}
+    .notes{color:var(--body);font-size:.9rem;white-space:pre-wrap;line-height:1.5;}
+    .pending{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:1rem;color:#9a3412;font-size:.9rem;}
+    .label{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem;display:block;}
+    .fld{background:#fff;border:1px solid var(--border-strong);border-radius:8px;color:var(--ink);padding:.65rem .75rem;width:100%;font-size:.95rem;font-family:inherit;}
+    .fld:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(234,106,48,.12);}
+    #sigpad{background:#fff;border:1px dashed var(--border-strong);border-radius:8px;touch-action:none;width:100%;height:180px;display:block;}
+    .btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.85rem;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit;}
+    .btn:hover{background:#d75f28;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <p class="eyebrow">Contract{% if contract.number %} · {{ contract.number }}{% endif %}</p>
+      <h1>{{ contract.title }}</h1>
+      <p class="sub">{{ company.get('name', '') if company else '' }}{% if contract.customer %} · Prepared for {{ contract.customer.name }}{% endif %}</p>
+    </div>
+
+    {% if contract.scope_of_work %}
+    <div class="card">
+      <h2>Scope of Work</h2>
+      <div class="scope">{{ contract.scope_of_work }}</div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h2>Payment Schedule</h2>
+      {% for d in contract.draws %}
+      <div class="row"><span class="d">{{ loop.index }}. {{ d.description }}</span><span class="amt">${{ '%.2f'|format(d.amount or 0) }}</span></div>
+      {% else %}
+      <p class="sub">Payment schedule to be confirmed.</p>
+      {% endfor %}
+      <div class="total"><span class="k">Contract Total</span><span class="v">${{ '%.2f'|format(contract.contract_total or 0) }}</span></div>
+      {% if contract.retainage_percent %}<p class="sub" style="margin-top:.5rem;">Retainage: {{ contract.retainage_percent }}% held until final completion.</p>{% endif %}
+    </div>
+
+    {% if contract.notes %}
+    <div class="card">
+      <h2>Terms &amp; Notes</h2>
+      <div class="notes">{{ contract.notes }}</div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      {% if contract.signed_at %}
+      <p style="color:var(--green);font-weight:700;margin-bottom:.25rem;">✓ Accepted</p>
+      <p class="sub">Signed by {{ contract.signature_name }} on {{ contract.signed_at.strftime('%B %d, %Y at %H:%M') }}</p>
+      {% if contract.signature_data %}
+      <img src="{{ contract.signature_data }}" alt="Signature" style="margin:1rem auto 0;display:block;background:#fff;border:1px solid var(--border);border-radius:8px;padding:.5rem;max-height:120px;"/>
+      {% endif %}
+      {% else %}
+      <p style="color:var(--ink);font-weight:700;margin-bottom:.25rem;">Accept this contract</p>
+      <p class="sub" style="margin-bottom:1rem;">Type your name and sign below to agree to the scope, total, and payment schedule above.</p>
+      <form method="POST" action="{{ url_for('contracts.public_accept', token=contract.public_token) }}" onsubmit="return prepareSignature();">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <label class="label">Your full name *</label>
+        <input type="text" name="signature_name" class="fld" required placeholder="Full name" style="margin-bottom:1rem;"/>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem;">
+          <label class="label" style="margin-bottom:0;">Sign below (finger or mouse) *</label>
+          <button type="button" id="sig-clear" style="background:none;border:none;color:var(--muted);font-size:.78rem;cursor:pointer;">Clear</button>
+        </div>
+        <canvas id="sigpad"></canvas>
+        <input type="hidden" name="signature_data" id="signature_data"/>
+        <label style="display:flex;gap:.6rem;align-items:flex-start;margin-top:1rem;color:var(--body);font-size:.82rem;cursor:pointer;">
+          <input type="checkbox" name="consent" required style="margin-top:.15rem;flex-shrink:0;"/>
+          <span>{{ consent_text }}</span>
+        </label>
+        <button type="submit" class="btn" style="margin-top:1rem;">Sign to accept contract</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/signature.js') }}"></script>
+</body>
+</html>
