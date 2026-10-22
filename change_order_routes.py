@@ -22,6 +22,7 @@ from forms import DeleteForm
 from models import ChangeOrder, ChangeOrderItem, Contract, ContractDraw
 from quote_routes import (
     COMPANY, LOGO_PATH, _parse_items, _pdf_text, _validated_signature_data,
+    safe_filename,
 )
 from signature_audit import (
     record_signature_event, latest_event, events_for, CONSENT_TEXT,
@@ -310,7 +311,10 @@ def send_change_order_email(change_order):
     message.attach(alternative)
     attachment = MIMEApplication(
         build_change_order_pdf(change_order).read(), _subtype='pdf')
-    safe_name = (change_order.number or 'change-order').replace('/', '-')
+    safe_name = safe_filename(
+        change_order.customer.name if change_order.customer else None,
+        change_order.number or ('Change Order ' + str(change_order.id)),
+        'Change Order')
     attachment.add_header(
         'Content-Disposition', 'attachment', filename=f'{safe_name}.pdf')
     message.attach(attachment)
@@ -428,7 +432,7 @@ def pdf(change_order_id):
     return send_file(
         build_change_order_pdf(change_order), mimetype='application/pdf',
         as_attachment=False,
-        download_name=f'{change_order.number or change_order.id}.pdf')
+        download_name=f"{safe_filename(change_order.customer.name if change_order.customer else None, change_order.number or ('Change Order ' + str(change_order.id)), 'Change Order')}.pdf")
 
 
 @change_order_bp.route('/co/<token>')
@@ -525,4 +529,4 @@ def public_pdf(token):
     return send_file(
         build_change_order_pdf(change_order), mimetype='application/pdf',
         as_attachment=False,
-        download_name=f'{change_order.number or change_order.id}.pdf')
+        download_name=f"{safe_filename(change_order.customer.name if change_order.customer else None, change_order.number or ('Change Order ' + str(change_order.id)), 'Change Order')}.pdf")
