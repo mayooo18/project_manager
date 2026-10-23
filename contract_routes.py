@@ -45,7 +45,9 @@ contract_bp = Blueprint('contracts', __name__, url_prefix='/contracts')
 
 PAGE_SIZE = 100
 # Status groups for the list filter tabs (Active / All / Archived).
-CONTRACT_ACTIVE_STATUSES = ('draft', 'active')
+# 'sent' (awaiting signature) and 'accepted' (signed, not yet started) are
+# in-progress work, so they belong in Active — not hidden until 'all'.
+CONTRACT_ACTIVE_STATUSES = ('draft', 'sent', 'accepted', 'active')
 CONTRACT_ARCHIVED_STATUSES = ('completed',)
 
 # ── helpers ──────────────────────────────────────────────────────────────
