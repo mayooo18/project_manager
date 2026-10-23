@@ -1,0 +1,62 @@
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+  <p style="font-size:15px;">Hi {{ invoice.customer.name }},</p>
+
+  <p style="font-size:15px;line-height:1.5;">
+    Thank you — we've received your payment{% if receipt.stage_label %} for
+    <strong>{{ receipt.stage_label }}</strong>{% endif %} on invoice
+    <strong>{{ invoice.number or invoice.id }}</strong> from <strong>{{ company.name }}</strong>.
+    A paid copy is attached as a PDF for your records.
+  </p>
+
+  <p style="text-align:center;margin:18px 0;">
+    <span style="display:inline-block;border:2px solid #16a34a;color:#16a34a;font-weight:bold;
+                 padding:6px 18px;border-radius:6px;letter-spacing:1px;">PAID</span>
+  </p>
+
+  <table style="width:100%;border-collapse:collapse;margin:18px 0;font-size:14px;">
+    <tr>
+      <td style="padding:6px 0;color:#666;">For</td>
+      <td style="padding:6px 0;text-align:right;"><strong>{{ invoice.title }}</strong></td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;color:#666;border-top:1px solid #eee;">Amount paid</td>
+      <td style="padding:6px 0;text-align:right;border-top:1px solid #eee;"><strong>${{ '%.2f'|format(receipt.amount_paid or 0) }}</strong></td>
+    </tr>
+    {% if invoice.payment_method %}
+    <tr>
+      <td style="padding:6px 0;color:#666;">Method</td>
+      <td style="padding:6px 0;text-align:right;">{{ invoice.payment_method }}</td>
+    </tr>
+    {% endif %}
+    {% if invoice.paid_at %}
+    <tr>
+      <td style="padding:6px 0;color:#666;">Date paid</td>
+      <td style="padding:6px 0;text-align:right;">{{ invoice.paid_at.strftime('%Y-%m-%d') }}</td>
+    </tr>
+    {% endif %}
+  </table>
+
+  {% if receipt.show_progress %}
+  <table style="width:100%;border-collapse:collapse;margin:0 0 18px;font-size:14px;background:#f8f8f8;border-radius:8px;">
+    <tr><td colspan="2" style="padding:10px 12px 2px;color:#111;"><strong>Project payment progress</strong></td></tr>
+    <tr>
+      <td style="padding:4px 12px;color:#666;">Paid to date</td>
+      <td style="padding:4px 12px;text-align:right;">${{ '%.2f'|format(receipt.paid_to_date or 0) }} of ${{ '%.2f'|format(receipt.contract_total or 0) }}</td>
+    </tr>
+    <tr>
+      <td style="padding:4px 12px 10px;color:#666;">Remaining</td>
+      <td style="padding:4px 12px 10px;text-align:right;"><strong>${{ '%.2f'|format(receipt.remaining or 0) }}</strong></td>
+    </tr>
+  </table>
+  {% endif %}
+
+  <p style="text-align:center;margin:26px 0;">
+    <a href="{{ link }}"
+       style="background:#ea6a30;color:#fff;text-decoration:none;font-weight:bold;
+              padding:14px 28px;border-radius:8px;display:inline-block;font-size:15px;">
+      View receipt online
+    </a>
+  </p>
+
+  <p style="font-size:14px;margin-top:24px;">Thank you for your business,<br>{{ company.name }}<br>{{ company.phone }}</p>
+</div>
