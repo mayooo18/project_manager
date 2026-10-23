@@ -30,7 +30,7 @@ from sqlalchemy.orm import selectinload
 from permissions import owner_required
 
 from extensions import db, limiter
-from models import Invoice, InvoiceItem, Customer, Quote, Project, Income
+from models import Invoice, InvoiceItem, Customer, Quote, Project, Income, Reminder
 from forms import DeleteForm
 from quote_routes import (
     COMPANY, LOGO_PATH, _pdf_text, _parse_items, _new_token as _new_quote_token,
@@ -84,6 +84,37 @@ def _get_public_invoice(token):
 def _owned_invoice_or_404(invoice_id):
     return Invoice.query.filter_by(
         id=invoice_id, user_id=current_user.id).first_or_404()
+
+
+# ── Payment-deadline reminders (F2) ──────────────────────────────────────────
+
+def _sync_payment_reminder(invoice):
+    """Create or update the payment-due reminder for a deadline invoice.
+
+    No-op for invoices without deadlines. Idempotent: one reminder per invoice,
+    kept in step with the current due date. Caller commits.
+    """
+    if not invoice.has_deadlines:
+        return
+    due = invoice.payment_due_date
+    if due is None:
+        return
+    cust = invoice.customer.name if invoice.customer else 'customer'
+    text = f"Payment due — invoice {invoice.number or invoice.id} ({cust})"
+    rem = Reminder.query.filter_by(invoice_id=invoice.id).first()
+    if rem is None:
+        rem = Reminder(user_id=invoice.user_id, invoice_id=invoice.id)
+        db.session.add(rem)
+    rem.text = text
+    rem.due_date = due
+    rem.is_done = False
+
+
+def _complete_payment_reminder(invoice):
+    """Mark the invoice's payment reminder done (e.g. once it's paid)."""
+    rem = Reminder.query.filter_by(invoice_id=invoice.id).first()
+    if rem is not None:
+        rem.is_done = True
 
 
 def _apply_items(invoice, item_dicts):
@@ -321,6 +352,165 @@ def build_invoice_pdf(invoice):
     return buf
 
 
+def build_suspension_notice_pdf(invoice):
+    """A 7-day written notice of intent to suspend work on an overdue invoice.
+
+    Reuses the company letterhead. Fills in the property/contract, the invoice
+    number, the amount overdue and the date seven calendar days out, so the
+    notice documents that written warning was given before any suspension."""
+    import os
+    from datetime import date
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image)
+
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=0.6 * inch,
+                            bottomMargin=0.6 * inch, leftMargin=0.75 * inch,
+                            rightMargin=0.75 * inch)
+    styles = getSampleStyleSheet()
+    normal = styles['Normal']
+    small = ParagraphStyle('small', parent=normal, fontSize=9, leading=13)
+    small_r = ParagraphStyle('small_r', parent=small, alignment=TA_RIGHT)
+    body = ParagraphStyle('body', parent=normal, fontSize=10.5, leading=16, spaceAfter=10)
+    title = ParagraphStyle('title', parent=styles['Title'], fontSize=15,
+                           alignment=TA_CENTER, spaceAfter=2)
+    company_name = ParagraphStyle('coname', parent=normal, fontSize=13,
+                                  leading=16, fontName='Helvetica-Bold')
+
+    today = date.today()
+    deadline = today + timedelta(days=7)
+    cust = invoice.customer
+    amount = invoice.balance_due
+    due = invoice.payment_due_date
+    overdue_days = (today - due).days if due else None
+    contract = invoice.contract
+    prop = (contract.title if contract else invoice.title)
+
+    elems = []
+    left = []
+    if os.path.exists(LOGO_PATH):
+        try:
+            logo = Image(LOGO_PATH)
+            ratio = logo.imageHeight / float(logo.imageWidth)
+            logo.drawWidth = 1.7 * inch
+            logo.drawHeight = 1.7 * inch * ratio
+            logo.hAlign = 'LEFT'
+            left += [logo, Spacer(1, 4)]
+        except Exception:
+            pass
+    left += [Paragraph(COMPANY['name'], company_name),
+             Paragraph(COMPANY['address_line1'], small),
+             Paragraph(COMPANY['address_line2'], small),
+             Paragraph(COMPANY['phone'], small),
+             Paragraph(COMPANY['email'], small)]
+    right = [Paragraph(f"DATE {today.strftime('%m/%d/%y')}", small_r)]
+    head = Table([[left, right]], colWidths=[4.0 * inch, 3.0 * inch])
+    head.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                              ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                              ('RIGHTPADDING', (0, 0), (-1, -1), 0)]))
+    elems += [head, Spacer(1, 18)]
+
+    elems.append(Paragraph('NOTICE OF INTENT TO SUSPEND WORK', title))
+    elems.append(Spacer(1, 14))
+
+    to = [Paragraph('<b>To:</b>', small), Paragraph(_pdf_text(cust.name, 150), small)]
+    if cust.address:
+        to.append(Paragraph(_pdf_text(cust.address, 250), small))
+    for p in to:
+        elems.append(p)
+    elems.append(Spacer(1, 6))
+    elems.append(Paragraph(f"<b>Re:</b> {_pdf_text(prop, 200)} — invoice "
+                           f"{_pdf_text(invoice.number or invoice.id, 50)}", small))
+    elems.append(Spacer(1, 14))
+
+    overdue_txt = (f"is now {overdue_days} day{'s' if overdue_days != 1 else ''} past due"
+                   if overdue_days is not None else "is past due")
+    elems.append(Paragraph(
+        f"This letter serves as formal written notice that invoice "
+        f"<b>{_pdf_text(invoice.number or invoice.id, 50)}</b> in the amount of "
+        f"<b>${amount:,.2f}</b>"
+        + (f", due {due.strftime('%B %d, %Y')}," if due else ",")
+        + f" remains unpaid and {overdue_txt}.", body))
+    elems.append(Paragraph(
+        f"In accordance with the terms of our contract, you are hereby given "
+        f"<b>seven (7) calendar days</b> from the date of this notice to remit "
+        f"payment in full. If payment is not received by "
+        f"<b>{deadline.strftime('%B %d, %Y')}</b>, {COMPANY['name']} will suspend "
+        f"all work on the above-referenced property until the account is brought "
+        f"current. Any resulting delay or cost is the responsibility of the owner "
+        f"under the contract.", body))
+    elems.append(Paragraph(
+        "We value our working relationship and hope to resolve this promptly. "
+        "Please contact us if you have any questions regarding this account.", body))
+    elems.append(Spacer(1, 20))
+    elems.append(Paragraph("Sincerely,", small))
+    elems.append(Spacer(1, 26))
+    elems.append(Paragraph("_______________________________", small))
+    elems.append(Paragraph(COMPANY['name'], small))
+
+    elems.append(Spacer(1, 24))
+    elems.append(Paragraph(COMPANY['footer'],
+                           ParagraphStyle('foot', parent=normal, alignment=TA_CENTER,
+                                          fontSize=9, fontName='Helvetica-Bold')))
+    doc.build(elems)
+    buf.seek(0)
+    return buf
+
+
+def send_suspension_notice_email(invoice):
+    """Email the 7-day suspension notice (PDF) to the customer via Gmail.
+    Returns (ok, message)."""
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.application import MIMEApplication
+    from googleapiclient.discovery import build as gbuild
+    from google_routes import get_credentials
+    from datetime import date
+
+    customer = invoice.customer
+    if not customer.email:
+        return False, 'This customer has no email address on file. Add one on the Customers page.'
+    creds = get_credentials()
+    if not creds:
+        return False, 'Google account not connected (GOOGLE_REFRESH_TOKEN missing).'
+
+    deadline = date.today() + timedelta(days=7)
+    html = (
+        f"<p>Please find attached a formal notice regarding overdue invoice "
+        f"<strong>{invoice.number or invoice.id}</strong> "
+        f"(${invoice.balance_due:,.2f}).</p>"
+        f"<p>Payment is requested within <strong>seven (7) calendar days</strong> "
+        f"(by {deadline.strftime('%B %d, %Y')}) to avoid a suspension of work on "
+        f"the project. The attached letter has the details.</p>"
+        f"<p>{COMPANY['name']}<br>{COMPANY['phone']}</p>")
+
+    msg = MIMEMultipart('mixed')
+    msg['To'] = customer.email
+    msg['From'] = 'me'
+    msg['Subject'] = (f"Notice of intent to suspend work — invoice "
+                      f"{invoice.number or invoice.id}")
+    alt = MIMEMultipart('alternative')
+    alt.attach(MIMEText(html, 'html'))
+    msg.attach(alt)
+
+    pdf_bytes = build_suspension_notice_pdf(invoice).read()
+    att = MIMEApplication(pdf_bytes, _subtype='pdf')
+    safe_name = safe_filename(customer.name, invoice.number or ('Invoice ' + str(invoice.id)),
+                              'Notice')
+    att.add_header('Content-Disposition', 'attachment', filename=f'7-day-notice-{safe_name}.pdf')
+    msg.attach(att)
+
+    gmail = gbuild('gmail', 'v1', credentials=creds)
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    gmail.users().messages().send(userId='me', body={'raw': raw}).execute()
+    return True, f'7-day notice emailed to {customer.email}.'
+
+
 def send_invoice_email(invoice):
     """Email the invoice (view link + PDF) to the customer via Gmail.
     Returns (ok, message)."""
@@ -527,6 +717,8 @@ def send(invoice_id):
         invoice.sent_at = datetime.utcnow()
     if not _public_link_is_active(invoice):
         _refresh_public_link(invoice)
+    # Start / refresh the payment-deadline reminder (no-op without deadlines).
+    _sync_payment_reminder(invoice)
     db.session.commit()
     link = url_for('invoices.public_view', token=invoice.public_token, _external=True)
     flash(f'Invoice marked as sent. Shareable link: {link}', 'success')
@@ -550,6 +742,8 @@ def mark_paid(invoice_id):
     invoice.status = 'paid'
     invoice.paid_at = paid_at
     invoice.payment_method = method
+    # The deadline is met once it's paid — close its reminder (no-op if none).
+    _complete_payment_reminder(invoice)
 
     # Optionally record the payment as Income on the linked project.
     # Subtract any retainage withheld so income reflects what was actually
@@ -619,12 +813,46 @@ def pdf(invoice_id):
                      download_name=f"{safe_filename(invoice.customer.name if invoice.customer else None, invoice.number or ('Invoice ' + str(invoice.id)), 'Invoice')}.pdf")
 
 
+@invoice_bp.route('/<int:invoice_id>/suspension-notice.pdf')
+@login_required
+def suspension_notice_pdf(invoice_id):
+    """Preview / download the 7-day notice of intent to suspend work (F2)."""
+    invoice = _owned_invoice_or_404(invoice_id)
+    buf = build_suspension_notice_pdf(invoice)
+    name = safe_filename(invoice.customer.name if invoice.customer else None,
+                         invoice.number or ('Invoice ' + str(invoice.id)), 'Notice')
+    return send_file(buf, mimetype='application/pdf', as_attachment=False,
+                     download_name=f"7-day-notice-{name}.pdf")
+
+
+@invoice_bp.route('/<int:invoice_id>/suspension-notice/email', methods=['POST'])
+@login_required
+def suspension_notice_email(invoice_id):
+    """Email the 7-day notice to the customer (confirmed from the invoice page)."""
+    invoice = _owned_invoice_or_404(invoice_id)
+    try:
+        ok, message = send_suspension_notice_email(invoice)
+        db.session.commit()
+    except Exception as exc:  # noqa: BLE001
+        db.session.rollback()
+        ok, message = False, f'Email failed: {exc}'
+    flash(message, 'success' if ok else 'error')
+    return redirect(url_for('invoices.edit', invoice_id=invoice.id))
+
+
 # ── public view (no login) ─────────────────────────────────────────────────
 
 @invoice_bp.route('/i/<token>')
 @limiter.limit("60 per minute")
 def public_view(token):
     invoice = _get_public_invoice(token)
+    # Record the first time the client opens the invoice (F2). This starts the
+    # payment clock; a reminder already exists from when it was sent, so refresh
+    # its due date to reflect the received date.
+    if invoice.received_at is None:
+        invoice.received_at = datetime.utcnow()
+        _sync_payment_reminder(invoice)
+        db.session.commit()
     return render_template('invoices/public.html', invoice=invoice, company=COMPANY)
 
 

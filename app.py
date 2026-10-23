@@ -296,6 +296,25 @@ def home():
                           .order_by(Reminder.due_date.asc())
                           .limit(6).all())
 
+    # ── Overdue invoices by customer (F2) ──
+    # deadline_status is a Python property, so load the open contract invoices
+    # and bucket the overdue ones. Only contract invoices with deadlines on ever
+    # qualify, so this stays empty for ordinary/Simple invoices.
+    from models import Invoice as _Invoice
+    open_contract_invoices = (_Invoice.query
+                              .filter(_Invoice.user_id == current_user.id,
+                                      _Invoice.status == 'sent',
+                                      _Invoice.contract_id.isnot(None))
+                              .all())
+    overdue_by_customer = {}
+    overdue_total = 0.0
+    for _inv in open_contract_invoices:
+        if _inv.deadline_status == 'overdue':
+            name = _inv.customer.name if _inv.customer else 'Unknown'
+            overdue_by_customer[name] = overdue_by_customer.get(name, 0.0) + _inv.balance_due
+            overdue_total += _inv.balance_due
+    overdue_customers = sorted(overdue_by_customer.items(), key=lambda kv: -kv[1])
+
     return render_template(
         "home.html",
         worker_count=worker_count,
@@ -310,6 +329,8 @@ def home():
         pending_quote_value=pending_quote_value,
         recent_quotes=recent_quotes,
         upcoming_reminders=upcoming_reminders,
+        overdue_customers=overdue_customers,
+        overdue_total=overdue_total,
         today=today,
         timedelta=timedelta,
     )
