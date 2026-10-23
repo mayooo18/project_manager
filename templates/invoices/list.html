@@ -13,6 +13,11 @@
   {% set status_styles = {
     'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
     'paid':'text-green-300 border-green-500','void':'text-red-300 border-red-500'} %}
+  {# Deadline badge styling (F2): label + colour per status. #}
+  {% set deadline_badges = {
+    'on_time':('ON TIME','text-green-300 border-green-500'),
+    'due_soon':('DUE SOON','text-yellow-300 border-yellow-500'),
+    'overdue':('OVERDUE','text-red-300 border-red-500')} %}
 
   {% if invoices %}
   {% for inv in invoices %}
@@ -22,12 +27,17 @@
         <div class="flex items-center flex-wrap gap-2">
           <a href="{{ url_for('invoices.edit', invoice_id=inv.id) }}" style="color:var(--ink-900);font-weight:600;font-size:1.05rem;text-decoration:none;">{{ inv.title }}</a>
           <span class="pill {{ status_styles.get(inv.status, 'text-gray-300 border-gray-500') }}" style="font-size:.65rem;text-transform:uppercase;border:1px solid;border-radius:4px;padding:1px 6px;">{{ inv.status }}</span>
+          {% set ds = inv.deadline_status %}
+          {% if ds %}
+          <span class="pill {{ deadline_badges[ds][1] }}" style="font-size:.65rem;text-transform:uppercase;border:1px solid;border-radius:4px;padding:1px 6px;">{{ deadline_badges[ds][0] }}</span>
+          {% endif %}
         </div>
         <p class="muted" style="margin-top:.25rem;">
           {{ inv.number or '#' ~ inv.id }} · {{ inv.customer.name }}
           {% if inv.created_at %} · {{ inv.created_at.strftime('%Y-%m-%d') }}{% endif %}
           {% if inv.project %} · Job: {{ inv.project.name }}{% endif %}
           {% if inv.status == 'paid' and inv.paid_at %} · Paid {{ inv.paid_at.strftime('%Y-%m-%d') }}{% if inv.payment_method %} · {{ inv.payment_method }}{% endif %}{% endif %}
+          {% if inv.deadline_status %} · Due {{ inv.payment_due_date.strftime('%Y-%m-%d') }}{% endif %}
         </p>
       </div>
       <div class="flex items-center gap-3 flex-shrink-0 flex-wrap">

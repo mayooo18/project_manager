@@ -98,6 +98,22 @@
     <a href="{{ url_for('income') }}" class="action"><span class="ico">＄</span><span class="lab">Income</span></a>
   </div>
 
+  <!-- Overdue invoices by customer (F2) — only shown when something is overdue -->
+  {% if overdue_customers %}
+  <div class="panel" style="margin-bottom:1.25rem;border-color:var(--red-fg);">
+    <div class="panel-head">
+      <h2 style="color:var(--red-fg);">Overdue invoices · ${{ '{:,.0f}'.format(overdue_total) }}</h2>
+      <a href="{{ url_for('invoices.index') }}">View invoices</a>
+    </div>
+    {% for name, amount in overdue_customers %}
+    <div class="listrow">
+      <span class="t">{{ name }}</span>
+      <span class="m c-red" style="white-space:nowrap;font-weight:600;">${{ '%.2f'|format(amount) }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <!-- Two-column: reminders + recent quotes -->
   <div class="twocol">
 

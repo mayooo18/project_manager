@@ -183,6 +183,14 @@ def _checkbox(form, name):
     return form.get(name) is not None
 
 
+def _int_or_default(raw, default):
+    try:
+        v = int(float(raw))
+        return v if v > 0 else default
+    except (TypeError, ValueError):
+        return default
+
+
 def _apply_terms_profile(contract, form):
     """Save the chosen profile and the six toggles from the submitted form.
 
@@ -195,6 +203,11 @@ def _apply_terms_profile(contract, form):
     contract.terms_profile = profile if profile in VALID_TERMS_PROFILES else 'simple'
     for field in CONTRACT_TOGGLE_FIELDS:
         setattr(contract, field, _checkbox(form, field))
+    # Payment-deadline windows (F2). Fall back to the standard defaults when a
+    # field is blank or non-numeric, so the clock always has sane values.
+    contract.review_days = _int_or_default(form.get('review_days'), 5)
+    contract.payment_days = _int_or_default(form.get('payment_days'), 10)
+    contract.retainage_release_days = _int_or_default(form.get('retainage_release_days'), 30)
 
 
 def _parse_draws(form):

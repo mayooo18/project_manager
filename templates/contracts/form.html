@@ -77,7 +77,7 @@
         </label>
         <label class="drow" style="cursor:pointer;">
           <span>Payment deadlines<br><span class="muted" style="font-size:.72rem;">Track review / payment due dates</span></span>
-          <input type="checkbox" name="deadlines_enabled" id="deadlines_enabled" {{ 'checked' if contract and contract.deadlines_enabled }}/>
+          <input type="checkbox" name="deadlines_enabled" id="deadlines_enabled" onchange="toggleDeadlineSettings()" {{ 'checked' if contract and contract.deadlines_enabled }}/>
         </label>
         <label class="drow" style="cursor:pointer;">
           <span>Sworn statements<br><span class="muted" style="font-size:.72rem;">Contractor's sworn statement per invoice</span></span>
@@ -95,6 +95,26 @@
           <span>Evidence required<br><span class="muted" style="font-size:.72rem;">Photos / tickets before a draw is billed</span></span>
           <input type="checkbox" name="evidence_required" id="evidence_required" {{ 'checked' if contract and contract.evidence_required }}/>
         </label>
+      </div>
+
+      {# Payment-deadline windows (F2). Shown only when Payment deadlines is on;
+         defaults match the Developer/GC terms. #}
+      <div id="deadline-settings" style="margin-top:1rem;{{ '' if contract and contract.deadlines_enabled else 'display:none;' }}">
+        <label class="lbl">Payment deadline windows (days)</label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="margin-top:.25rem;">
+          <div>
+            <input type="number" min="1" name="review_days" class="fld" placeholder="5" value="{{ contract.review_days if contract and contract.review_days is not none else 5 }}"/>
+            <p class="muted" style="margin-top:.2rem;font-size:.72rem;">Review due (after a complete invoice)</p>
+          </div>
+          <div>
+            <input type="number" min="1" name="payment_days" class="fld" placeholder="10" value="{{ contract.payment_days if contract and contract.payment_days is not none else 10 }}"/>
+            <p class="muted" style="margin-top:.2rem;font-size:.72rem;">Payment due (after a complete invoice)</p>
+          </div>
+          <div>
+            <input type="number" min="1" name="retainage_release_days" class="fld" placeholder="30" value="{{ contract.retainage_release_days if contract and contract.retainage_release_days is not none else 30 }}"/>
+            <p class="muted" style="margin-top:.2rem;font-size:.72rem;">Retainage release (after closeout acceptance)</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -118,6 +138,13 @@
           var r = document.getElementById('retainage_percent');
           if(r && !r.value){ r.value = 5; }
         }
+        toggleDeadlineSettings();
+      }
+      // Show the deadline-day fields only while Payment deadlines is ticked.
+      function toggleDeadlineSettings(){
+        var on = document.getElementById('deadlines_enabled').checked;
+        var box = document.getElementById('deadline-settings');
+        if(box){ box.style.display = on ? '' : 'none'; }
       }
     </script>
 

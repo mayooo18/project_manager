@@ -109,6 +109,35 @@
     {% endif %}
   </div>
 
+  {% if invoice.has_deadlines %}
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="step" style="margin-bottom:.75rem;">Payment deadline</p>
+    {% set ds = invoice.deadline_status %}
+    {% set badge = {'on_time':('On time','c-green'),'due_soon':('Due soon','c-amber'),'overdue':('Overdue','c-red')} %}
+    <p style="margin-bottom:.4rem;">
+      {% if ds %}<span class="spill {{ badge[ds][1] }}" style="border-color:currentColor;">{{ badge[ds][0] }}</span>{% endif %}
+      {% if invoice.payment_due_date %}<span class="muted" style="margin-left:.5rem;">Payment due {{ invoice.payment_due_date.strftime('%Y-%m-%d') }}{% if invoice.review_due_date %} · review by {{ invoice.review_due_date.strftime('%Y-%m-%d') }}{% endif %}</span>{% endif %}
+    </p>
+    {% if invoice.received_at %}
+    <p class="muted" style="font-size:.85rem;">Received by client {{ invoice.received_at.strftime('%Y-%m-%d') }}.</p>
+    {% else %}
+    <p class="muted" style="font-size:.85rem;">The clock starts when the client first opens the link (or when it's sent).</p>
+    {% endif %}
+    {% if ds == 'overdue' %}
+    <div class="flex flex-wrap items-center gap-3" style="margin-top:.75rem;">
+      <a href="{{ url_for('invoices.suspension_notice_pdf', invoice_id=invoice.id) }}" target="_blank" class="obtn">Preview 7-day notice</a>
+      {% if invoice.customer.email %}
+      <form method="POST" action="{{ url_for('invoices.suspension_notice_email', invoice_id=invoice.id) }}" onsubmit="return confirm('Email a formal 7-day notice of intent to suspend work to {{ invoice.customer.email }}? This is a legal notice.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="btn">✉ Email 7-day notice</button>
+      </form>
+      {% endif %}
+    </div>
+    <p class="muted" style="margin-top:.5rem;font-size:.85rem;">Formal written notice giving 7 calendar days to pay before work is suspended on this property.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="sec" style="margin-top:1.5rem;">
     <p class="step" style="margin-bottom:.75rem;">Send to customer</p>
     <p class="muted" style="margin-bottom:.75rem;font-size:.9rem;">Email the invoice (with the PDF attached), or copy a view link to send yourself.</p>

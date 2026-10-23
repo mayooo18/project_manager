@@ -211,6 +211,9 @@ class Reminder(db.Model):
     inspection_id = db.Column(db.Integer, db.ForeignKey('inspection.id'), nullable=True)
     inspection_field = db.Column(db.String(50), nullable=True)
     inspection_offset_days = db.Column(db.Integer, nullable=True)
+    # Payment-deadline reminders link to the invoice they track (F2), so a
+    # payment reminder can be auto-completed when that invoice is paid.
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=True)
 
     user = db.relationship('User', backref=db.backref('reminders', cascade='all, delete-orphan'))
 
@@ -591,6 +594,10 @@ class Invoice(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     sent_at = db.Column(db.DateTime)
+    # When the client received the invoice (F2). Auto-set the first time the
+    # public link is opened; can be overridden. The payment clock starts here
+    # (falling back to sent_at). null for every invoice that has no deadlines.
+    received_at = db.Column(db.DateTime)
 
     customer = db.relationship('Customer', backref='invoices')
     project = db.relationship('Project', backref='invoices')
@@ -617,6 +624,73 @@ class Invoice(db.Model):
         # Retainage held reduces what the customer owes now; null = 0, so
         # non-retainage invoices are unchanged.
         return (self.total or 0) - (self.deposit or 0) - (self.retainage_amount or 0)
+
+    # ── Payment deadlines (F2) ──
+    # Days before the due date at which an invoice is flagged "due soon".
+    DUE_SOON_DAYS = 3
+
+    @property
+    def has_deadlines(self):
+        """Deadlines apply only to invoices on a contract that has them on."""
+        c = self.contract
+        return bool(c is not None and c.deadlines_enabled)
+
+    @property
+    def clock_start(self):
+        """When the payment clock starts: received date, else sent date.
+
+        (When F4's invoice packet exists this can switch to packet-complete.)
+        Returns a date, or None if the invoice hasn't been sent/received.
+        """
+        dt = self.received_at or self.sent_at
+        return dt.date() if dt else None
+
+    @property
+    def payment_due_date(self):
+        if not self.has_deadlines:
+            return None
+        start = self.clock_start
+        if start is None:
+            return None
+        days = self.contract.payment_days
+        return start + timedelta(days=days if days is not None else 10)
+
+    @property
+    def review_due_date(self):
+        if not self.has_deadlines:
+            return None
+        start = self.clock_start
+        if start is None:
+            return None
+        days = self.contract.review_days
+        return start + timedelta(days=days if days is not None else 5)
+
+    @property
+    def deadline_status(self):
+        """'on_time' / 'due_soon' / 'overdue', or None when not applicable.
+
+        None once paid/void or when the invoice has no deadlines or no clock.
+        """
+        if not self.has_deadlines or self.status in ('paid', 'void'):
+            return None
+        due = self.payment_due_date
+        if due is None:
+            return None
+        from datetime import date as _date
+        today = _date.today()
+        if today > due:
+            return 'overdue'
+        if (due - today).days <= self.DUE_SOON_DAYS:
+            return 'due_soon'
+        return 'on_time'
+
+    @property
+    def days_until_due(self):
+        due = self.payment_due_date
+        if due is None:
+            return None
+        from datetime import date as _date
+        return (due - _date.today()).days
 
 
 class InvoiceItem(db.Model):
@@ -665,6 +739,15 @@ class Contract(db.Model):
     lot_releases_enabled = db.Column(db.Boolean, default=False, nullable=False)
     hold_points_enabled = db.Column(db.Boolean, default=False, nullable=False)
     evidence_required = db.Column(db.Boolean, default=False, nullable=False)
+
+    # ── Payment deadline windows (F2) ──
+    # Used only when deadlines_enabled. Defaults match the Developer/GC terms:
+    # review due 5 days after a complete invoice, payment due 10 days after,
+    # retainage release due 30 days after closeout acceptance. Editable per
+    # contract; ignored entirely when deadlines are off.
+    review_days = db.Column(db.Integer, default=5)
+    payment_days = db.Column(db.Integer, default=10)
+    retainage_release_days = db.Column(db.Integer, default=30)
     # draft → sent → accepted → active → completed
     status = db.Column(db.String(20), default='draft', nullable=False, index=True)
     notes = db.Column(db.Text)
