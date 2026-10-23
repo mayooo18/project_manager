@@ -719,6 +719,10 @@ def send(invoice_id):
         _refresh_public_link(invoice)
     # Start / refresh the payment-deadline reminder (no-op without deadlines).
     _sync_payment_reminder(invoice)
+    # Archive a PDF snapshot of exactly what was sent.
+    from archive_routes import archive_document
+    archive_document(current_user.id, 'invoice', invoice.id,
+                     invoice.number, invoice.title, build_invoice_pdf(invoice))
     db.session.commit()
     link = url_for('invoices.public_view', token=invoice.public_token, _external=True)
     flash(f'Invoice marked as sent. Shareable link: {link}', 'success')

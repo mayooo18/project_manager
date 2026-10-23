@@ -788,6 +788,10 @@ def send(contract_id):
         contract.status = 'sent'
     if not contract.sent_at:
         contract.sent_at = datetime.utcnow()
+    # Archive a PDF snapshot of exactly what was sent.
+    from archive_routes import archive_document
+    archive_document(current_user.id, 'contract', contract.id,
+                     contract.number, contract.title, build_contract_pdf(contract))
     db.session.commit()
     link = url_for('contracts.public_view', token=contract.public_token,
                    _external=True)

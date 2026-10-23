@@ -1103,3 +1103,24 @@ class MilestoneEvidence(db.Model):
     def is_image(self):
         ext = (self.original_name or self.filename or '').rsplit('.', 1)[-1].lower()
         return ext in ('png', 'jpg', 'jpeg', 'gif', 'heic')
+
+
+# ── Sent-document archive (immutable "this is what I sent" snapshots) ──
+
+class SentDocumentArchive(db.Model):
+    """A permanent PDF snapshot taken when a customer-facing document is sent.
+
+    Each send stores the exact PDF on disk, so a later edit or dispute can't
+    change what was actually delivered. Multiple rows per document are kept —
+    one per send — as a history.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    doc_type = db.Column(db.String(20), nullable=False, index=True)  # invoice / contract / change_order
+    doc_id = db.Column(db.Integer, nullable=False, index=True)
+    number = db.Column(db.String(50))          # human number at send time
+    label = db.Column(db.String(200))          # e.g. the document title
+    filename = db.Column(db.String(300), nullable=False)   # stored under UPLOAD_FOLDER
+    archived_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    user = db.relationship('User')

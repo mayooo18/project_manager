@@ -397,6 +397,11 @@ def send(change_order_id):
         change_order.sent_at = datetime.utcnow()
     if not _public_link_is_active(change_order):
         _refresh_public_link(change_order)
+    # Archive a PDF snapshot of exactly what was sent.
+    from archive_routes import archive_document
+    archive_document(current_user.id, 'change_order', change_order.id,
+                     change_order.number, change_order.title,
+                     build_change_order_pdf(change_order))
     db.session.commit()
     flash('Change order marked as sent.', 'success')
     return redirect(url_for(
