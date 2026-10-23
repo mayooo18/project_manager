@@ -1,5 +1,5 @@
 from extensions import db
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
@@ -245,6 +245,9 @@ class Subcontractor(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(150), nullable=False)   # company or person
     trade = db.Column(db.String(80))                   # Electrical, Plumbing, HVAC, Framing...
+    # 'subcontractor' or 'supplier' (F3) — lets suppliers live in the same list
+    # and be filtered. Existing rows default to subcontractor.
+    kind = db.Column(db.String(20), default='subcontractor')
     contact_name = db.Column(db.String(120))
     phone = db.Column(db.String(30))
     email = db.Column(db.String(150))
@@ -986,3 +989,72 @@ class SignatureEvent(db.Model):
     consent_text = db.Column(db.Text)        # exact intent-to-sign wording shown at signing
     decline_reason = db.Column(db.Text)      # nullable; only on declines
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+
+# ── Contractor's sworn statements (F3) ──
+
+class SwornStatement(db.Model):
+    """An Illinois-style contractor's sworn statement for one invoice.
+
+    Lists each subcontractor/supplier with their contract amount, previously
+    paid, this payment and balance. One invoice can have several (e.g. a
+    corrected version); each later statement on the same contract pre-fills
+    from the most recent prior one, with the amounts rolled forward.
+    Only used on contracts with sworn statements turned on (F0).
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=False, index=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True, index=True)
+    statement_date = db.Column(db.Date, default=date.today)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    invoice = db.relationship('Invoice', backref=db.backref('sworn_statements',
+                              cascade='all, delete-orphan'))
+    contract = db.relationship('Contract')
+    lines = db.relationship('SwornStatementLine', back_populates='statement',
+                            cascade='all, delete-orphan',
+                            order_by='SwornStatementLine.id')
+
+    @property
+    def total_contract(self):
+        return sum((ln.contract_amount or 0) for ln in self.lines)
+
+    @property
+    def total_previously_paid(self):
+        return sum((ln.previously_paid or 0) for ln in self.lines)
+
+    @property
+    def total_this_payment(self):
+        return sum((ln.this_payment or 0) for ln in self.lines)
+
+    @property
+    def total_balance(self):
+        return sum(ln.balance for ln in self.lines)
+
+
+class SwornStatementLine(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sworn_statement_id = db.Column(db.Integer, db.ForeignKey('sworn_statement.id'),
+                                   nullable=False, index=True)
+    # Optional link to a saved subcontractor/supplier; `name`/`trade` always hold
+    # a snapshot so the statement is stable even if the sub record changes.
+    subcontractor_id = db.Column(db.Integer, db.ForeignKey('subcontractor.id'), nullable=True)
+    name = db.Column(db.String(150))         # sub/supplier name (snapshot or typed)
+    trade = db.Column(db.String(80))
+    description = db.Column(db.Text)          # work done / material furnished
+    contract_amount = db.Column(db.Float, default=0.0)
+    previously_paid = db.Column(db.Float, default=0.0)
+    this_payment = db.Column(db.Float, default=0.0)
+
+    statement = db.relationship('SwornStatement', back_populates='lines')
+    subcontractor = db.relationship('Subcontractor')
+
+    @property
+    def balance(self):
+        return (self.contract_amount or 0) - (self.previously_paid or 0) - (self.this_payment or 0)
+
+    @property
+    def display_name(self):
+        return self.name or (self.subcontractor.name if self.subcontractor else '')

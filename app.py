@@ -32,6 +32,7 @@ from subcontractor_routes import subcontractor_bp
 from license_routes import license_bp
 from permit_routes import permit_bp, sync_reminders_for_permit
 from waiver_routes import waiver_bp
+from sworn_routes import sworn_bp
 from portal_routes import portal_bp
 from crew_routes import crew_bp
 from payroll_routes import payroll_bp
@@ -66,6 +67,7 @@ app.register_blueprint(subcontractor_bp)
 app.register_blueprint(license_bp)
 app.register_blueprint(permit_bp)
 app.register_blueprint(waiver_bp)
+app.register_blueprint(sworn_bp)
 app.register_blueprint(portal_bp)
 app.register_blueprint(crew_bp)
 app.register_blueprint(payroll_bp)

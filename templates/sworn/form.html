@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title %}Sworn Statement{% endblock %}
+
+{% block content %}
+<style>
+  .swrap{max-width:1000px;margin:0 auto;}
+  .fld{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-900);padding:.4rem .55rem;width:100%;font-size:.85rem;}
+  .fld:focus{outline:none;border-color:var(--accent);}
+  .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;margin-bottom:1.25rem;}
+  .lbl{color:var(--ink-500);font-size:.72rem;}
+  .step{color:var(--ink-500);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;}
+  table.lines{width:100%;border-collapse:collapse;font-size:.82rem;}
+  table.lines th{color:var(--ink-500);font-size:.68rem;text-transform:uppercase;text-align:left;padding:.3rem .35rem;}
+  table.lines td{padding:.2rem .25rem;vertical-align:top;}
+  .num{text-align:right;}
+  .bal{color:var(--ink-900);font-weight:600;white-space:nowrap;}
+</style>
+
+<div class="swrap">
+  <div class="page-head">
+    <h1>Sworn Statement</h1>
+    <a href="{{ url_for('invoices.edit', invoice_id=statement.invoice_id) }}" class="lnk">← Back to invoice</a>
+  </div>
+
+  <form method="POST" action="{{ url_for('sworn.edit', statement_id=statement.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    <div class="sec">
+      <p class="step" style="margin-bottom:.75rem;">Statement details</p>
+      <p class="muted" style="margin-bottom:.75rem;font-size:.9rem;">
+        Invoice {{ statement.invoice.number or statement.invoice_id }}
+        {% if statement.contract %} · Contract {{ statement.contract.number }} — {{ statement.contract.title }}{% endif %}
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="lbl">Statement date</label>
+          <input type="date" name="statement_date" class="fld" value="{{ statement.statement_date.strftime('%Y-%m-%d') if statement.statement_date else '' }}"/></div>
+      </div>
+      <div style="margin-top:.75rem;"><label class="lbl">Notes (optional)</label>
+        <textarea name="notes" class="fld" rows="2">{{ statement.notes or '' }}</textarea></div>
+    </div>
+
+    <div class="sec">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <p class="step">Subcontractors &amp; suppliers</p>
+        <button type="button" class="obtn" onclick="addRow()">+ Add line</button>
+      </div>
+      <p class="muted" style="margin-bottom:.5rem;font-size:.82rem;">Pick a saved sub/supplier or type a name. Balance is calculated for you; every value is editable.</p>
+      <div style="overflow-x:auto;">
+      <table class="lines">
+        <thead>
+          <tr>
+            <th style="width:150px;">Saved sub/supplier</th>
+            <th style="width:130px;">Name (or type)</th>
+            <th style="width:90px;">Trade</th>
+            <th>Work / material</th>
+            <th class="num" style="width:95px;">Contract</th>
+            <th class="num" style="width:95px;">Prev. paid</th>
+            <th class="num" style="width:95px;">This pmt</th>
+            <th class="num" style="width:90px;">Balance</th>
+            <th style="width:24px;"></th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          {% for ln in statement.lines %}
+          <tr class="line-row">
+            <td>
+              <select name="line_subcontractor_id" class="fld s-sub">
+                <option value="">—</option>
+                {% for s in subcontractors %}<option value="{{ s.id }}" {{ 'selected' if ln.subcontractor_id == s.id }}>{{ s.name }}{% if s.kind == 'supplier' %} (supplier){% endif %}</option>{% endfor %}
+              </select>
+            </td>
+            <td><input type="text" name="line_name" class="fld" value="{{ ln.name or '' }}"/></td>
+            <td><input type="text" name="line_trade" class="fld" value="{{ ln.trade or '' }}"/></td>
+            <td><input type="text" name="line_description" class="fld" value="{{ ln.description or '' }}"/></td>
+            <td><input type="number" step="any" name="line_contract_amount" class="fld num c-amt" value="{{ '%.2f'|format(ln.contract_amount or 0) }}" oninput="recalc(this)"/></td>
+            <td><input type="number" step="any" name="line_previously_paid" class="fld num p-paid" value="{{ '%.2f'|format(ln.previously_paid or 0) }}" oninput="recalc(this)"/></td>
+            <td><input type="number" step="any" name="line_this_payment" class="fld num t-pay" value="{{ '%.2f'|format(ln.this_payment or 0) }}" oninput="recalc(this)"/></td>
+            <td class="bal num"><span class="bal-val">0.00</span></td>
+            <td><button type="button" class="linkbtn danger" onclick="removeRow(this)" title="Remove">✕</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="num"><b>Totals</b></td>
+            <td class="num"><b><span id="t-contract">0.00</span></b></td>
+            <td class="num"><b><span id="t-prev">0.00</span></b></td>
+            <td class="num"><b><span id="t-this">0.00</span></b></td>
+            <td class="num"><b><span id="t-bal">0.00</span></b></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+      </div>
+      {% if not statement.lines %}
+      <p class="muted" style="margin-top:.75rem;font-size:.85rem;">No lines yet — click “Add line” to list each subcontractor and supplier.</p>
+      {% endif %}
+    </div>
+
+    <div class="flex items-center gap-3 flex-wrap" style="margin-bottom:1.5rem;">
+      <button type="submit" class="btn">Save statement</button>
+      <a href="{{ url_for('sworn.pdf', statement_id=statement.id) }}" target="_blank" class="obtn">Preview PDF</a>
+      <form method="POST" action="{{ url_for('sworn.delete', statement_id=statement.id) }}" onsubmit="return confirm('Delete this sworn statement?');" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="linkbtn danger">Delete</button>
+      </form>
+    </div>
+  </form>
+</div>
+
+<template id="row-tpl">
+  <tr class="line-row">
+    <td>
+      <select name="line_subcontractor_id" class="fld s-sub">
+        <option value="">—</option>
+        {% for s in subcontractors %}<option value="{{ s.id }}" data-name="{{ s.name }}" data-trade="{{ s.trade or '' }}">{{ s.name }}{% if s.kind == 'supplier' %} (supplier){% endif %}</option>{% endfor %}
+      </select>
+    </td>
+    <td><input type="text" name="line_name" class="fld"/></td>
+    <td><input type="text" name="line_trade" class="fld"/></td>
+    <td><input type="text" name="line_description" class="fld"/></td>
+    <td><input type="number" step="any" name="line_contract_amount" class="fld num c-amt" value="0" oninput="recalc(this)"/></td>
+    <td><input type="number" step="any" name="line_previously_paid" class="fld num p-paid" value="0" oninput="recalc(this)"/></td>
+    <td><input type="number" step="any" name="line_this_payment" class="fld num t-pay" value="0" oninput="recalc(this)"/></td>
+    <td class="bal num"><span class="bal-val">0.00</span></td>
+    <td><button type="button" class="linkbtn danger" onclick="removeRow(this)" title="Remove">✕</button></td>
+  </tr>
+</template>
+
+<script>
+  function money(n){ return (Math.round((n||0)*100)/100).toFixed(2); }
+  function rowVal(row, cls){ var el = row.querySelector('.'+cls); return el ? (parseFloat(el.value)||0) : 0; }
+
+  function recalc(){
+    var tc=0, tp=0, tt=0, tb=0;
+    document.querySelectorAll('#rows .line-row').forEach(function(row){
+      var c=rowVal(row,'c-amt'), p=rowVal(row,'p-paid'), t=rowVal(row,'t-pay');
+      var bal=c-p-t;
+      row.querySelector('.bal-val').textContent = money(bal);
+      tc+=c; tp+=p; tt+=t; tb+=bal;
+    });
+    document.getElementById('t-contract').textContent = money(tc);
+    document.getElementById('t-prev').textContent = money(tp);
+    document.getElementById('t-this').textContent = money(tt);
+    document.getElementById('t-bal').textContent = money(tb);
+  }
+
+  function addRow(){
+    var tpl = document.getElementById('row-tpl');
+    var clone = tpl.content.cloneNode(true);
+    document.getElementById('rows').appendChild(clone);
+    wireSubSelects();
+    recalc();
+  }
+  function removeRow(btn){
+    var row = btn.closest('.line-row');
+    if(row){ row.remove(); recalc(); }
+  }
+  // When a saved sub is chosen and the name is blank, copy its name/trade in.
+  function wireSubSelects(){
+    document.querySelectorAll('.s-sub').forEach(function(sel){
+      if(sel.dataset.wired) return;
+      sel.dataset.wired = '1';
+      sel.addEventListener('change', function(){
+        var opt = sel.options[sel.selectedIndex];
+        var row = sel.closest('.line-row');
+        var nameEl = row.querySelector('input[name="line_name"]');
+        var tradeEl = row.querySelector('input[name="line_trade"]');
+        if(opt && opt.dataset.name && !nameEl.value){ nameEl.value = opt.dataset.name; }
+        if(opt && opt.dataset.trade && !tradeEl.value){ tradeEl.value = opt.dataset.trade; }
+      });
+    });
+  }
+  wireSubSelects();
+  recalc();
+</script>
+{% endblock %}

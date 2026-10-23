@@ -138,6 +138,32 @@
   </div>
   {% endif %}
 
+  {% if invoice.contract and invoice.contract.sworn_statements_enabled %}
+  <div class="sec" style="margin-top:1.5rem;">
+    <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+      <p class="step">Sworn statements</p>
+      <form method="POST" action="{{ url_for('sworn.create_for_invoice', invoice_id=invoice.id) }}" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="btn">+ New sworn statement</button>
+      </form>
+    </div>
+    <p class="muted" style="margin-bottom:.5rem;font-size:.85rem;">A new statement pre-fills from the previous one on this contract; every value stays editable.</p>
+    {% if invoice.sworn_statements %}
+      {% for st in invoice.sworn_statements %}
+      <div class="flex items-center justify-between gap-3 flex-wrap" style="padding:.4rem 0;border-top:1px solid var(--border);">
+        <span class="muted">{{ st.statement_date.strftime('%Y-%m-%d') if st.statement_date else st.created_at.strftime('%Y-%m-%d') }} · {{ st.lines|length }} line{{ 's' if st.lines|length != 1 }} · this payment ${{ '%.2f'|format(st.total_this_payment) }}</span>
+        <span class="flex items-center gap-3">
+          <a href="{{ url_for('sworn.edit', statement_id=st.id) }}" class="lnk">Edit</a>
+          <a href="{{ url_for('sworn.pdf', statement_id=st.id) }}" target="_blank" class="lnk">PDF</a>
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted" style="font-size:.85rem;">No sworn statement yet for this invoice.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="sec" style="margin-top:1.5rem;">
     <p class="step" style="margin-bottom:.75rem;">Send to customer</p>
     <p class="muted" style="margin-bottom:.75rem;font-size:.9rem;">Email the invoice (with the PDF attached), or copy a view link to send yourself.</p>
