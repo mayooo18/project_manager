@@ -803,6 +803,106 @@ def email(invoice_id):
     return redirect(url_for('invoices.edit', invoice_id=invoice.id))
 
 
+def _receipt_context(invoice):
+    """Build the receipt's stage + progress info for a paid invoice.
+
+    For a contract draw invoice this names the stage ("Deposit — Payment 2 of 4",
+    "Final payment") and the running contract progress. For a plain invoice it just
+    carries the amount paid. Returns a dict the receipt template reads.
+    """
+    ctx = {
+        'amount_paid': invoice.net_due,          # total − deposit − retainage held
+        'stage_label': None,
+        'show_progress': False,
+    }
+    linked = getattr(invoice, 'contract_draw', None) or []
+    if linked:
+        draw = linked[0]
+        contract = draw.contract
+        ordered = list(contract.draws)           # ordered by sequence
+        count = len(ordered)
+        idx = next((i for i, d in enumerate(ordered, start=1) if d.id == draw.id), None)
+        desc = (draw.description or '').strip()
+        if idx == count and count:
+            stage = 'Final payment'
+        elif idx:
+            stage = f'Payment {idx} of {count}'
+        else:
+            stage = 'Payment'
+        ctx['stage_label'] = f'{desc} — {stage}' if desc else stage
+        total = contract.contract_total or contract.scheduled_total or 0
+        ctx['show_progress'] = True
+        ctx['contract_total'] = total
+        ctx['paid_to_date'] = contract.paid_to_date
+        ctx['remaining'] = total - contract.paid_to_date
+    return ctx
+
+
+def send_invoice_receipt_email(invoice):
+    """Email a paid receipt (view link + PAID-stamped PDF) to the customer via Gmail.
+    Returns (ok, message)."""
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.application import MIMEApplication
+    from googleapiclient.discovery import build as gbuild
+    from google_routes import get_credentials
+
+    if invoice.status != 'paid':
+        return False, 'This invoice is not marked paid yet.'
+
+    customer = invoice.customer
+    if not customer.email:
+        return False, 'This customer has no email address on file. Add one on the Customers page.'
+
+    if not _public_link_is_active(invoice):
+        _refresh_public_link(invoice)
+
+    creds = get_credentials()
+    if not creds:
+        return False, 'Google account not connected (GOOGLE_REFRESH_TOKEN missing).'
+
+    link = url_for('invoices.public_view', token=invoice.public_token, _external=True)
+    html = render_template('invoices/receipt_email.html', invoice=invoice, link=link,
+                           company=COMPANY, receipt=_receipt_context(invoice))
+
+    msg = MIMEMultipart('mixed')
+    msg['To'] = customer.email
+    msg['From'] = 'me'
+    msg['Subject'] = f"Receipt for Invoice {invoice.number or invoice.id} from {COMPANY['name']}"
+
+    alt = MIMEMultipart('alternative')
+    alt.attach(MIMEText(html, 'html'))
+    msg.attach(alt)
+
+    pdf_bytes = build_invoice_pdf(invoice).read()   # already stamps PAID when status == 'paid'
+    attachment = MIMEApplication(pdf_bytes, _subtype='pdf')
+    safe_name = safe_filename(invoice.customer.name if invoice.customer else None,
+                              invoice.number or ('Invoice ' + str(invoice.id)),
+                              'Receipt')
+    attachment.add_header('Content-Disposition', 'attachment',
+                          filename=f'{safe_name}.pdf')
+    msg.attach(attachment)
+
+    gmail = gbuild('gmail', 'v1', credentials=creds)
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    gmail.users().messages().send(userId='me', body={'raw': raw}).execute()
+    return True, f'Receipt emailed to {customer.email}.'
+
+
+@invoice_bp.route('/<int:invoice_id>/receipt/email', methods=['POST'])
+@login_required
+def receipt_email(invoice_id):
+    invoice = _owned_invoice_or_404(invoice_id)
+    try:
+        ok, message = send_invoice_receipt_email(invoice)
+        db.session.commit()
+    except Exception as exc:  # noqa: BLE001
+        db.session.rollback()
+        ok, message = False, f'Email failed: {exc}'
+    flash(message, 'success' if ok else 'error')
+    return redirect(url_for('invoices.edit', invoice_id=invoice.id))
+
+
 @invoice_bp.route('/<int:invoice_id>/pdf')
 @login_required
 def pdf(invoice_id):
