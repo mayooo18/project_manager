@@ -875,6 +875,10 @@ class ContractDraw(db.Model):
 
     contract = db.relationship('Contract', back_populates='draws')
     invoice = db.relationship('Invoice', backref='contract_draw')
+    # Milestone evidence attached to this draw (F5).
+    evidence = db.relationship('MilestoneEvidence', back_populates='draw',
+                               cascade='all, delete-orphan',
+                               order_by='MilestoneEvidence.uploaded_at')
 
     @property
     def is_billed(self):
@@ -883,6 +887,21 @@ class ContractDraw(db.Model):
     @property
     def is_paid(self):
         return self.invoice is not None and self.invoice.status == 'paid'
+
+    @property
+    def has_evidence(self):
+        return len(self.evidence) > 0
+
+    @property
+    def evidence_ok(self):
+        """Whether this draw satisfies its contract's evidence requirement.
+
+        When evidence is required, at least one attachment is needed before the
+        draw can be billed. When it isn't required, nothing blocks billing.
+        """
+        if self.contract is None or not self.contract.evidence_required:
+            return True
+        return self.has_evidence
 
 
 class ContractProposal(db.Model):
@@ -1058,3 +1077,29 @@ class SwornStatementLine(db.Model):
     @property
     def display_name(self):
         return self.name or (self.subcontractor.name if self.subcontractor else '')
+
+
+# ── Milestone evidence attachments (F5) ──
+
+class MilestoneEvidence(db.Model):
+    """A photo, concrete ticket, inspection report or test result attached to a
+    contract draw/milestone. The file lives under UPLOAD_FOLDER (a Render Disk
+    in production); this row records where it is and what it is."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    draw_id = db.Column(db.Integer, db.ForeignKey('contract_draw.id'),
+                        nullable=False, index=True)
+    # photo / concrete_ticket / inspection_report / test_result / other
+    kind = db.Column(db.String(30), default='photo')
+    filename = db.Column(db.String(300), nullable=False)   # stored name under UPLOAD_FOLDER
+    original_name = db.Column(db.String(300))              # what the user uploaded
+    note = db.Column(db.String(300))
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    draw = db.relationship('ContractDraw', back_populates='evidence')
+    user = db.relationship('User')
+
+    @property
+    def is_image(self):
+        ext = (self.original_name or self.filename or '').rsplit('.', 1)[-1].lower()
+        return ext in ('png', 'jpg', 'jpeg', 'gif', 'heic')

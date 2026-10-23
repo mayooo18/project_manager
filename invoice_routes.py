@@ -968,6 +968,50 @@ def _packet_waivers(invoice):
             .order_by(GcDocument.created_at.desc()).all())
 
 
+def _invoice_draw(invoice):
+    """The contract draw this invoice bills, if any (for its evidence)."""
+    draws = getattr(invoice, 'contract_draw', None) or []
+    return draws[0] if draws else None
+
+
+def _evidence_as_pdf(ev):
+    """Return a BytesIO PDF for one evidence file, or None if it can't be
+    embedded. PDFs pass through; images become a single captioned page;
+    other document types (docx/xls/…) are skipped."""
+    import os
+    from flask import current_app
+    path = os.path.join(current_app.config['UPLOAD_FOLDER'], ev.filename)
+    if not os.path.exists(path):
+        return None
+    ext = (ev.original_name or ev.filename or '').rsplit('.', 1)[-1].lower()
+    if ext == 'pdf':
+        with open(path, 'rb') as fh:
+            return BytesIO(fh.read())
+    if ext in ('png', 'jpg', 'jpeg', 'gif'):
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.lib.units import inch
+            from reportlab.platypus import SimpleDocTemplate, Image, Spacer, Paragraph
+            from reportlab.lib.styles import getSampleStyleSheet
+            from reportlab.lib.utils import ImageReader
+            buf = BytesIO()
+            doc = SimpleDocTemplate(buf, pagesize=letter,
+                                    topMargin=0.6 * inch, bottomMargin=0.6 * inch,
+                                    leftMargin=0.6 * inch, rightMargin=0.6 * inch)
+            iw, ih = ImageReader(path).getSize()
+            max_w, max_h = 7.0 * inch, 8.2 * inch
+            scale = min(max_w / iw, max_h / ih, 1.0)
+            img = Image(path, width=iw * scale, height=ih * scale)
+            styles = getSampleStyleSheet()
+            caption = f"{ev.kind.replace('_', ' ').title()}" + (f" — {ev.note}" if ev.note else "")
+            doc.build([Paragraph(caption, styles['Normal']), Spacer(1, 8), img])
+            buf.seek(0)
+            return buf
+        except Exception:
+            return None
+    return None  # docx / xls / etc. can't be embedded in the PDF packet
+
+
 @invoice_bp.route('/<int:invoice_id>/packet')
 @login_required
 def packet(invoice_id):
@@ -976,12 +1020,15 @@ def packet(invoice_id):
     contract = invoice.contract
     sworn_enabled = bool(contract and contract.sworn_statements_enabled)
     evidence_required = bool(contract and contract.evidence_required)
+    draw = _invoice_draw(invoice)
+    evidence = draw.evidence if draw is not None else []
     return render_template(
         'invoices/packet.html', invoice=invoice, contract=contract,
         sworn_statements=invoice.sworn_statements,
         waivers=_packet_waivers(invoice),
         sworn_enabled=sworn_enabled,
-        evidence_required=evidence_required)
+        evidence_required=evidence_required,
+        evidence=evidence)
 
 
 @invoice_bp.route('/<int:invoice_id>/packet/build', methods=['POST'])
@@ -1014,7 +1061,16 @@ def packet_build(invoice_id):
         if doc is not None:
             parts.append(build_gc_document_pdf(doc))
 
-    # Evidence attachments (F5) will be appended here once that feature exists.
+    # Evidence attachments (F5): append the billed draw's photos/tickets/reports
+    # when the user opted to include them. Images become a page each; PDFs pass
+    # through; other document types are skipped.
+    if request.form.get('include_evidence'):
+        draw = _invoice_draw(invoice)
+        if draw is not None:
+            for ev in draw.evidence:
+                buf = _evidence_as_pdf(ev)
+                if buf is not None:
+                    parts.append(buf)
 
     merged = _merge_pdfs(parts)
     name = safe_filename(invoice.customer.name if invoice.customer else None,

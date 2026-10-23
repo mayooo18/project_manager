@@ -23,7 +23,7 @@
   {% set missing = [] %}
   {% if sworn_enabled and not sworn_statements %}{% set _ = missing.append('a sworn statement') %}{% endif %}
   {% if not waivers %}{% set _ = missing.append('a lien waiver') %}{% endif %}
-  {% if evidence_required %}{% set _ = missing.append('milestone evidence (available in a later update)') %}{% endif %}
+  {% if evidence_required and not evidence %}{% set _ = missing.append('milestone evidence') %}{% endif %}
   {% if missing %}
   <div class="warnbox">
     <p style="color:var(--amber-fg,#b45309);font-weight:600;">Heads up — this packet is missing: {{ missing|join(', ') }}.</p>
@@ -86,10 +86,17 @@
       </div>
 
       <div class="row">
-        <span>—</span>
+        <span>{{ '✓' if evidence else '—' }}</span>
         <div style="flex:1;min-width:0;">
           <p style="color:var(--ink-900);">Milestone evidence</p>
-          <p class="muted" style="font-size:.85rem;">Photos, tickets and reports attach here in a later update (F5).</p>
+          {% if evidence %}
+          <label class="flex items-center gap-2" style="margin-top:.35rem;cursor:pointer;">
+            <input type="checkbox" name="include_evidence" value="1" checked/>
+            <span class="muted" style="font-size:.88rem;">Include {{ evidence|length }} evidence file{{ 's' if evidence|length != 1 }} (photos &amp; PDFs; other file types are skipped).</span>
+          </label>
+          {% else %}
+          <p class="muted" style="font-size:.85rem;">No evidence attached to this draw.{% if evidence_required %} Attach some on the contract's draw before billing.{% endif %}</p>
+          {% endif %}
         </div>
       </div>
     </div>

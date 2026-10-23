@@ -52,8 +52,11 @@ class Config:
         }
     }
     
-    # File upload settings
-    UPLOAD_FOLDER = 'static/uploads'
+    # File upload settings.
+    # On Render the container filesystem is ephemeral, so point UPLOAD_FOLDER at
+    # a mounted Render Disk (e.g. UPLOAD_FOLDER=/var/data/uploads) to persist
+    # uploads across deploys. Falls back to the local folder for development.
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'static/uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
     
     # Security settings

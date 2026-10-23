@@ -289,7 +289,7 @@
     <div class="drow">
       <div style="min-width:0;">
         <p style="color:var(--ink-900);font-size:.88rem;">{{ loop.index }}. {{ d.description }}</p>
-        <p class="muted">${{ '%.2f'|format(d.amount or 0) }}</p>
+        <p class="muted">${{ '%.2f'|format(d.amount or 0) }}{% if contract.evidence_required %} · <span class="{{ 'c-green' if d.has_evidence else 'c-amber' }}">{{ d.evidence|length }} evidence file{{ 's' if d.evidence|length != 1 }}</span>{% endif %}</p>
       </div>
       <div class="flex items-center gap-3 flex-shrink-0">
         {% if d.is_paid %}
@@ -298,6 +298,8 @@
         {% elif d.is_billed %}
         <span class="spill c-blue" style="border-color:var(--blue-fg);">INVOICED</span>
         <a href="{{ url_for('invoices.edit', invoice_id=d.invoice_id) }}" class="lnk">{{ d.invoice.number }}</a>
+        {% elif contract.evidence_required and not d.evidence_ok %}
+        <button type="button" class="obtn" disabled style="opacity:.5;cursor:not-allowed;" title="Attach evidence first">Bill this draw</button>
         {% else %}
         <form method="POST" action="{{ url_for('contracts.bill_draw', contract_id=contract.id, draw_id=d.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -306,6 +308,43 @@
         {% endif %}
       </div>
     </div>
+    {# Evidence area (F5) — only when the contract requires evidence, so other
+       contracts' draw rows look exactly as before. #}
+    {% if contract.evidence_required %}
+    <div style="margin:-.25rem 0 .75rem;padding:.5rem .75rem;background:var(--canvas);border:1px solid var(--border);border-radius:var(--r);">
+      {% if d.evidence %}
+      <div class="flex flex-wrap gap-2" style="margin-bottom:.5rem;">
+        {% for ev in d.evidence %}
+        <span class="flex items-center gap-1" style="font-size:.74rem;border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:.15rem .45rem;">
+          <a href="{{ url_for('evidence.download', evidence_id=ev.id) }}" target="_blank" class="lnk">{{ ev.original_name or ev.filename }}</a>
+          <span class="muted">· {{ ev.kind.replace('_',' ') }}</span>
+          <form method="POST" action="{{ url_for('evidence.delete', evidence_id=ev.id) }}" onsubmit="return confirm('Remove this evidence?');" style="margin:0;display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="linkbtn danger" title="Remove">✕</button>
+          </form>
+        </span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="muted" style="font-size:.78rem;margin-bottom:.4rem;">No evidence yet — attach at least one file to bill this draw.</p>
+      {% endif %}
+      {% if not d.is_billed %}
+      <form method="POST" action="{{ url_for('evidence.upload', draw_id=d.id) }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="file" name="file" class="fld" style="max-width:210px;font-size:.8rem;"/>
+        <select name="kind" class="fld" style="max-width:155px;font-size:.8rem;">
+          <option value="photo">Photo</option>
+          <option value="concrete_ticket">Concrete ticket</option>
+          <option value="inspection_report">Inspection report</option>
+          <option value="test_result">Test result</option>
+          <option value="other">Other</option>
+        </select>
+        <input type="text" name="note" placeholder="Note (optional)" class="fld" style="max-width:170px;font-size:.8rem;"/>
+        <button type="submit" class="obtn">Attach</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
     {% endfor %}
     <p class="muted" style="margin-top:.75rem;">Billing a draw creates an invoice for that amount — send it, mark it paid, and (if a job is linked) it posts income automatically.</p>
     {% else %}
