@@ -239,6 +239,19 @@
   {% endif %}
 
   {% if contract %}
+  {% set copies = sent_copies('contract', contract.id) %}
+  {% if copies %}
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="step" style="margin-bottom:.5rem;">Sent copies</p>
+    <p class="muted" style="font-size:.85rem;margin-bottom:.5rem;">Immutable PDF snapshots saved each time this contract was sent.</p>
+    {% for a in copies %}
+    <div class="flex items-center justify-between gap-3" style="padding:.35rem 0;border-top:1px solid var(--border);">
+      <span class="muted">{{ a.archived_at.strftime('%Y-%m-%d %H:%M') }} UTC{% if a.number %} · {{ a.number }}{% endif %}</span>
+      <a href="{{ url_for('archive.download', archive_id=a.id) }}" target="_blank" class="lnk">Download</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
   <div class="sec" style="margin-top:1.5rem;">
     <p class="step" style="margin-bottom:.75rem;">Progress billing</p>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" style="margin-bottom:1rem;">

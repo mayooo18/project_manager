@@ -173,6 +173,20 @@
   </div>
   {% endif %}
 
+  {% set copies = sent_copies('invoice', invoice.id) %}
+  {% if copies %}
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="step" style="margin-bottom:.5rem;">Sent copies</p>
+    <p class="muted" style="font-size:.85rem;margin-bottom:.5rem;">Immutable PDF snapshots saved each time this invoice was sent.</p>
+    {% for a in copies %}
+    <div class="flex items-center justify-between gap-3" style="padding:.35rem 0;border-top:1px solid var(--border);">
+      <span class="muted">{{ a.archived_at.strftime('%Y-%m-%d %H:%M') }} UTC{% if a.number %} · {{ a.number }}{% endif %}</span>
+      <a href="{{ url_for('archive.download', archive_id=a.id) }}" target="_blank" class="lnk">Download</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <div class="sec" style="margin-top:1.5rem;">
     <p class="step" style="margin-bottom:.75rem;">Send to customer</p>
     <p class="muted" style="margin-bottom:.75rem;font-size:.9rem;">Email the invoice (with the PDF attached), or copy a view link to send yourself.</p>
