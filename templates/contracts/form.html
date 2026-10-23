@@ -126,9 +126,13 @@
     <p class="c-green" style="font-weight:600;">✓ Accepted by {{ contract.signature_name }} on {{ contract.signed_at.strftime('%Y-%m-%d %H:%M') }}</p>
     {% else %}
     <div class="flex flex-wrap items-center gap-3">
+      <form method="POST" action="{{ url_for('contracts.email', contract_id=contract.id) }}" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="btn">{{ 'Re-email for signature' if contract.sent_at else 'Email for signature' }}</button>
+      </form>
       <form method="POST" action="{{ url_for('contracts.send', contract_id=contract.id) }}" style="margin:0;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit" class="obtn accent">{{ 'Resend for signature' if contract.sent_at else 'Send for signature' }}</button>
+        <button type="submit" class="obtn accent">{{ 'Refresh share link' if contract.sent_at else 'Get share link' }}</button>
       </form>
       {% if contract.public_token and not contract.public_token_revoked_at %}
       <a href="{{ url_for('contracts.public_view', token=contract.public_token) }}" target="_blank" class="lnk">View acceptance page ↗</a>
