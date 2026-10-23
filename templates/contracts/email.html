@@ -1,0 +1,47 @@
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+  <p style="font-size:15px;">Hi {{ contract.customer.name }},</p>
+
+  <p style="font-size:15px;line-height:1.5;">
+    Please find your contract from <strong>{{ company.name }}</strong> below.
+    The full details are attached as a PDF. You can review the scope, total, and
+    payment schedule and accept it online with your signature.
+  </p>
+
+  <table style="width:100%;border-collapse:collapse;margin:18px 0;font-size:14px;">
+    <tr>
+      <td style="padding:6px 0;color:#666;">Project</td>
+      <td style="padding:6px 0;text-align:right;"><strong>{{ contract.title }}</strong></td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;color:#666;border-top:1px solid #eee;">Contract total</td>
+      <td style="padding:6px 0;text-align:right;border-top:1px solid #eee;"><strong>${{ '%.2f'|format(contract.contract_total or 0) }}</strong></td>
+    </tr>
+  </table>
+
+  {% if contract.draws %}
+  <p style="font-size:14px;color:#666;margin:0 0 6px;">Payment schedule</p>
+  <table style="width:100%;border-collapse:collapse;margin:0 0 18px;font-size:14px;">
+    {% for d in contract.draws %}
+    <tr>
+      <td style="padding:6px 0;color:#444;border-top:1px solid #eee;">{{ loop.index }}. {{ d.description }}</td>
+      <td style="padding:6px 0;text-align:right;border-top:1px solid #eee;">${{ '%.2f'|format(d.amount or 0) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  <p style="text-align:center;margin:26px 0;">
+    <a href="{{ link }}"
+       style="background:#ea6a30;color:#fff;text-decoration:none;font-weight:bold;
+              padding:14px 28px;border-radius:8px;display:inline-block;font-size:15px;">
+      Review &amp; sign online
+    </a>
+  </p>
+
+  <p style="font-size:13px;color:#666;line-height:1.5;">
+    Or paste this link into your browser:<br>
+    <a href="{{ link }}" style="color:#ea6a30;">{{ link }}</a>
+  </p>
+
+  <p style="font-size:14px;margin-top:24px;">Thank you,<br>{{ company.name }}<br>{{ company.phone }}</p>
+</div>

@@ -22,7 +22,7 @@ from io import BytesIO
 
 from flask import (
     Blueprint, render_template, redirect, url_for, flash, request, send_file,
-    abort,
+    abort, current_app,
 )
 from flask_login import login_required, current_user
 from permissions import owner_required
@@ -98,6 +98,54 @@ def _refresh_contract_link(contract):
     contract.public_token = _new_contract_token()
     contract.public_token_expires_at = datetime.utcnow() + PUBLIC_LINK_LIFETIME
     contract.public_token_revoked_at = None
+
+
+def send_contract_email(contract):
+    """Email the contract (acceptance link + PDF) to the customer via the app's
+    Gmail integration. Returns (ok, message)."""
+    import base64 as _b64
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.application import MIMEApplication
+    from googleapiclient.discovery import build as gbuild
+    from google_routes import get_credentials
+
+    customer = contract.customer
+    if not customer or not customer.email:
+        return False, ('This customer has no email address on file. '
+                       'Add one on the Customers page.')
+    if not _contract_link_is_active(contract):
+        _refresh_contract_link(contract)
+    creds = get_credentials()
+    if not creds:
+        return False, 'Google account not connected (GOOGLE_REFRESH_TOKEN missing).'
+
+    link = url_for('contracts.public_view', token=contract.public_token,
+                   _external=True)
+    html = render_template('contracts/email.html', contract=contract,
+                           link=link, company=COMPANY)
+
+    msg = MIMEMultipart('mixed')
+    msg['To'] = customer.email
+    msg['From'] = 'me'
+    msg['Subject'] = f"Contract from {COMPANY['name']}: {contract.title}"
+    alt = MIMEMultipart('alternative')
+    alt.attach(MIMEText(html, 'html'))
+    msg.attach(alt)
+
+    pdf_bytes = build_contract_pdf(contract).read()
+    attachment = MIMEApplication(pdf_bytes, _subtype='pdf')
+    safe_name = safe_filename(customer.name,
+                              contract.number or ('Contract ' + str(contract.id)),
+                              'Contract')
+    attachment.add_header('Content-Disposition', 'attachment',
+                          filename=f'{safe_name}.pdf')
+    msg.attach(attachment)
+
+    gmail = gbuild('gmail', 'v1', credentials=creds)
+    raw = _b64.urlsafe_b64encode(msg.as_bytes()).decode()
+    gmail.users().messages().send(userId='me', body={'raw': raw}).execute()
+    return True, f'Emailed to {customer.email}.'
 
 
 def _float(raw, default=0.0):
@@ -678,6 +726,30 @@ def send(contract_id):
                    _external=True)
     flash(f'Contract marked as sent. Share this acceptance link with the '
           f'customer: {link}', 'success')
+    return redirect(url_for('contracts.edit', contract_id=contract.id))
+
+
+@contract_bp.route('/<int:contract_id>/email', methods=['POST'])
+@login_required
+def email(contract_id):
+    contract = _owned_contract_or_404(contract_id)
+    if contract.status in ('active', 'completed'):
+        flash('This contract is already under way.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
+    try:
+        ok, message = send_contract_email(contract)
+    except Exception:  # noqa: BLE001 — provider failures are logged below
+        current_app.logger.exception('Failed to email contract %s', contract.id)
+        ok, message = False, 'Email failed. Please try again or use the share link.'
+    if ok:
+        if contract.status == 'draft':
+            contract.status = 'sent'
+        if not contract.sent_at:
+            contract.sent_at = datetime.utcnow()
+        db.session.commit()
+        flash(message, 'success')
+    else:
+        flash(message, 'error')
     return redirect(url_for('contracts.edit', contract_id=contract.id))
 
 
