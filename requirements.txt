@@ -25,3 +25,4 @@ google-auth-oauthlib==1.4.0
 google-api-python-client==2.169.0
 Flask-Limiter==3.5.0
 reportlab==4.2.5
+pypdf==6.15.0

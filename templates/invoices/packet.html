@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Invoice Packet{% endblock %}
+
+{% block content %}
+<style>
+  .pwrap{max-width:760px;margin:0 auto;}
+  .fld{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-900);padding:.5rem .75rem;width:100%;font-size:.9rem;}
+  .fld:focus{outline:none;border-color:var(--accent);}
+  .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;margin-bottom:1.25rem;}
+  .step{color:var(--ink-500);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;}
+  .row{display:flex;align-items:flex-start;gap:.75rem;padding:.6rem 0;border-top:1px solid var(--border);}
+  .chk{color:var(--green-fg);font-weight:700;}
+  .warnbox{background:var(--surface);border:1px solid var(--amber-fg,#b45309);border-radius:var(--r-card);padding:.9rem 1.1rem;margin-bottom:1.25rem;}
+</style>
+
+<div class="pwrap">
+  <div class="page-head">
+    <h1>Invoice Packet</h1>
+    <a href="{{ url_for('invoices.edit', invoice_id=invoice.id) }}" class="lnk">← Back to invoice</a>
+  </div>
+  <p class="muted" style="margin-bottom:1rem;">Combine this invoice with its supporting documents into one PDF for {{ invoice.customer.name if invoice.customer else 'the customer' }}.</p>
+
+  {% set missing = [] %}
+  {% if sworn_enabled and not sworn_statements %}{% set _ = missing.append('a sworn statement') %}{% endif %}
+  {% if not waivers %}{% set _ = missing.append('a lien waiver') %}{% endif %}
+  {% if evidence_required %}{% set _ = missing.append('milestone evidence (available in a later update)') %}{% endif %}
+  {% if missing %}
+  <div class="warnbox">
+    <p style="color:var(--amber-fg,#b45309);font-weight:600;">Heads up — this packet is missing: {{ missing|join(', ') }}.</p>
+    <p class="muted" style="margin-top:.25rem;font-size:.88rem;">You can still generate the packet with what's available, or add the missing items first.</p>
+  </div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('invoices.packet_build', invoice_id=invoice.id) }}" target="_blank">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    <div class="sec">
+      <p class="step" style="margin-bottom:.5rem;">Documents in this packet</p>
+
+      <div class="row">
+        <span class="chk">✓</span>
+        <div style="flex:1;min-width:0;">
+          <p style="color:var(--ink-900);">Invoice {{ invoice.number or invoice.id }}</p>
+          <p class="muted" style="font-size:.85rem;">Always included — leads the packet.</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <span>{{ '✓' if sworn_statements else '—' }}</span>
+        <div style="flex:1;min-width:0;">
+          <p style="color:var(--ink-900);">Sworn statement {% if sworn_enabled %}<span class="muted">(required)</span>{% endif %}</p>
+          {% if sworn_statements %}
+          <select name="sworn_statement_id" class="fld" style="margin-top:.35rem;max-width:420px;">
+            {% for st in sworn_statements %}
+            <option value="{{ st.id }}">{{ st.statement_date.strftime('%Y-%m-%d') if st.statement_date else st.created_at.strftime('%Y-%m-%d') }} · {{ st.lines|length }} line{{ 's' if st.lines|length != 1 }} · this payment ${{ '%.2f'|format(st.total_this_payment) }}</option>
+            {% endfor %}
+            <option value="">— Don't include —</option>
+          </select>
+          {% else %}
+          <p class="muted" style="font-size:.85rem;">None yet.
+            {% if sworn_enabled %}
+            <span style="display:inline;">
+              <button form="make-sworn" type="submit" class="linkbtn c-accent" style="text-decoration:underline;">Create one</button>
+            </span>
+            {% endif %}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row">
+        <span>{{ '✓' if waivers else '—' }}</span>
+        <div style="flex:1;min-width:0;">
+          <p style="color:var(--ink-900);">Conditional lien waiver</p>
+          {% if waivers %}
+          <select name="waiver_id" class="fld" style="margin-top:.35rem;max-width:420px;">
+            {% for w in waivers %}
+            <option value="{{ w.id }}">{{ w.doc_kind.replace('_',' ').title() }}{% if w.amount %} · ${{ '%.2f'|format(w.amount) }}{% endif %} · {{ w.created_at.strftime('%Y-%m-%d') }}</option>
+            {% endfor %}
+            <option value="">— Don't include —</option>
+          </select>
+          {% else %}
+          <p class="muted" style="font-size:.85rem;">None on file. <a href="{{ url_for('waivers.new') }}" class="lnk c-accent" style="text-decoration:underline;">Create a lien waiver</a> for this payment first.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row">
+        <span>—</span>
+        <div style="flex:1;min-width:0;">
+          <p style="color:var(--ink-900);">Milestone evidence</p>
+          <p class="muted" style="font-size:.85rem;">Photos, tickets and reports attach here in a later update (F5).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 flex-wrap" style="margin-bottom:1.5rem;">
+      <button type="submit" class="btn">Generate packet PDF</button>
+      <span class="muted" style="font-size:.85rem;">Opens the combined PDF in a new tab.</span>
+    </div>
+  </form>
+
+  {% if sworn_enabled and not sworn_statements %}
+  <form id="make-sworn" method="POST" action="{{ url_for('sworn.create_for_invoice', invoice_id=invoice.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

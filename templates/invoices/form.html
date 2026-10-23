@@ -72,6 +72,7 @@
     <div class="flex flex-wrap items-center gap-3">
       <button type="submit" class="btn">Save Invoice</button>
       {% if invoice %}<a href="{{ url_for('invoices.pdf', invoice_id=invoice.id) }}" target="_blank" class="obtn">Preview PDF</a>{% endif %}
+      {% if invoice and invoice.contract %}<a href="{{ url_for('invoices.packet', invoice_id=invoice.id) }}" class="obtn">Build packet</a>{% endif %}
     </div>
   </form>
 
