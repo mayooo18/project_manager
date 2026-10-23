@@ -221,6 +221,42 @@
       <div class="metric"><p class="k">Remaining</p><p class="v">${{ '%.0f'|format(contract.remaining_to_bill) }}</p></div>
     </div>
 
+    {# Retainage summary + release (F1) — only when retainage is turned on, so a
+       Simple/non-retainage contract's panel looks exactly as before. #}
+    {% if contract.retainage_active %}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" style="margin-bottom:1rem;">
+      <div class="metric"><p class="k">Retainage %</p><p class="v">{{ '%g'|format(contract.retainage_percent) }}%</p></div>
+      <div class="metric"><p class="k">Retainage held</p><p class="v">${{ '%.2f'|format(contract.retainage_held_to_date) }}</p></div>
+      <div class="metric"><p class="k">Retainage released</p><p class="v {{ 'c-green' if contract.retainage_is_released }}">${{ '%.2f'|format(contract.retainage_released) }}</p></div>
+      <div class="metric"><p class="k">Status</p><p class="v">{{ 'Released' if contract.retainage_is_released else 'Held' }}</p></div>
+    </div>
+    <div class="drow" style="align-items:center;margin-bottom:1rem;">
+      <div style="min-width:0;">
+        <p style="color:var(--ink-900);font-size:.88rem;">Retainage release</p>
+        {% if contract.retainage_is_released %}
+        <p class="muted">Released on {{ contract.retainage_released_at.strftime('%Y-%m-%d') }}{% if contract.retainage_release_invoice %} · invoice {{ contract.retainage_release_invoice.number }}{% endif %}.</p>
+        {% elif contract.can_release_retainage %}
+        <p class="muted">All draws are paid — bill the ${{ '%.2f'|format(contract.retainage_held_to_date) }} held back to the customer. This is a one-time action.</p>
+        {% else %}
+        <p class="muted">Available once every draw has been paid{% if not contract.retainage_held_to_date %} and retainage has been withheld on a draw{% endif %}.</p>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-3 flex-shrink-0">
+        {% if contract.retainage_is_released %}
+        <span class="spill c-green" style="border-color:var(--green-fg);">RELEASED</span>
+        {% if contract.retainage_release_invoice %}<a href="{{ url_for('invoices.edit', invoice_id=contract.retainage_release_invoice_id) }}" class="lnk">{{ contract.retainage_release_invoice.number }}</a>{% endif %}
+        {% elif contract.can_release_retainage %}
+        <form method="POST" action="{{ url_for('contracts.release_retainage', contract_id=contract.id) }}" onsubmit="return confirm('Release retainage? This creates one invoice for ${{ '%.2f'|format(contract.retainage_held_to_date) }} and cannot be undone.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="btn">Release retainage</button>
+        </form>
+        {% else %}
+        <button type="button" class="obtn" disabled style="opacity:.5;cursor:not-allowed;">Release retainage</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
     {% if contract.draws %}
     {% for d in contract.draws %}
     <div class="drow">

@@ -62,8 +62,11 @@
     {% if invoice.deposit %}
     <div class="sub-row"><span class="kk">Deposit collected</span><span class="vv">−${{ '%.2f'|format(invoice.deposit) }}</span></div>
     {% endif %}
+    {% if invoice.retainage_amount %}
+    <div class="sub-row"><span class="kk">Less retainage{% if invoice.retainage_percent %} ({{ '%g'|format(invoice.retainage_percent) }}%){% endif %}</span><span class="vv">−${{ '%.2f'|format(invoice.retainage_amount) }}</span></div>
+    {% endif %}
     <div class="row" style="margin-top:.75rem;">
-      <span class="k">Balance due</span>
+      <span class="k">{{ 'Net due' if invoice.retainage_amount else 'Balance due' }}</span>
       <span class="balance {{ 'paid' if invoice.status == 'paid' }}">${{ '%.2f'|format(invoice.balance_due) }}</span>
     </div>
 

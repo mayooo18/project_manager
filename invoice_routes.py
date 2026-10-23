@@ -228,13 +228,22 @@ def build_invoice_pdf(invoice):
         desc = _pdf_text(item.description, preserve_newlines=True)
         data.append([Paragraph(desc, small),
                      Paragraph(f"${item.line_total:,.2f}", small_r)])
-    data.append([Paragraph('<b>Total</b>', small),
+    # On a retainage invoice the Total is the gross for the period, and the
+    # retainage held is shown as a deduction so the customer sees the net due.
+    gross_label = 'Gross this period' if invoice.retainage_amount else 'Total'
+    data.append([Paragraph(f'<b>{gross_label}</b>', small),
                  Paragraph(f"<b>${invoice.total:,.2f}</b>", small_r)])
     if invoice.deposit:
         data.append([Paragraph('Deposit', small),
                      Paragraph(f"-${invoice.deposit:,.2f}", small_r)])
-    balance = 0.0 if invoice.status == 'paid' else (invoice.total or 0) - (invoice.deposit or 0)
-    data.append([Paragraph('<b>Balance Due</b>', small),
+    if invoice.retainage_amount:
+        pct_txt = f" ({invoice.retainage_percent:g}%)" if invoice.retainage_percent else ""
+        data.append([Paragraph(f'Less retainage{pct_txt}', small),
+                     Paragraph(f"-${invoice.retainage_amount:,.2f}", small_r)])
+    balance = 0.0 if invoice.status == 'paid' else (
+        (invoice.total or 0) - (invoice.deposit or 0) - (invoice.retainage_amount or 0))
+    due_label = 'Net Due This Period' if invoice.retainage_amount else 'Balance Due'
+    data.append([Paragraph(f'<b>{due_label}</b>', small),
                  Paragraph(f"<b>${balance:,.2f}</b>", small_r)])
 
     items_table = Table(data, colWidths=[5.2 * inch, 1.8 * inch])
@@ -251,6 +260,42 @@ def build_invoice_pdf(invoice):
     ]))
     elems.append(items_table)
     elems.append(Spacer(1, 16))
+
+    # ── Contract progress-billing summary (F1) ──
+    # Shown only for invoices on a contract that uses retainage, so ordinary
+    # invoices (and Simple-contract progress invoices) are completely unchanged.
+    contract = invoice.contract
+    if contract is not None and (invoice.retainage_amount
+                                 or invoice.is_retainage_release
+                                 or contract.retainage_active):
+        # "Previously billed" excludes this draw's gross; a retainage release is
+        # not a draw, so it counts all draws as previously billed.
+        prev_billed = (contract.billed_to_date or 0) - (
+            0 if invoice.is_retainage_release else (invoice.total or 0))
+        this_label = ('This retainage release' if invoice.is_retainage_release
+                      else 'This invoice (gross)')
+        summ_rows = [
+            ('Contract total', contract.contract_total or 0),
+            ('Previously billed', prev_billed),
+            ('Retainage held to date', contract.retainage_held_to_date),
+            (this_label, invoice.total or 0),
+            ('Balance remaining to bill', contract.remaining_to_bill),
+        ]
+        summ_data = [[Paragraph(k, small), Paragraph(f"${v:,.2f}", small_r)]
+                     for k, v in summ_rows]
+        summ_table = Table(summ_data, colWidths=[5.2 * inch, 1.8 * inch])
+        summ_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('LINEBELOW', (0, 0), (-1, -2), 0.25, colors.HexColor('#dddddd')),
+        ]))
+        elems.append(Paragraph('Contract Summary', section))
+        elems.append(Spacer(1, 4))
+        elems.append(summ_table)
+        elems.append(Spacer(1, 16))
 
     if invoice.status == 'paid' and invoice.paid_at:
         elems.append(Paragraph(
@@ -507,11 +552,15 @@ def mark_paid(invoice_id):
     invoice.payment_method = method
 
     # Optionally record the payment as Income on the linked project.
+    # Subtract any retainage withheld so income reflects what was actually
+    # received this payment. Retainage is null on normal invoices, so this is a
+    # no-op for every non-retainage invoice (deposit handling is unchanged).
+    net_received = (invoice.total or 0) - (invoice.retainage_amount or 0)
     record_income = request.form.get('record_income') == 'on'
     if record_income and invoice.project_id and invoice.income_id is None:
         income = Income(
             project_id=invoice.project_id,
-            amount=invoice.total or 0,
+            amount=net_received,
             source=f"Invoice {invoice.number or invoice.id}",
             date=paid_at,
             note=f"Auto-recorded from paid invoice {invoice.number or invoice.id}",

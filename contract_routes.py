@@ -917,6 +917,14 @@ def bill_draw(contract_id, draw_id):
                     f"— progress billing on contract {contract.number}",
         quantity=1, unit_price=draw.amount))
     inv.recalculate_total()
+    # Withhold retainage when the contract has it turned on. We snapshot both the
+    # % and the resulting amount (rounded to cents) onto the invoice, so the net
+    # due is fixed and a later change to the contract's % never alters this
+    # invoice. When retainage is off, nothing is set and the invoice is identical
+    # to a normal progress invoice.
+    if contract.retainage_active:
+        inv.retainage_percent = contract.retainage_percent
+        inv.retainage_amount = round((inv.total or 0) * contract.retainage_percent / 100.0, 2)
     db.session.flush()
 
     draw.invoice_id = inv.id
@@ -925,6 +933,62 @@ def bill_draw(contract_id, draw_id):
         contract.status = 'active'
     db.session.commit()
     flash(f'Draw billed as invoice {inv.number}. Send it to the customer below.', 'success')
+    return redirect(url_for('invoices.edit', invoice_id=inv.id))
+
+
+@contract_bp.route('/<int:contract_id>/release-retainage', methods=['POST'])
+@login_required
+def release_retainage(contract_id):
+    """Bill the accumulated retainage back to the customer — one invoice, once.
+
+    Enabled only when retainage is on, every draw has been paid, and there is
+    held retainage to release. The release amount is the exact sum of what was
+    withheld across the draw invoices (not re-derived from the %)."""
+    # Lock the contract row so two concurrent clicks can't both release.
+    contract = db.session.execute(
+        select(Contract)
+        .where(Contract.id == contract_id, Contract.user_id == current_user.id)
+        .with_for_update()
+    ).scalar_one_or_none()
+    if contract is None:
+        abort(404)
+
+    if not contract.can_release_retainage:
+        if contract.retainage_is_released:
+            msg = 'Retainage has already been released.'
+        elif not contract.retainage_active:
+            msg = 'Retainage is not enabled on this contract.'
+        elif not contract.all_draws_paid:
+            msg = 'Release retainage once every draw has been paid.'
+        else:
+            msg = 'There is no held retainage to release.'
+        flash(msg, 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
+
+    held = round(contract.retainage_held_to_date, 2)
+    n = len(contract.draws)
+    inv = Invoice(
+        user_id=current_user.id,
+        customer_id=contract.customer_id,
+        project_id=contract.project_id,
+        contract_id=contract.id,
+        number=_next_number(),
+        title=f"{contract.title} — Retainage release",
+        public_token=_new_invoice_token(),
+        is_retainage_release=True,
+    )
+    db.session.add(inv)
+    inv.items.append(InvoiceItem(
+        description=f"Release of retainage — {contract.retainage_percent:g}% held "
+                    f"across {n} draw{'s' if n != 1 else ''} on contract {contract.number}",
+        quantity=1, unit_price=held))
+    inv.recalculate_total()
+    db.session.flush()
+
+    contract.retainage_released_at = datetime.utcnow()
+    contract.retainage_release_invoice_id = inv.id
+    db.session.commit()
+    flash(f'Retainage of ${held:,.2f} released as invoice {inv.number}.', 'success')
     return redirect(url_for('invoices.edit', invoice_id=inv.id))
 
 
