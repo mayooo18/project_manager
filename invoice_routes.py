@@ -940,6 +940,89 @@ def suspension_notice_email(invoice_id):
     return redirect(url_for('invoices.edit', invoice_id=invoice.id))
 
 
+# ── Invoice packet builder (F4) ──────────────────────────────────────────────
+
+def _merge_pdfs(buffers):
+    """Concatenate several PDF BytesIO buffers into one. Returns a BytesIO."""
+    from pypdf import PdfReader, PdfWriter
+    writer = PdfWriter()
+    for buf in buffers:
+        buf.seek(0)
+        reader = PdfReader(buf)
+        for page in reader.pages:
+            writer.add_page(page)
+    out = BytesIO()
+    writer.write(out)
+    out.seek(0)
+    return out
+
+
+def _packet_waivers(invoice):
+    """The customer's lien-waiver documents, offered for inclusion."""
+    from models import GcDocument
+    if not invoice.customer_id:
+        return []
+    return (GcDocument.query
+            .filter_by(user_id=current_user.id, customer_id=invoice.customer_id)
+            .filter(GcDocument.doc_kind != 'completion')
+            .order_by(GcDocument.created_at.desc()).all())
+
+
+@invoice_bp.route('/<int:invoice_id>/packet')
+@login_required
+def packet(invoice_id):
+    """Builder page: choose which documents go into the combined packet."""
+    invoice = _owned_invoice_or_404(invoice_id)
+    contract = invoice.contract
+    sworn_enabled = bool(contract and contract.sworn_statements_enabled)
+    evidence_required = bool(contract and contract.evidence_required)
+    return render_template(
+        'invoices/packet.html', invoice=invoice, contract=contract,
+        sworn_statements=invoice.sworn_statements,
+        waivers=_packet_waivers(invoice),
+        sworn_enabled=sworn_enabled,
+        evidence_required=evidence_required)
+
+
+@invoice_bp.route('/<int:invoice_id>/packet/build', methods=['POST'])
+@login_required
+def packet_build(invoice_id):
+    """Merge the selected documents into one PDF and return it.
+
+    Warn-but-allow: if a required item was left out, the builder page already
+    flagged it; this still generates whatever was selected.
+    """
+    from models import GcDocument
+    invoice = _owned_invoice_or_404(invoice_id)
+
+    parts = [build_invoice_pdf(invoice)]  # the invoice always leads the packet
+
+    sworn_id = request.form.get('sworn_statement_id', type=int)
+    if sworn_id:
+        from models import SwornStatement
+        from sworn_routes import build_sworn_pdf
+        st = SwornStatement.query.filter_by(
+            id=sworn_id, user_id=current_user.id, invoice_id=invoice.id).first()
+        if st is not None:
+            parts.append(build_sworn_pdf(st))
+
+    waiver_id = request.form.get('waiver_id', type=int)
+    if waiver_id:
+        from waiver_routes import build_gc_document_pdf
+        doc = GcDocument.query.filter_by(
+            id=waiver_id, user_id=current_user.id).first()
+        if doc is not None:
+            parts.append(build_gc_document_pdf(doc))
+
+    # Evidence attachments (F5) will be appended here once that feature exists.
+
+    merged = _merge_pdfs(parts)
+    name = safe_filename(invoice.customer.name if invoice.customer else None,
+                         invoice.number or ('Invoice ' + str(invoice.id)), 'Packet')
+    return send_file(merged, mimetype='application/pdf', as_attachment=False,
+                     download_name=f'{name}-packet.pdf')
+
+
 # ── public view (no login) ─────────────────────────────────────────────────
 
 @invoice_bp.route('/i/<token>')
