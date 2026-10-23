@@ -22,8 +22,14 @@
       <td style="padding:6px 0;text-align:right;">−${{ '%.2f'|format(invoice.deposit) }}</td>
     </tr>
     {% endif %}
+    {% if invoice.retainage_amount %}
     <tr>
-      <td style="padding:6px 0;color:#666;border-top:1px solid #eee;"><strong>Balance due</strong></td>
+      <td style="padding:6px 0;color:#666;">Less retainage{% if invoice.retainage_percent %} ({{ '%g'|format(invoice.retainage_percent) }}%){% endif %}</td>
+      <td style="padding:6px 0;text-align:right;">−${{ '%.2f'|format(invoice.retainage_amount) }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td style="padding:6px 0;color:#666;border-top:1px solid #eee;"><strong>{{ 'Net due' if invoice.retainage_amount else 'Balance due' }}</strong></td>
       <td style="padding:6px 0;text-align:right;border-top:1px solid #eee;"><strong>${{ '%.2f'|format(invoice.balance_due) }}</strong></td>
     </tr>
   </table>

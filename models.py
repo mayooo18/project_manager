@@ -560,6 +560,19 @@ class Invoice(db.Model):
     deposit = db.Column(db.Float)           # deposit already collected (reduces balance due)
     po_number = db.Column(db.String(50))
 
+    # ── Retainage (F1) ──
+    # Only set when the contract has retainage turned on. `total` stays the
+    # GROSS of this period's work; `retainage_amount` is held back, so the
+    # customer's NET due = total − deposit − retainage_amount. Both the amount
+    # and the % are frozen snapshots: a later change to the contract's % never
+    # alters an invoice already issued. null here means "no retainage", i.e.
+    # every existing/Simple invoice behaves exactly as before.
+    retainage_amount = db.Column(db.Float)      # withheld this invoice (gross × %)
+    retainage_percent = db.Column(db.Float)     # snapshot of the % applied
+    # True on the single invoice that bills the accumulated retainage back to
+    # the customer at closeout (not tied to a draw).
+    is_retainage_release = db.Column(db.Boolean, default=False, nullable=False)
+
     # Payment record
     paid_at = db.Column(db.DateTime)
     payment_method = db.Column(db.String(50))   # Cash / Zelle / Check / Bank transfer / Card / Other
@@ -582,6 +595,9 @@ class Invoice(db.Model):
     customer = db.relationship('Customer', backref='invoices')
     project = db.relationship('Project', backref='invoices')
     quote = db.relationship('Quote', backref='invoices')
+    # Set when this invoice bills a contract draw or a retainage release (F1).
+    # Lets the invoice PDF show the contract-level progress-billing summary.
+    contract = db.relationship('Contract', foreign_keys=[contract_id])
     items = db.relationship('InvoiceItem', back_populates='invoice',
                             cascade='all, delete-orphan', order_by='InvoiceItem.id')
 
@@ -590,10 +606,17 @@ class Invoice(db.Model):
         return self.total
 
     @property
+    def net_due(self):
+        """Gross this period minus deposit and retainage held (ignores paid)."""
+        return (self.total or 0) - (self.deposit or 0) - (self.retainage_amount or 0)
+
+    @property
     def balance_due(self):
         if self.status == 'paid':
             return 0.0
-        return (self.total or 0) - (self.deposit or 0)
+        # Retainage held reduces what the customer owes now; null = 0, so
+        # non-retainage invoices are unchanged.
+        return (self.total or 0) - (self.deposit or 0) - (self.retainage_amount or 0)
 
 
 class InvoiceItem(db.Model):
@@ -664,9 +687,20 @@ class Contract(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
+    # ── Retainage release (F1) ──
+    # Set exactly once, when the accumulated retainage is billed back to the
+    # customer at closeout. null = nothing released yet (every Simple contract).
+    retainage_released_at = db.Column(db.DateTime)
+    retainage_release_invoice_id = db.Column(
+        db.Integer, db.ForeignKey('invoice.id'), nullable=True)
+
     customer = db.relationship('Customer', backref='contracts')
     project = db.relationship('Project', backref='contracts')
     quote = db.relationship('Quote', backref='contracts')
+    # The single invoice that released retainage (if any). Explicit FK because
+    # Invoice also points back here via Invoice.contract_id.
+    retainage_release_invoice = db.relationship(
+        'Invoice', foreign_keys=[retainage_release_invoice_id], post_update=True)
     draws = db.relationship('ContractDraw', back_populates='contract',
                             cascade='all, delete-orphan',
                             order_by='ContractDraw.sequence')
@@ -697,6 +731,50 @@ class Contract(db.Model):
         if not self.retainage_percent:
             return 0.0
         return (self.contract_total or 0) * (self.retainage_percent / 100.0)
+
+    # ── Retainage, real (F1) ──
+
+    @property
+    def retainage_active(self):
+        """Retainage only applies when the toggle is on AND a % is set."""
+        return bool(self.retainage_enabled and self.retainage_percent)
+
+    @property
+    def retainage_held_to_date(self):
+        """Sum of retainage actually withheld on this contract's draw invoices.
+
+        Summing the stored per-invoice amounts (not re-deriving from %) keeps the
+        figure exact and immune to later % changes — the release bills exactly
+        what was held, to the cent.
+        """
+        return sum((d.invoice.retainage_amount or 0)
+                   for d in self.draws if d.invoice is not None)
+
+    @property
+    def retainage_released(self):
+        inv = self.retainage_release_invoice
+        return (inv.total or 0) if inv is not None else 0.0
+
+    @property
+    def retainage_is_released(self):
+        return self.retainage_released_at is not None
+
+    @property
+    def all_draws_billed(self):
+        return bool(self.draws) and all(d.is_billed for d in self.draws)
+
+    @property
+    def all_draws_paid(self):
+        return bool(self.draws) and all(d.is_paid for d in self.draws)
+
+    @property
+    def can_release_retainage(self):
+        """Release is a one-time action, allowed once every draw is PAID and
+        there is something held to bill back."""
+        return (self.retainage_active
+                and not self.retainage_is_released
+                and self.all_draws_paid
+                and self.retainage_held_to_date > 0)
 
 
 class ContractDraw(db.Model):
