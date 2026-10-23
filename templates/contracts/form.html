@@ -48,10 +48,78 @@
         <div><label class="lbl">Contract total *</label>
           <input type="number" step="any" name="contract_total" id="contract_total" class="fld" placeholder="e.g. 42000" oninput="checkSchedule()" value="{{ contract.contract_total if contract and contract.contract_total else '' }}"/></div>
         <div><label class="lbl">Retainage % (optional)</label>
-          <input type="number" step="any" name="retainage_percent" class="fld" placeholder="e.g. 10" value="{{ contract.retainage_percent if contract and contract.retainage_percent else '' }}"/>
+          <input type="number" step="any" name="retainage_percent" id="retainage_percent" class="fld" placeholder="e.g. 10" value="{{ contract.retainage_percent if contract and contract.retainage_percent else '' }}"/>
           <p class="muted" style="margin-top:.25rem;">% held back until final completion (informational).</p></div>
       </div>
     </div>
+
+    {# ── Terms profile + feature toggles (F0) ──────────────────────────────
+       Pick a profile to pre-fill the switches below; every switch stays
+       editable. A Simple contract (the default) keeps them all off, so it
+       behaves exactly like contracts did before this section existed. #}
+    {% set tp = contract.terms_profile if contract else 'simple' %}
+    <div class="sec">
+      <p class="step" style="margin-bottom:.75rem;">2 · Terms &amp; billing profile</p>
+      <div style="max-width:360px;">
+        <label class="lbl">Profile</label>
+        <select name="terms_profile" id="terms_profile" class="fld" onchange="applyProfile()">
+          <option value="simple" {{ 'selected' if tp == 'simple' }}>Simple — standard contract (default)</option>
+          <option value="progress" {{ 'selected' if tp == 'progress' }}>Progress — progress billing + deadlines</option>
+          <option value="developer_gc" {{ 'selected' if tp == 'developer_gc' }}>Developer / GC — full package</option>
+        </select>
+        <p class="muted" style="margin-top:.25rem;">Pre-fills the switches below. You can still change any one of them.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" style="margin-top:1rem;">
+        <label class="drow" style="cursor:pointer;">
+          <span>Retainage<br><span class="muted" style="font-size:.72rem;">Hold back a % on each draw</span></span>
+          <input type="checkbox" name="retainage_enabled" id="retainage_enabled" {{ 'checked' if contract and contract.retainage_enabled }}/>
+        </label>
+        <label class="drow" style="cursor:pointer;">
+          <span>Payment deadlines<br><span class="muted" style="font-size:.72rem;">Track review / payment due dates</span></span>
+          <input type="checkbox" name="deadlines_enabled" id="deadlines_enabled" {{ 'checked' if contract and contract.deadlines_enabled }}/>
+        </label>
+        <label class="drow" style="cursor:pointer;">
+          <span>Sworn statements<br><span class="muted" style="font-size:.72rem;">Contractor's sworn statement per invoice</span></span>
+          <input type="checkbox" name="sworn_statements_enabled" id="sworn_statements_enabled" {{ 'checked' if contract and contract.sworn_statements_enabled }}/>
+        </label>
+        <label class="drow" style="cursor:pointer;">
+          <span>Lot releases<br><span class="muted" style="font-size:.72rem;">Require a signed lot release before work</span></span>
+          <input type="checkbox" name="lot_releases_enabled" id="lot_releases_enabled" {{ 'checked' if contract and contract.lot_releases_enabled }}/>
+        </label>
+        <label class="drow" style="cursor:pointer;">
+          <span>Hold points<br><span class="muted" style="font-size:.72rem;">Inspection gates per property</span></span>
+          <input type="checkbox" name="hold_points_enabled" id="hold_points_enabled" {{ 'checked' if contract and contract.hold_points_enabled }}/>
+        </label>
+        <label class="drow" style="cursor:pointer;">
+          <span>Evidence required<br><span class="muted" style="font-size:.72rem;">Photos / tickets before a draw is billed</span></span>
+          <input type="checkbox" name="evidence_required" id="evidence_required" {{ 'checked' if contract and contract.evidence_required }}/>
+        </label>
+      </div>
+    </div>
+
+    <script>
+      // Pre-fill the toggles when a profile is chosen. Each profile's defaults;
+      // the user may override any switch afterward. Runs only on change, so the
+      // saved values of an existing contract are left as-is on page load.
+      function applyProfile(){
+        var p = document.getElementById('terms_profile').value;
+        var MAP = {
+          simple:       {retainage_enabled:false, deadlines_enabled:false, sworn_statements_enabled:false, lot_releases_enabled:false, hold_points_enabled:false, evidence_required:false},
+          progress:     {retainage_enabled:false, deadlines_enabled:true,  sworn_statements_enabled:false, lot_releases_enabled:false, hold_points_enabled:false, evidence_required:false},
+          developer_gc: {retainage_enabled:true,  deadlines_enabled:true,  sworn_statements_enabled:true,  lot_releases_enabled:true,  hold_points_enabled:true,  evidence_required:true}
+        };
+        var cfg = MAP[p];
+        if(!cfg) return;
+        for(var k in cfg){ var el = document.getElementById(k); if(el) el.checked = cfg[k]; }
+        // Developer/GC implies 5% retainage, but only pre-fill it if the field
+        // is empty so a number you typed is never overwritten.
+        if(p === 'developer_gc'){
+          var r = document.getElementById('retainage_percent');
+          if(r && !r.value){ r.value = 5; }
+        }
+      }
+    </script>
 
     {% if contract and (contract.proposals or contract.quote) %}
     <div class="sec">
@@ -77,7 +145,7 @@
 
     <div class="sec">
       <div class="flex items-center justify-between mb-1">
-        <p class="step">2 · Draw schedule</p>
+        <p class="step">3 · Draw schedule</p>
         <button type="button" onclick="addDrawRow()" class="chip" style="border-color:var(--accent);color:var(--accent);">+ Add draw</button>
       </div>
       <p class="muted" style="margin-bottom:.75rem;">Break the contract into milestones you'll bill one at a time.{% if contract %} Already-billed draws are locked in the Progress billing panel below.{% endif %}</p>
@@ -101,13 +169,13 @@
     </div>
 
     <div class="sec">
-      <p class="step" style="margin-bottom:.75rem;">3 · Scope of Work</p>
+      <p class="step" style="margin-bottom:.75rem;">4 · Scope of Work</p>
       <p class="muted" style="margin-bottom:.5rem;">Carried over from the proposal when this contract was created. Edit freely — changes here don't affect the original proposal.</p>
       <textarea name="scope_of_work" rows="10" class="fld" placeholder="Describe the work to be performed. One item per block; blank lines separate items.">{{ contract.scope_of_work if contract else '' }}</textarea>
     </div>
 
     <div class="sec">
-      <p class="step" style="margin-bottom:.75rem;">4 · Notes &amp; exclusions</p>
+      <p class="step" style="margin-bottom:.75rem;">5 · Notes &amp; exclusions</p>
       <textarea name="notes" rows="2" class="fld" placeholder="Terms, exclusions, special conditions…">{{ contract.notes if contract else '' }}</textarea>
     </div>
 
