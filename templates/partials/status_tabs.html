@@ -1,8 +1,8 @@
-{% macro status_tabs(endpoint, counts, view, q='') %}
+{% macro status_tabs(endpoint, counts, view, q='', profile='') %}
 <div style="display:flex;gap:.6rem;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 1.1rem;">
   <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
     {% for key, label in [('active','Active'), ('all','All'), ('archived','Archived')] %}
-    <a href="{{ url_for(endpoint, view=key, q=q or none) }}"
+    <a href="{{ url_for(endpoint, view=key, q=q or none, profile=profile or none) }}"
        style="padding:.35rem .9rem;border-radius:999px;text-decoration:none;font-size:.85rem;
               border:1px solid {{ 'transparent' if view == key else 'var(--border-strong)' }};
               background:{{ 'var(--accent)' if view == key else 'var(--surface)' }};
@@ -13,9 +13,10 @@
   </div>
   <form method="GET" action="{{ url_for(endpoint) }}" style="display:flex;gap:.4rem;align-items:center;">
     <input type="hidden" name="view" value="{{ view }}">
+    {% if profile %}<input type="hidden" name="profile" value="{{ profile }}">{% endif %}
     <input type="text" name="q" value="{{ q }}" placeholder="Search title or customer…"
            style="background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm,.4rem);color:var(--ink-900);padding:.35rem .6rem;font-size:.85rem;min-width:200px;">
-    {% if q %}<a href="{{ url_for(endpoint, view=view) }}" class="obtn">Clear</a>{% endif %}
+    {% if q %}<a href="{{ url_for(endpoint, view=view, profile=profile or none) }}" class="obtn">Clear</a>{% endif %}
   </form>
 </div>
 {% endmacro %}

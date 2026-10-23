@@ -623,6 +623,25 @@ class Contract(db.Model):
     title = db.Column(db.String(200), nullable=False)
     contract_total = db.Column(db.Float, default=0.0)
     retainage_percent = db.Column(db.Float)  # optional % held back (informational)
+
+    # ── Terms profile + per-contract feature toggles (F0) ──
+    # A profile pre-fills the toggles below; each toggle stays individually
+    # editable. Everything defaults to the "Simple" / off state so existing
+    # contracts and ordinary homeowner jobs are completely unaffected: a
+    # feature only shows up on the contract screen, invoice PDF or progress
+    # billing panel when its toggle is explicitly turned on.
+    #   simple        — plain contract (today's behaviour), all toggles off
+    #   progress      — progress billing with payment deadlines
+    #   developer_gc  — full developer/GC package (retainage, deadlines,
+    #                   sworn statements, lot releases, hold points, evidence)
+    terms_profile = db.Column(db.String(20), default='simple',
+                              nullable=False, index=True)
+    retainage_enabled = db.Column(db.Boolean, default=False, nullable=False)
+    deadlines_enabled = db.Column(db.Boolean, default=False, nullable=False)
+    sworn_statements_enabled = db.Column(db.Boolean, default=False, nullable=False)
+    lot_releases_enabled = db.Column(db.Boolean, default=False, nullable=False)
+    hold_points_enabled = db.Column(db.Boolean, default=False, nullable=False)
+    evidence_required = db.Column(db.Boolean, default=False, nullable=False)
     # draft → sent → accepted → active → completed
     status = db.Column(db.String(20), default='draft', nullable=False, index=True)
     notes = db.Column(db.Text)

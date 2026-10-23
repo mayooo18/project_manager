@@ -11,8 +11,29 @@
       <a href="{{ url_for('contracts.new') }}" class="btn">+ New Contract</a>
     </div>
   </div>
-  {{ status_tabs('contracts.index', counts, view, q) }}
+  {{ status_tabs('contracts.index', counts, view, q, profile) }}
 
+  {# Terms-profile filter (F0). Chips carry the current view + search so the
+     filters compose. Counts reflect the chosen status view. #}
+  {% set profile_chips = [('', 'All', profile_counts.all),
+                          ('simple', 'Simple', profile_counts.simple),
+                          ('progress', 'Progress', profile_counts.progress),
+                          ('developer_gc', 'Developer / GC', profile_counts.developer_gc)] %}
+  <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin:-.4rem 0 1.1rem;">
+    <span class="muted" style="font-size:.78rem;">Profile:</span>
+    {% for key, label, n in profile_chips %}
+    {% set on = (profile or '') == key %}
+    <a href="{{ url_for('contracts.index', view=view, q=q or none, profile=key or none) }}"
+       style="padding:.25rem .7rem;border-radius:999px;text-decoration:none;font-size:.78rem;
+              border:1px solid {{ 'transparent' if on else 'var(--border-strong)' }};
+              background:{{ 'var(--accent)' if on else 'var(--surface)' }};
+              color:{{ '#fff' if on else 'var(--ink-700)' }} !important;">
+      {{ label }} <span style="opacity:.65;">({{ n }})</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% set profile_labels = {'progress':'PROGRESS', 'developer_gc':'DEV/GC'} %}
   {% set status_styles = {
     'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
     'accepted':'text-green-300 border-green-500','active':'text-blue-300 border-blue-500',
@@ -26,6 +47,9 @@
         <div class="flex items-center flex-wrap gap-2">
           <a href="{{ url_for('contracts.edit', contract_id=con.id) }}" style="color:var(--ink-900);font-weight:600;font-size:1.05rem;text-decoration:none;">{{ con.title }}</a>
           <span class="pill {{ status_styles.get(con.status, 'text-gray-300 border-gray-500') }}" style="font-size:.65rem;text-transform:uppercase;border:1px solid;border-radius:4px;padding:1px 6px;">{{ con.status }}</span>
+          {% if con.terms_profile in profile_labels %}
+          <span class="pill" style="font-size:.65rem;text-transform:uppercase;border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:1px 6px;">{{ profile_labels[con.terms_profile] }}</span>
+          {% endif %}
         </div>
         <p class="muted" style="margin-top:.25rem;">
           {{ con.number or '#' ~ con.id }} · {{ con.customer.name }}

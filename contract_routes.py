@@ -165,6 +165,38 @@ def _float_or_none(raw):
         return None
 
 
+# ── Terms profile + feature toggles (F0) ──
+
+# The three allowed profiles. An unknown value falls back to 'simple' so the
+# contract can never land in a state that turns features on unexpectedly.
+VALID_TERMS_PROFILES = {'simple', 'progress', 'developer_gc'}
+
+# The six per-contract feature toggles, in the order they appear on the form.
+CONTRACT_TOGGLE_FIELDS = (
+    'retainage_enabled', 'deadlines_enabled', 'sworn_statements_enabled',
+    'lot_releases_enabled', 'hold_points_enabled', 'evidence_required',
+)
+
+
+def _checkbox(form, name):
+    """An HTML checkbox submits its value only when ticked; absent means off."""
+    return form.get(name) is not None
+
+
+def _apply_terms_profile(contract, form):
+    """Save the chosen profile and the six toggles from the submitted form.
+
+    The <select> pre-fills the checkboxes in the browser (step 4), but we always
+    trust whatever checkboxes actually arrive, so the user can override any one
+    of them. Each toggle defaults to off when its checkbox is absent, which
+    keeps a Simple contract completely off by default.
+    """
+    profile = (form.get('terms_profile') or 'simple').strip()
+    contract.terms_profile = profile if profile in VALID_TERMS_PROFILES else 'simple'
+    for field in CONTRACT_TOGGLE_FIELDS:
+        setattr(contract, field, _checkbox(form, field))
+
+
 def _parse_draws(form):
     """Read parallel draw_description[]/draw_amount[] arrays into dicts."""
     descriptions = form.getlist('draw_description')
@@ -482,6 +514,24 @@ def index():
     elif view == 'archived':
         listing = listing.filter(Contract.status.in_(CONTRACT_ARCHIVED_STATUSES))
 
+    # Terms-profile filter (F0). Counts reflect the CURRENT status view + search,
+    # so a chip's number matches what you'd see after clicking it. An unknown
+    # value is ignored, so a bad query string just shows everything.
+    profile = request.args.get('profile')
+    if profile not in VALID_TERMS_PROFILES:
+        profile = None
+    profile_rows = dict(
+        listing.with_entities(Contract.terms_profile, db.func.count(Contract.id))
+        .group_by(Contract.terms_profile).all())
+    profile_counts = {
+        'all': sum(profile_rows.values()),
+        'simple': profile_rows.get('simple', 0),
+        'progress': profile_rows.get('progress', 0),
+        'developer_gc': profile_rows.get('developer_gc', 0),
+    }
+    if profile:
+        listing = listing.filter(Contract.terms_profile == profile)
+
     contracts = (listing
                  .options(
                      selectinload(Contract.customer),
@@ -493,7 +543,8 @@ def index():
                            per_page=PAGE_SIZE, error_out=False))
     return render_template('contracts/list.html', contracts=contracts.items,
                            pagination=contracts, view=view, counts=counts,
-                           q=search, delete_form=DeleteForm())
+                           q=search, profile=profile, profile_counts=profile_counts,
+                           delete_form=DeleteForm())
 
 
 # ── builder (create / edit) ─────────────────────────────────────────────────
@@ -534,6 +585,7 @@ def _save_contract(contract):
             contract.retainage_percent = _float_or_none(request.form.get('retainage_percent'))
             contract.notes = (request.form.get('notes') or '').strip()
             contract.scope_of_work = (request.form.get('scope_of_work') or '').strip()
+            _apply_terms_profile(contract, request.form)
             _apply_draws(contract, _parse_draws(request.form))
             db.session.commit()
             flash('Contract saved.', 'success')
