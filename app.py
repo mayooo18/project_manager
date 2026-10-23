@@ -1916,13 +1916,23 @@ def handle_database_error(error):
 @app.errorhandler(DisconnectionError)
 def handle_disconnection_error(error):
     db_logger.error(f"Database disconnection error: {error}")
-    
+
     try:
         db.session.rollback()
     except:
         pass
-    
+
     flash('Connection lost. Please try again.')
+    return redirect(url_for('home'))
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(error):
+    # Expired/missing CSRF token (e.g. a form left open too long): send the
+    # user back with a clear message instead of a bare 400.
+    flash('Your session timed out — please try that again.', 'error')
+    referrer = request.referrer or ''
+    if referrer.startswith(request.host_url):
+        return redirect(referrer)
     return redirect(url_for('home'))
 
 if __name__ == '__main__':

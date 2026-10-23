@@ -58,6 +58,9 @@ class Config:
     
     # Security settings
     WTF_CSRF_ENABLED = True
+    # Tie the CSRF token lifetime to the session (1 day) rather than the
+    # default 1 hour, so a form left open a while doesn't fail on submit.
+    WTF_CSRF_TIME_LIMIT = None
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
     
     # Session configuration to prevent issues
