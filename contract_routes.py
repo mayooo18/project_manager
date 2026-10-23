@@ -914,6 +914,13 @@ def bill_draw(contract_id, draw_id):
               'customer has signed.', 'error')
         return redirect(url_for('contracts.edit', contract_id=contract.id))
 
+    # Evidence gate (F5): when the contract requires evidence, a draw can't be
+    # billed until at least one photo/ticket/report is attached to it.
+    if not draw.evidence_ok:
+        flash('Attach milestone evidence to this draw before billing it '
+              '(this contract requires evidence).', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
+
     n = len(contract.draws)
     inv = Invoice(
         user_id=current_user.id,
