@@ -35,6 +35,7 @@ from waiver_routes import waiver_bp
 from sworn_routes import sworn_bp
 from evidence_routes import evidence_bp
 from archive_routes import archive_bp, archived_copies
+from lot_release_routes import lot_release_bp
 from portal_routes import portal_bp
 from crew_routes import crew_bp
 from payroll_routes import payroll_bp
@@ -72,6 +73,7 @@ app.register_blueprint(waiver_bp)
 app.register_blueprint(sworn_bp)
 app.register_blueprint(evidence_bp)
 app.register_blueprint(archive_bp)
+app.register_blueprint(lot_release_bp)
 
 
 @app.context_processor
@@ -847,6 +849,13 @@ def add_manual_adjustment():
         flash('Manual adjustment could not be saved. Check the required fields.', 'error')
         return redirect(url_for('timeclock'))
 
+    # Lot-release gate (F6): no logging work on an unreleased job.
+    _proj = Project.query.get(form.project_id.data)
+    if _proj is not None and not _proj.lot_release_ok:
+        flash("This job isn't released yet — a signed lot release is required "
+              "before logging work on it.", 'error')
+        return redirect(url_for('timeclock'))
+
     new_log = WorkLog(
         worker_id=form.worker_id.data,
         project_id=form.project_id.data,
@@ -1154,6 +1163,13 @@ def work_logs():
 
     # Handle new log submission
     if form.validate_on_submit() and 'submit' in request.form:
+        # Lot-release gate (F6): block logging work on a job that requires a
+        # signed lot release until it's released.
+        _proj = Project.query.get(form.project_id.data)
+        if _proj is not None and not _proj.lot_release_ok:
+            flash("This job isn't released yet — a signed lot release is required "
+                  "before logging work on it.", 'error')
+            return redirect(url_for('work_logs'))
         new_log = WorkLog(
             worker_id=form.worker_id.data,
             project_id=form.project_id.data,

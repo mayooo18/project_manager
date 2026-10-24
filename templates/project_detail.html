@@ -282,6 +282,33 @@
         </div>
       </div>
 
+      {# Lot release (F6) — only shown when a contract requires one or releases exist. #}
+      {% if project.lot_release_required or project.lot_releases %}
+      <div style="margin-top:.75rem;padding:.6rem .75rem;border:1px solid {{ 'var(--red-fg)' if not project.lot_release_ok else 'var(--border)' }};border-radius:var(--r);">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="flex items-center gap-2">
+            <strong style="font-size:.9rem;color:var(--ink-900);">Lot release</strong>
+            {% if not project.lot_release_ok %}
+            <span class="pill" style="font-size:.62rem;text-transform:uppercase;border:1px solid var(--red-fg);color:var(--red-fg);border-radius:4px;padding:1px 6px;">NOT RELEASED</span>
+            {% elif project.lot_release_required %}
+            <span class="pill" style="font-size:.62rem;text-transform:uppercase;border:1px solid var(--green-fg);color:var(--green-fg);border-radius:4px;padding:1px 6px;">RELEASED</span>
+            {% endif %}
+          </span>
+          <form method="POST" action="{{ url_for('lot_releases.new', project_id=project.id) }}" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="obtn">+ Lot release</button>
+          </form>
+        </div>
+        {% if not project.lot_release_ok %}
+        <p class="muted" style="font-size:.78rem;margin-top:.35rem;">Work logging and invoicing are blocked until a lot release is signed by both parties.</p>
+        {% endif %}
+        {% for lr in project.lot_releases %}
+        <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('lot_releases.edit', lot_release_id=lr.id) }}">Lot release #{{ lr.id }}{% if lr.address %} · {{ lr.address }}{% endif %}</a>
+          <span class="pill" style="font-size:.62rem;text-transform:uppercase;border:1px solid {{ 'var(--green-fg)' if lr.is_fully_signed else 'var(--border-strong)' }};color:{{ 'var(--green-fg)' if lr.is_fully_signed else 'var(--ink-500)' }};border-radius:4px;padding:1px 6px;">{{ 'Signed' if lr.is_fully_signed else 'Draft' }}</span></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
       <p class="muted" style="margin-top:.5rem;">Permits ({{ permits|length }})</p>
       {% for p in permits %}
       <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('permits.edit', permit_id=p.id) }}">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>

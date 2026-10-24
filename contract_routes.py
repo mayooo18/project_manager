@@ -925,6 +925,14 @@ def bill_draw(contract_id, draw_id):
               '(this contract requires evidence).', 'error')
         return redirect(url_for('contracts.edit', contract_id=contract.id))
 
+    # Lot-release gate (F6): when the contract requires a lot release, the job
+    # must have a fully-signed release before it can be billed.
+    if contract.lot_releases_enabled and (
+            contract.project is None or not contract.project.lot_release_ok):
+        flash('This job is not released yet — a signed lot release is required '
+              'before billing this contract.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
+
     n = len(contract.draws)
     inv = Invoice(
         user_id=current_user.id,
