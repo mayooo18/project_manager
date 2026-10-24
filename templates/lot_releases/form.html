@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}Lot Release{% endblock %}
+
+{% block content %}
+<style>
+  .lrwrap{max-width:860px;margin:0 auto;}
+  .fld{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-900);padding:.45rem .6rem;width:100%;font-size:.88rem;}
+  .fld:focus{outline:none;border-color:var(--accent);}
+  .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.1rem 1.25rem;margin-bottom:1.1rem;}
+  .step{color:var(--ink-500);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;}
+  .lbl{color:var(--ink-500);font-size:.72rem;}
+  #sigpad{background:#fff;border:1px dashed var(--border-strong);border-radius:8px;touch-action:none;width:100%;height:160px;display:block;}
+</style>
+
+<div class="lrwrap">
+  <div class="page-head">
+    <h1>Lot Release
+      <span class="spill {{ 'c-green' if lr.is_fully_signed else 'muted' }}" style="margin-left:.5rem;border:1px solid var(--border-strong);font-size:.7rem;text-transform:uppercase;border-radius:4px;padding:1px 6px;">{{ 'Signed' if lr.is_fully_signed else 'Draft' }}</span>
+    </h1>
+    <a href="{{ url_for('project_detail', project_id=lr.project_id) }}" class="lnk">← Back to job</a>
+  </div>
+
+  {% set readonly = lr.is_fully_signed %}
+  <form method="POST" action="{{ url_for('lot_releases.edit', lot_release_id=lr.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    <div class="sec">
+      <p class="step">Property</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="lbl">Address</label><input name="address" class="fld" value="{{ lr.address or '' }}"/></div>
+        <div><label class="lbl">PIN (parcel #)</label><input name="pin" class="fld" value="{{ lr.pin or '' }}"/></div>
+        <div><label class="lbl">Deed / survey reference</label><input name="deed_survey_ref" class="fld" value="{{ lr.deed_survey_ref or '' }}"/></div>
+        <div><label class="lbl">Plan revision</label><input name="plan_revision" class="fld" value="{{ lr.plan_revision or '' }}"/></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <p class="step">Permit &amp; schedule</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="lbl">Permit number</label><input name="permit_number" class="fld" value="{{ lr.permit_number or '' }}"/></div>
+        <div><label class="lbl">Permit status</label><input name="permit_status" class="fld" value="{{ lr.permit_status or '' }}"/></div>
+        <div><label class="lbl">Start date</label><input type="date" name="start_date" class="fld" value="{{ lr.start_date.strftime('%Y-%m-%d') if lr.start_date else '' }}"/></div>
+        <div><label class="lbl">Framing handoff date</label><input type="date" name="framing_handoff_date" class="fld" value="{{ lr.framing_handoff_date.strftime('%Y-%m-%d') if lr.framing_handoff_date else '' }}"/></div>
+        <div><label class="lbl">Superintendent</label><input name="superintendent" class="fld" value="{{ lr.superintendent or '' }}"/></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <p class="step">Utilities</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="lbl">Water connection (endpoint, length/size/depth)</label><textarea name="water_connection" class="fld" rows="2">{{ lr.water_connection or '' }}</textarea></div>
+        <div><label class="lbl">Sanitary connection (endpoint, length/size/depth)</label><textarea name="sanitary_connection" class="fld" rows="2">{{ lr.sanitary_connection or '' }}</textarea></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <p class="step">Site</p>
+      <div class="grid grid-cols-1 gap-3">
+        <div><label class="lbl">Stockpile (map / capacity)</label><textarea name="stockpile" class="fld" rows="2">{{ lr.stockpile or '' }}</textarea></div>
+        <div><label class="lbl">Cut / fill / disposal quantities</label><textarea name="cut_fill_disposal" class="fld" rows="2">{{ lr.cut_fill_disposal or '' }}</textarea></div>
+        <div><label class="lbl">Water-control plan</label><textarea name="water_control_plan" class="fld" rows="2">{{ lr.water_control_plan or '' }}</textarea></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <p class="step">Testing &amp; handoff</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="lbl">Testing contact</label><input name="testing_contact" class="fld" value="{{ lr.testing_contact or '' }}"/></div>
+        <div><label class="lbl">Handoff reviewer</label><input name="handoff_reviewer" class="fld" value="{{ lr.handoff_reviewer or '' }}"/></div>
+        <div class="sm:col-span-2"><label class="lbl">Testing plan</label><textarea name="testing_plan" class="fld" rows="2">{{ lr.testing_plan or '' }}</textarea></div>
+        <div class="sm:col-span-2"><label class="lbl">Deferred operations</label><textarea name="deferred_operations" class="fld" rows="2">{{ lr.deferred_operations or '' }}</textarea></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <p class="step">Pricing &amp; notes</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div><label class="lbl">Base price</label><input type="number" step="any" name="base_price" class="fld" value="{{ lr.base_price if lr.base_price else '' }}"/></div>
+        <div><label class="lbl">Signed changes</label><input type="number" step="any" name="signed_changes" class="fld" value="{{ lr.signed_changes if lr.signed_changes else '' }}"/></div>
+        <div><label class="lbl">Total</label><input class="fld" value="${{ '%.2f'|format(lr.total) }}" disabled style="opacity:.7;"/></div>
+      </div>
+      <div style="margin-top:.75rem;"><label class="lbl">Notes</label><textarea name="notes" class="fld" rows="2">{{ lr.notes or '' }}</textarea></div>
+    </div>
+
+    {% if not readonly %}
+    <div class="flex items-center gap-3 flex-wrap" style="margin-bottom:1.25rem;">
+      <button type="submit" class="btn">Save</button>
+      <a href="{{ url_for('lot_releases.pdf', lot_release_id=lr.id) }}" target="_blank" class="obtn">Preview PDF</a>
+    </div>
+    {% endif %}
+  </form>
+
+  <div class="sec">
+    <p class="step">Signatures — both parties required</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Owner -->
+      <div>
+        <p style="color:var(--ink-900);font-weight:600;">Owner</p>
+        {% if lr.owner_signed_at %}
+        <p class="c-green" style="font-size:.85rem;">✓ Signed by {{ lr.owner_signature_name }} on {{ lr.owner_signed_at.strftime('%Y-%m-%d') }}</p>
+        {% else %}
+        <p class="muted" style="font-size:.85rem;margin-bottom:.4rem;">Send the owner a link to sign.</p>
+        {% if link_active %}
+        <div class="flex items-center gap-2 flex-wrap">
+          <input type="text" readonly class="fld" style="flex:1;min-width:0;" value="{{ url_for('lot_releases.public_view', token=lr.public_token, _external=True) }}"/>
+        </div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('lot_releases.send', lot_release_id=lr.id) }}" style="margin-top:.5rem;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="obtn accent">{{ 'Regenerate owner link' if link_active else 'Create owner signing link' }}</button>
+        </form>
+        {% endif %}
+      </div>
+      <!-- Contractor -->
+      <div>
+        <p style="color:var(--ink-900);font-weight:600;">Contractor</p>
+        {% if lr.contractor_signed_at %}
+        <p class="c-green" style="font-size:.85rem;">✓ Signed by {{ lr.contractor_signature_name }} on {{ lr.contractor_signed_at.strftime('%Y-%m-%d') }}</p>
+        {% else %}
+        <form method="POST" action="{{ url_for('lot_releases.contractor_sign', lot_release_id=lr.id) }}" onsubmit="return prepareSignature();">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <label class="lbl">Your name</label>
+          <input type="text" name="signature_name" class="fld" required placeholder="Full name" style="margin-bottom:.4rem;"/>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem;">
+            <label class="lbl">Sign below</label>
+            <button type="button" id="sig-clear" style="background:none;border:none;color:var(--ink-500);font-size:.78rem;cursor:pointer;">Clear</button>
+          </div>
+          <canvas id="sigpad"></canvas>
+          <input type="hidden" name="signature_data" id="signature_data"/>
+          <button type="submit" class="btn" style="margin-top:.6rem;">Sign as contractor</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% if lr.is_fully_signed %}
+    <p class="c-green" style="margin-top:.75rem;font-weight:600;">✓ Fully signed — this job is released. Work logging and invoicing are unblocked.</p>
+    <a href="{{ url_for('lot_releases.pdf', lot_release_id=lr.id) }}" target="_blank" class="lnk">Download signed PDF</a>
+    {% endif %}
+  </div>
+
+  {% if current_user.is_owner %}
+  <form method="POST" action="{{ url_for('lot_releases.delete', lot_release_id=lr.id) }}" onsubmit="return confirm('Delete this lot release?');" style="margin-bottom:1.5rem;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <button type="submit" class="linkbtn danger">Delete lot release</button>
+  </form>
+  {% endif %}
+</div>
+{% if not lr.contractor_signed_at %}
+<script src="{{ url_for('static', filename='js/signature.js') }}"></script>
+{% endif %}
+{% endblock %}

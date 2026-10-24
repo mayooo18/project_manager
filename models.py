@@ -86,6 +86,19 @@ class Project(db.Model):
     incomes = db.relationship('Income', backref='incomes', cascade='all, delete-orphan')
     payments = db.relationship('Payment', backref='project_payments', cascade='all, delete-orphan')
 
+    @property
+    def lot_release_required(self):
+        """True when any contract on this job has lot releases turned on (F6)."""
+        return any(getattr(c, 'lot_releases_enabled', False) for c in self.contracts)
+
+    @property
+    def lot_release_ok(self):
+        """Whether work/invoicing is allowed: fine unless a lot release is
+        required and none is fully signed yet."""
+        if not self.lot_release_required:
+            return True
+        return any(lr.is_fully_signed for lr in self.lot_releases)
+
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
@@ -1124,3 +1137,73 @@ class SentDocumentArchive(db.Model):
     archived_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     user = db.relationship('User')
+
+
+# ── Lot releases (F6) ──
+
+class LotRelease(db.Model):
+    """A per-job/property lot-release form (F6). Draft until signed by BOTH the
+    contractor and the owner. When a job's contract has lot releases turned on,
+    work logging and invoicing on that job are blocked until a release is fully
+    signed. Opt-in: jobs on contracts without the toggle are unaffected.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
+    status = db.Column(db.String(20), default='draft', nullable=False, index=True)
+
+    # Property
+    address = db.Column(db.String(250))
+    pin = db.Column(db.String(60))                 # parcel identification number
+    deed_survey_ref = db.Column(db.String(200))
+    plan_revision = db.Column(db.String(100))
+    # Permit
+    permit_number = db.Column(db.String(80))
+    permit_status = db.Column(db.String(80))
+    # Schedule
+    start_date = db.Column(db.Date)
+    framing_handoff_date = db.Column(db.Date)
+    superintendent = db.Column(db.String(150))
+    # Utilities — water + sanitary connections
+    water_connection = db.Column(db.Text)          # endpoint, length/size/depth
+    sanitary_connection = db.Column(db.Text)
+    # Site
+    stockpile = db.Column(db.Text)                 # map / capacity
+    cut_fill_disposal = db.Column(db.Text)         # quantities
+    water_control_plan = db.Column(db.Text)
+    # Testing + handoff
+    testing_contact = db.Column(db.String(200))
+    testing_plan = db.Column(db.Text)
+    handoff_reviewer = db.Column(db.String(150))
+    deferred_operations = db.Column(db.Text)
+    # Pricing
+    base_price = db.Column(db.Float, default=0.0)
+    signed_changes = db.Column(db.Float, default=0.0)
+    notes = db.Column(db.Text)
+
+    # Dual e-signatures. Owner signs via a public link (reusing the quote/CO
+    # pattern); the contractor counter-signs in-app. Fully signed only when both
+    # are present.
+    public_token = db.Column(db.String(64), unique=True)
+    public_token_expires_at = db.Column(db.DateTime)
+    public_token_revoked_at = db.Column(db.DateTime)
+    owner_signature_name = db.Column(db.String(150))
+    owner_signature_data = db.Column(db.Text)
+    owner_signed_at = db.Column(db.DateTime)
+    contractor_signature_name = db.Column(db.String(150))
+    contractor_signature_data = db.Column(db.Text)
+    contractor_signed_at = db.Column(db.DateTime)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    sent_at = db.Column(db.DateTime)
+
+    project = db.relationship('Project', backref=db.backref(
+        'lot_releases', cascade='all, delete-orphan'))
+
+    @property
+    def total(self):
+        return (self.base_price or 0) + (self.signed_changes or 0)
+
+    @property
+    def is_fully_signed(self):
+        return self.owner_signed_at is not None and self.contractor_signed_at is not None
