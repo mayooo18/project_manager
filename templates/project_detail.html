@@ -309,6 +309,82 @@
       </div>
       {% endif %}
 
+      {# Hold-point checklist (F7) — only when a contract requires hold points. #}
+      {% if project.hold_points_required or project.hold_points %}
+      <div style="margin-top:.75rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--r);">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <strong style="font-size:.9rem;color:var(--ink-900);">Hold points</strong>
+          {% if not project.hold_points %}
+          <form method="POST" action="{{ url_for('hold_points.setup', project_id=project.id) }}" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="obtn">Set up hold points</button>
+          </form>
+          {% endif %}
+        </div>
+        {% for hp in project.hold_points %}
+        {% set passed = hp.is_passed %}
+        {% set unlocked = hp.is_unlocked %}
+        <div style="margin-top:.5rem;padding:.5rem .6rem;border:1px solid {{ 'var(--green-fg)' if passed else 'var(--border)' }};border-radius:var(--r-sm);">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span style="font-size:.88rem;color:var(--ink-900);">{{ loop.index }}. {{ hp.name }}</span>
+            <span class="pill" style="font-size:.6rem;text-transform:uppercase;border:1px solid {{ 'var(--green-fg)' if passed else ('var(--border-strong)' if unlocked else 'var(--border)') }};color:{{ 'var(--green-fg)' if passed else ('var(--ink-700)' if unlocked else 'var(--ink-500)') }};border-radius:4px;padding:1px 6px;">{{ 'Passed' if passed else ('Open' if unlocked else 'Locked') }}</span>
+          </div>
+
+          {% if passed %}
+          <p class="muted" style="font-size:.78rem;margin-top:.25rem;">Passed by {{ hp.approved_by }}{% if hp.approved_at %} on {{ hp.approved_at.strftime('%Y-%m-%d') }}{% endif %}{% if hp.inspection %} · inspection: {{ hp.inspection.inspection_type }} ({{ hp.inspection.status }}){% endif %}</p>
+          {% if current_user.is_owner %}
+          <form method="POST" action="{{ url_for('hold_points.reopen', hold_point_id=hp.id) }}" onsubmit="return confirm('Reopen this gate and all later gates?');" style="margin-top:.25rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="linkbtn danger" style="font-size:.78rem;">Reopen</button>
+          </form>
+          {% endif %}
+
+          {% elif unlocked %}
+          <form method="POST" action="{{ url_for('hold_points.update', hold_point_id=hp.id) }}" style="margin-top:.4rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <textarea name="required_items" class="fld-sm" rows="2" placeholder="Required items / checklist" style="width:100%;">{{ hp.required_items or '' }}</textarea>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" style="margin-top:.3rem;">
+              <select name="inspection_id" class="fld-sm">
+                <option value="">— Link inspection (optional) —</option>
+                {% for perm in project.permits %}{% for insp in perm.inspections %}
+                <option value="{{ insp.id }}" {{ 'selected' if hp.inspection_id == insp.id }}>{{ insp.inspection_type }} · {{ insp.status }}</option>
+                {% endfor %}{% endfor %}
+              </select>
+              <input name="notes" class="fld-sm" placeholder="Notes" value="{{ hp.notes or '' }}"/>
+            </div>
+            <button type="submit" class="obtn" style="margin-top:.3rem;">Save</button>
+          </form>
+          <form method="POST" action="{{ url_for('hold_points.pass_gate', hold_point_id=hp.id) }}" style="margin-top:.4rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input name="approved_by" class="fld-sm" placeholder="Approved by" style="max-width:180px;"/>
+            <button type="submit" class="obtn green">Mark passed</button>
+          </form>
+          {% else %}
+          <p class="muted" style="font-size:.78rem;margin-top:.25rem;">Locked — pass the previous gate first.</p>
+          {% endif %}
+
+          {% if hp.photos %}
+          <div class="flex flex-wrap gap-2" style="margin-top:.4rem;">
+            {% for ph in hp.photos %}
+            <span style="font-size:.72rem;border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:.1rem .4rem;">
+              <a href="{{ url_for('hold_points.download_photo', photo_id=ph.id) }}" target="_blank" class="lk">{{ ph.original_name or ph.filename }}</a>
+              <form method="POST" action="{{ url_for('hold_points.delete_photo', photo_id=ph.id) }}" onsubmit="return confirm('Remove photo?');" style="display:inline;margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+            </span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if not passed and unlocked %}
+          <form method="POST" action="{{ url_for('hold_points.upload_photo', hold_point_id=hp.id) }}" enctype="multipart/form-data" style="margin-top:.35rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="file" name="file" class="fld-sm" style="max-width:190px;"/>
+            <button type="submit" class="obtn" style="font-size:.78rem;">Add photo</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
       <p class="muted" style="margin-top:.5rem;">Permits ({{ permits|length }})</p>
       {% for p in permits %}
       <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('permits.edit', permit_id=p.id) }}">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>

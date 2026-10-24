@@ -99,6 +99,11 @@ class Project(db.Model):
             return True
         return any(lr.is_fully_signed for lr in self.lot_releases)
 
+    @property
+    def hold_points_required(self):
+        """True when any contract on this job has hold points turned on (F7)."""
+        return any(getattr(c, 'hold_points_enabled', False) for c in self.contracts)
+
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
@@ -1207,3 +1212,63 @@ class LotRelease(db.Model):
     @property
     def is_fully_signed(self):
         return self.owner_signed_at is not None and self.contractor_signed_at is not None
+
+
+# ── Hold-point checklist (F7) ──
+
+HOLD_POINT_GATES = [
+    'Before excavation', 'Before footings', 'Before walls',
+    'Before backfill', 'Before slab', 'Before framing release',
+]
+
+
+class HoldPoint(db.Model):
+    """One gate in a property's hold-point checklist (F7). Gates are ordered and
+    sequential: a gate can be passed only once every earlier gate has passed.
+    Each gate can link to an existing Inspection for the official result, so the
+    Permits & Inspections module stays the single source of inspection truth.
+    Opt-in: only jobs on a contract with hold points enabled use these.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
+    sequence = db.Column(db.Integer, default=0, index=True)
+    name = db.Column(db.String(80), nullable=False)
+    required_items = db.Column(db.Text)
+    inspection_id = db.Column(db.Integer, db.ForeignKey('inspection.id'), nullable=True)
+    status = db.Column(db.String(20), default='open', nullable=False)  # open / passed
+    approved_by = db.Column(db.String(150))
+    approved_at = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    project = db.relationship('Project', backref=db.backref(
+        'hold_points', cascade='all, delete-orphan', order_by='HoldPoint.sequence'))
+    inspection = db.relationship('Inspection')
+    photos = db.relationship('HoldPointPhoto', back_populates='hold_point',
+                             cascade='all, delete-orphan',
+                             order_by='HoldPointPhoto.uploaded_at')
+
+    @property
+    def is_passed(self):
+        return self.status == 'passed'
+
+    @property
+    def is_unlocked(self):
+        """A gate is actionable only once all earlier gates have passed."""
+        for g in self.project.hold_points:
+            if g.sequence < self.sequence and not g.is_passed:
+                return False
+        return True
+
+
+class HoldPointPhoto(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    hold_point_id = db.Column(db.Integer, db.ForeignKey('hold_point.id'),
+                              nullable=False, index=True)
+    filename = db.Column(db.String(300), nullable=False)   # stored under UPLOAD_FOLDER
+    original_name = db.Column(db.String(300))
+    caption = db.Column(db.String(300))
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    hold_point = db.relationship('HoldPoint', back_populates='photos')
