@@ -32,7 +32,7 @@ from sqlalchemy.orm import selectinload
 from extensions import db, limiter
 from models import (
     Contract, ContractDraw, ContractProposal, Customer, Quote, Project,
-    Invoice, InvoiceItem, find_or_create_location,
+    Invoice, InvoiceItem, Subcontractor, find_or_create_location,
 )
 from forms import DeleteForm
 from quote_routes import (
@@ -607,8 +607,11 @@ def _save_contract(contract):
     customers = (Customer.query.filter_by(user_id=current_user.id)
                  .order_by(Customer.name.asc()).all())
     projects = Project.query.order_by(Project.name.asc()).all()
+    subcontractors = (Subcontractor.query.filter_by(user_id=current_user.id)
+                      .order_by(Subcontractor.name.asc()).all())
     return render_template('contracts/form.html', contract=contract,
-                           customers=customers, projects=projects)
+                           customers=customers, projects=projects,
+                           subcontractors=subcontractors)
 
 
 # ── create a contract from an approved proposal ─────────────────────────────

@@ -1272,3 +1272,53 @@ class HoldPointPhoto(db.Model):
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     hold_point = db.relationship('HoldPoint', back_populates='photos')
+
+
+# ── Insurance & bond compliance (F8) ──
+
+INSURANCE_COVERAGE_TYPES = [
+    'General liability — per occurrence',
+    'General liability — aggregate',
+    'Automobile liability',
+    "Employer's liability",
+    "Workers' compensation",
+    'Additional insured — ongoing operations',
+    'Additional insured — completed operations',
+    'Bond',
+]
+
+
+class InsuranceRequirement(db.Model):
+    """A required coverage line on a contract (F8). The amount is recorded for
+    documentation; automatic compliance is expiration-based (see the routes)."""
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'),
+                            nullable=False, index=True)
+    coverage_type = db.Column(db.String(80), nullable=False)
+    required_amount = db.Column(db.Float)
+    notes = db.Column(db.String(300))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    contract = db.relationship('Contract', backref=db.backref(
+        'insurance_requirements', cascade='all, delete-orphan',
+        order_by='InsuranceRequirement.id'))
+
+
+class ContractSubcontractor(db.Model):
+    """Which subcontractors are assigned to a contract (F8). No such link existed
+    before; compliance checks only the subs actually on the job."""
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'),
+                            nullable=False, index=True)
+    subcontractor_id = db.Column(db.Integer, db.ForeignKey('subcontractor.id'),
+                                 nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('contract_id', 'subcontractor_id',
+                            name='uq_contract_subcontractor'),
+    )
+
+    contract = db.relationship('Contract', backref=db.backref(
+        'sub_links', cascade='all, delete-orphan'))
+    subcontractor = db.relationship('Subcontractor')

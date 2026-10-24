@@ -252,6 +252,75 @@
     {% endfor %}
   </div>
   {% endif %}
+  {# Insurance & bonds compliance (F8) — shown for developer/GC or lot-release
+     contracts, or once requirements/subs exist; Simple contracts are unchanged. #}
+  {% set show_ins = contract.terms_profile == 'developer_gc' or contract.lot_releases_enabled or contract.insurance_requirements or contract.sub_links %}
+  {% if show_ins %}
+  {% set ins = insurance_summary(contract) %}
+  {% set stc = {'valid':'c-green','expiring':'c-amber','expired':'c-red','missing':'c-red'} %}
+  {% set stl = {'valid':'Valid','expiring':'Expiring','expired':'Expired','missing':'Missing'} %}
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="step" style="margin-bottom:.5rem;">Insurance &amp; bonds</p>
+    {% if ins.blocks_release %}
+    <p class="c-red" style="font-size:.85rem;margin-bottom:.5rem;">⚠ An assigned subcontractor's COI is expired or missing — this blocks the lot-release sign-off.</p>
+    {% elif ins.has_warning %}
+    <p class="c-amber" style="font-size:.85rem;margin-bottom:.5rem;">Some coverage is expiring soon or missing — review below.</p>
+    {% else %}
+    <p class="muted" style="font-size:.85rem;margin-bottom:.5rem;">Record required coverage, assign subs, and track expirations.</p>
+    {% endif %}
+
+    <!-- Required coverage -->
+    <p class="lbl" style="margin-top:.5rem;">Required coverage</p>
+    {% for req in ins.requirements %}
+    <div class="drow" style="padding:.35rem .6rem;">
+      <span style="font-size:.85rem;">{{ req.coverage_type }}{% if req.required_amount %} · ${{ '%.0f'|format(req.required_amount) }}{% endif %}{% if req.notes %} <span class="muted">· {{ req.notes }}</span>{% endif %}</span>
+      <form method="POST" action="{{ url_for('insurance.delete_requirement', req_id=req.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+    </div>
+    {% else %}<p class="muted" style="font-size:.82rem;">None recorded.</p>{% endfor %}
+    <form method="POST" action="{{ url_for('insurance.add_requirement', contract_id=contract.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.4rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <select name="coverage_type" class="fld" style="max-width:260px;font-size:.82rem;">
+        {% for ct in ins.coverage_types %}<option value="{{ ct }}">{{ ct }}</option>{% endfor %}
+      </select>
+      <input type="number" step="any" name="required_amount" class="fld" placeholder="Amount" style="max-width:120px;font-size:.82rem;"/>
+      <input name="notes" class="fld" placeholder="Note" style="max-width:150px;font-size:.82rem;"/>
+      <button type="submit" class="obtn">Add</button>
+    </form>
+
+    <!-- Assigned subs + compliance -->
+    <p class="lbl" style="margin-top:1rem;">Assigned subcontractors</p>
+    {% for r in ins.subs %}
+    <div class="drow" style="padding:.35rem .6rem;">
+      <span style="font-size:.85rem;">{{ r.sub.name }}{% if r.sub.trade %} <span class="muted">· {{ r.sub.trade }}</span>{% endif %}</span>
+      <span class="flex items-center gap-2">
+        <span class="{{ stc[r.coi_status] }}" style="font-size:.72rem;">COI: {{ stl[r.coi_status] }}{% if r.sub.insurance_expiration %} ({{ r.sub.insurance_expiration.strftime('%Y-%m-%d') }}){% endif %}</span>
+        <span class="muted" style="font-size:.72rem;">· Lic: {{ stl[r.license_status] }}</span>
+        <form method="POST" action="{{ url_for('insurance.unassign_sub', link_id=r.link.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+      </span>
+    </div>
+    {% else %}<p class="muted" style="font-size:.82rem;">No subs assigned{% if subcontractors %} — most jobs have none; add any that apply.{% endif %}</p>{% endfor %}
+    {% if subcontractors %}
+    <form method="POST" action="{{ url_for('insurance.assign_sub', contract_id=contract.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.4rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <select name="subcontractor_id" class="fld" style="max-width:260px;font-size:.82rem;">
+        <option value="">— Assign a subcontractor —</option>
+        {% for s in subcontractors %}<option value="{{ s.id }}">{{ s.name }}{% if s.trade %} · {{ s.trade }}{% endif %}</option>{% endfor %}
+      </select>
+      <button type="submit" class="obtn">Assign</button>
+    </form>
+    {% endif %}
+
+    <!-- Company credentials -->
+    <p class="lbl" style="margin-top:1rem;">Your insurance &amp; bond credentials</p>
+    {% for c in ins.credentials %}
+    <div class="drow" style="padding:.35rem .6rem;">
+      <span style="font-size:.85rem;">{{ c.license.name }}{% if c.license.expiration_date %} <span class="muted">· exp {{ c.license.expiration_date.strftime('%Y-%m-%d') }}</span>{% endif %}</span>
+      <span class="{{ stc[c.status] }}" style="font-size:.72rem;">{{ stl[c.status] }}</span>
+    </div>
+    {% else %}<p class="muted" style="font-size:.82rem;">No insurance/bond records on your <a href="/licenses" class="lnk">Licenses</a> page yet (add them with type Insurance or Bond).</p>{% endfor %}
+  </div>
+  {% endif %}
+
   <div class="sec" style="margin-top:1.5rem;">
     <p class="step" style="margin-bottom:.75rem;">Progress billing</p>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" style="margin-bottom:1rem;">
