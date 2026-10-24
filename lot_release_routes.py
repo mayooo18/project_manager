@@ -126,6 +126,15 @@ def delete(lot_release_id):
 @login_required
 def contractor_sign(lot_release_id):
     lr = _owned_lr_or_404(lot_release_id)
+    # Insurance gate (F8): block the contractor's sign when an assigned sub on
+    # this job has an expired or missing COI. No assigned subs → never blocks.
+    from insurance_routes import contract_blocks_release
+    if lr.project is not None and any(
+            contract_blocks_release(con) for con in lr.project.contracts):
+        flash('An assigned subcontractor on this job has an expired or missing '
+              'COI — resolve insurance compliance before signing the lot release.',
+              'error')
+        return redirect(url_for('lot_releases.edit', lot_release_id=lr.id))
     name = (request.form.get('signature_name') or '').strip()
     signature = _validated_signature_data(request.form.get('signature_data') or '')
     if not name or signature is None:
