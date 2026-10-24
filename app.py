@@ -36,6 +36,7 @@ from sworn_routes import sworn_bp
 from evidence_routes import evidence_bp
 from archive_routes import archive_bp, archived_copies
 from lot_release_routes import lot_release_bp
+from hold_point_routes import hold_point_bp
 from portal_routes import portal_bp
 from crew_routes import crew_bp
 from payroll_routes import payroll_bp
@@ -74,6 +75,7 @@ app.register_blueprint(sworn_bp)
 app.register_blueprint(evidence_bp)
 app.register_blueprint(archive_bp)
 app.register_blueprint(lot_release_bp)
+app.register_blueprint(hold_point_bp)
 
 
 @app.context_processor
