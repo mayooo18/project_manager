@@ -601,7 +601,14 @@ def _save_contract(contract):
             _apply_terms_profile(contract, request.form)
             _apply_draws(contract, _parse_draws(request.form))
             db.session.commit()
-            flash('Contract saved.', 'success')
+            # Schedule-of-Values validation (F9): warn, but don't block, when the
+            # milestones don't total the contract price (draws are edited bit by
+            # bit and billed draws are locked).
+            if contract.contract_total and not contract.sov_balanced:
+                flash(f'Contract saved. Note: the draw milestones are off from the '
+                      f'contract total by ${abs(contract.sov_variance):,.2f}.', 'success')
+            else:
+                flash('Contract saved.', 'success')
             return redirect(url_for('contracts.edit', contract_id=contract.id))
 
     customers = (Customer.query.filter_by(user_id=current_user.id)

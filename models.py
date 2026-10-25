@@ -769,6 +769,9 @@ class Contract(db.Model):
     review_days = db.Column(db.Integer, default=5)
     payment_days = db.Column(db.Integer, default=10)
     retainage_release_days = db.Column(db.Integer, default=30)
+
+    # Markup % applied to unit-rate extras (F9). null until set.
+    unit_rate_markup_percent = db.Column(db.Float)
     # draft → sent → accepted → active → completed
     status = db.Column(db.String(20), default='draft', nullable=False, index=True)
     notes = db.Column(db.Text)
@@ -813,10 +816,24 @@ class Contract(db.Model):
     proposals = db.relationship('ContractProposal', back_populates='contract',
                                 cascade='all, delete-orphan',
                                 order_by='ContractProposal.id')
+    # Unit-rate sheet for extras (F9).
+    unit_rates = db.relationship('UnitRate', back_populates='contract',
+                                 cascade='all, delete-orphan',
+                                 order_by='UnitRate.sequence')
 
     @property
     def scheduled_total(self):
         return sum((d.amount or 0) for d in self.draws)
+
+    @property
+    def sov_variance(self):
+        """Schedule-of-Values variance: scheduled draws minus the contract
+        total. 0 means the milestones balance to the price (F9)."""
+        return round(self.scheduled_total - (self.contract_total or 0), 2)
+
+    @property
+    def sov_balanced(self):
+        return abs(self.sov_variance) < 0.01
 
     @property
     def billed_to_date(self):
@@ -1322,3 +1339,31 @@ class ContractSubcontractor(db.Model):
     contract = db.relationship('Contract', backref=db.backref(
         'sub_links', cascade='all, delete-orphan'))
     subcontractor = db.relationship('Subcontractor')
+
+
+# ── Unit-rate sheet for extras (F9) ──
+
+UNIT_RATE_DEFAULTS = [
+    ('Unsuitable soil removal', '$/bank CY'),
+    ('Imported fill', '$/compacted CY'),
+    ('Stone', '$/ton'),
+    ('Hauling / disposal', '$/load'),
+    ('Dewatering', '$/day'),
+    ('Standby', '$/crew-equipment hour'),
+    ('Remobilization', '$/event'),
+]
+
+
+class UnitRate(db.Model):
+    """A unit rate for extra/change work on a contract (F9). Feeds the Exhibit-C
+    export and gives change orders a rate to price against."""
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'),
+                            nullable=False, index=True)
+    sequence = db.Column(db.Integer, default=0)
+    label = db.Column(db.String(120), nullable=False)
+    unit = db.Column(db.String(60))          # e.g. "$/bank CY"
+    rate = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    contract = db.relationship('Contract', back_populates='unit_rates')
