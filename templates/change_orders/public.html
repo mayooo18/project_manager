@@ -55,6 +55,13 @@
     <h1>{{ change_order.title }}</h1>
     <p class="sub">For {{ change_order.customer.name }} · Contract {{ change_order.contract.number }}</p>
     {% if change_order.reason %}<p class="reason">{{ change_order.reason }}</p>{% endif %}
+    {% if change_order.location or change_order.schedule_impact_days is not none %}
+    <p class="reason" style="margin-top:.5rem;">
+      {% if change_order.location %}Location: {{ change_order.location }}{% endif %}
+      {% if change_order.location and change_order.schedule_impact_days is not none %} · {% endif %}
+      {% if change_order.schedule_impact_days is not none %}Schedule impact: {{ change_order.schedule_impact_days }} day{{ 's' if change_order.schedule_impact_days != 1 }}{% endif %}
+    </p>
+    {% endif %}
 
     <div class="items">
       {% for item in change_order.items %}

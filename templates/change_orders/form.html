@@ -36,16 +36,32 @@
         <p class="step" style="margin-bottom:.75rem;">1 · Amendment details</p>
         <label class="lbl">Title *</label>
         <input type="text" name="title" class="fld" style="margin-bottom:.75rem;" maxlength="200" required placeholder="e.g. Add recessed lighting" value="{{ change_order.title if change_order else '' }}"/>
-        <label class="lbl">Reason for change</label>
+        <label class="lbl">Cause / reason for change</label>
         <textarea name="reason" rows="3" class="fld" placeholder="Why is this amendment needed?">{{ change_order.reason if change_order else '' }}</textarea>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" style="margin-top:.75rem;">
+          <div><label class="lbl">Location</label>
+            <input type="text" name="location" class="fld" placeholder="Where on the property" value="{{ change_order.location if change_order and change_order.location else '' }}"/></div>
+          <div><label class="lbl">Schedule impact (days)</label>
+            <input type="number" name="schedule_impact_days" class="fld" placeholder="e.g. 3" value="{{ change_order.schedule_impact_days if change_order and change_order.schedule_impact_days is not none else '' }}"/></div>
+        </div>
+        <p class="muted" style="font-size:.78rem;margin-top:.4rem;">Cause, location and a priced line item are required before sending for signature.</p>
       </div>
 
       <div class="sec">
-        <div class="flex items-center justify-between mb-3">
-          <p class="step">2 · Added work / deductions</p>
-          <button type="button" onclick="addRow()" class="chip accent">+ Add item</button>
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <p class="step">2 · Added work / deductions (measured quantities)</p>
+          <span class="flex items-center gap-2">
+            {% if unit_rates %}
+            <select id="unit-rate-pick" class="fld" style="max-width:220px;font-size:.8rem;">
+              <option value="">Use a unit rate…</option>
+              {% for r in unit_rates %}<option value="{{ r.id }}" data-label="{{ r.label }}{% if r.unit %} ({{ r.unit }}){% endif %}" data-rate="{{ r.rate or 0 }}">{{ r.label }}{% if r.unit %} · {{ r.unit }}{% endif %} · ${{ '%.2f'|format(r.rate or 0) }}</option>{% endfor %}
+            </select>
+            <button type="button" onclick="addRateRow()" class="chip">Add rate</button>
+            {% endif %}
+            <button type="button" onclick="addRow()" class="chip accent">+ Add item</button>
+          </span>
         </div>
-        <p class="muted" style="margin-bottom:.75rem;">Use a negative unit price for a deduction or credit.</p>
+        <p class="muted" style="margin-bottom:.75rem;">Use a negative unit price for a deduction or credit.{% if markup_percent %} Unit-rate prices include your {{ '%g'|format(markup_percent) }}% markup.{% endif %}</p>
         <div id="items"></div>
         <div class="flex justify-end" style="margin-top:.75rem;">
           <div style="text-align:right;">
@@ -89,6 +105,46 @@
     {% endfor %}
   </div>
   {% endif %}
+  {# Photos (F10) #}
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="step" style="margin-bottom:.5rem;">Photos</p>
+    {% if change_order.photos %}
+    <div class="flex flex-wrap gap-2" style="margin-bottom:.5rem;">
+      {% for ph in change_order.photos %}
+      <span style="font-size:.74rem;border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:.1rem .4rem;">
+        <a href="{{ url_for('change_orders.download_photo', photo_id=ph.id) }}" target="_blank" class="lnk">{{ ph.original_name or ph.filename }}</a>
+        <form method="POST" action="{{ url_for('change_orders.delete_photo', photo_id=ph.id) }}" onsubmit="return confirm('Remove photo?');" style="display:inline;margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+      </span>
+      {% endfor %}
+    </div>
+    {% else %}<p class="muted" style="font-size:.82rem;">No photos yet.</p>{% endif %}
+    {% if not change_order.applied_at %}
+    <form method="POST" action="{{ url_for('change_orders.upload_photo', change_order_id=change_order.id) }}" enctype="multipart/form-data" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="file" name="file" class="fld" style="max-width:200px;font-size:.8rem;"/>
+      <button type="submit" class="obtn">Add photo</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {# Authorized approvers for this customer (F10) #}
+  <div class="sec" style="margin-top:1.5rem;">
+    <p class="step" style="margin-bottom:.5rem;">Authorized approvers{% if change_order.customer %} — {{ change_order.customer.name }}{% endif %}</p>
+    {% for a in approvers %}
+    <div class="flex items-center justify-between gap-2" style="padding:.3rem 0;border-top:1px solid var(--border);">
+      <span style="font-size:.85rem;">{{ a.name }} <span class="muted">· {{ a.role }}{% if a.email %} · {{ a.email }}{% endif %}</span></span>
+      <form method="POST" action="{{ url_for('change_orders.delete_approver', approver_id=a.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+    </div>
+    {% else %}<p class="muted" style="font-size:.82rem;">No authorized approvers on file for this customer.</p>{% endfor %}
+    <form method="POST" action="{{ url_for('change_orders.add_approver', change_order_id=change_order.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.5rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input name="name" class="fld" placeholder="Approver name" style="max-width:170px;font-size:.82rem;"/>
+      <select name="role" class="fld" style="max-width:120px;font-size:.82rem;"><option value="primary">Primary</option><option value="alternate">Alternate</option></select>
+      <input name="email" class="fld" placeholder="Email (optional)" style="max-width:170px;font-size:.82rem;"/>
+      <button type="submit" class="obtn">Add</button>
+    </form>
+  </div>
+
   <div class="sec" style="margin-top:1.5rem;">
     <p class="step" style="margin-bottom:.75rem;">Approval</p>
     {% if change_order.applied_at %}
@@ -187,6 +243,17 @@
     return row;
   }
   function addRow(desc, qty, price) { document.getElementById('items').appendChild(rowTemplate(desc, qty, price)); recalc(); }
+  // Add an item row pre-filled from a selected F9 unit rate (rate × markup).
+  var CO_MARKUP = {{ markup_percent or 0 }};
+  function addRateRow() {
+    var sel = document.getElementById('unit-rate-pick');
+    if (!sel || !sel.value) return;
+    var opt = sel.options[sel.selectedIndex];
+    var rate = parseFloat(opt.dataset.rate) || 0;
+    var price = Math.round(rate * (1 + CO_MARKUP/100) * 100) / 100;
+    addRow(opt.dataset.label || '', 1, price);
+    sel.value = '';
+  }
   async function aiSuggest(row) {
     const status = row.querySelector('.i-ai-status');
     const text = row.querySelector('.i-desc').value.trim();

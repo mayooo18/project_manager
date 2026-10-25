@@ -478,6 +478,9 @@ class Customer(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     quotes = db.relationship('Quote', back_populates='customer', cascade='all, delete-orphan')
+    approvers = db.relationship('CustomerApprover', back_populates='customer',
+                                cascade='all, delete-orphan',
+                                order_by='CustomerApprover.id')
 
 
 class Location(db.Model):
@@ -977,7 +980,9 @@ class ChangeOrder(db.Model):
 
     number = db.Column(db.String(50))
     title = db.Column(db.String(200), nullable=False)
-    reason = db.Column(db.Text)
+    reason = db.Column(db.Text)                # the cause
+    location = db.Column(db.String(250))       # where on the property (F10)
+    schedule_impact_days = db.Column(db.Integer)  # +/- days to the schedule (F10)
     status = db.Column(db.String(20), default='draft', nullable=False)
     total = db.Column(db.Float, default=0.0)
     notes = db.Column(db.Text)
@@ -1007,6 +1012,9 @@ class ChangeOrder(db.Model):
     items = db.relationship(
         'ChangeOrderItem', back_populates='change_order',
         cascade='all, delete-orphan', order_by='ChangeOrderItem.id')
+    photos = db.relationship(
+        'ChangeOrderPhoto', back_populates='change_order',
+        cascade='all, delete-orphan', order_by='ChangeOrderPhoto.uploaded_at')
 
     def recalculate_total(self):
         self.total = sum((item.line_total or 0) for item in self.items)
@@ -1367,3 +1375,31 @@ class UnitRate(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     contract = db.relationship('Contract', back_populates='unit_rates')
+
+
+# ── Change-order photos + authorized approvers (F10) ──
+
+class ChangeOrderPhoto(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    change_order_id = db.Column(db.Integer, db.ForeignKey('change_order.id'),
+                                nullable=False, index=True)
+    filename = db.Column(db.String(300), nullable=False)   # under UPLOAD_FOLDER
+    original_name = db.Column(db.String(300))
+    caption = db.Column(db.String(300))
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    change_order = db.relationship('ChangeOrder', back_populates='photos')
+
+
+class CustomerApprover(db.Model):
+    """A person authorized to approve change orders for a customer (F10),
+    e.g. a primary and an alternate."""
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'),
+                            nullable=False, index=True)
+    name = db.Column(db.String(150), nullable=False)
+    role = db.Column(db.String(20), default='primary')   # primary / alternate
+    email = db.Column(db.String(150))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    customer = db.relationship('Customer', back_populates='approvers')
