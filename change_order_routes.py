@@ -1,8 +1,10 @@
 """Phase 4: priced, customer-approved amendments to contracts."""
 
 import base64
+import os
 import re
 import secrets
+import uuid
 from datetime import datetime, timedelta
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -10,16 +12,20 @@ from email.mime.text import MIMEText
 from io import BytesIO
 
 from flask import (
-    Blueprint, current_app, flash, redirect, render_template, request,
+    Blueprint, abort, current_app, flash, redirect, render_template, request,
     send_file, url_for,
 )
 from flask_login import current_user, login_required
 from permissions import owner_required
 from sqlalchemy import select
+from werkzeug.utils import secure_filename
 
 from extensions import db, limiter
 from forms import DeleteForm
-from models import ChangeOrder, ChangeOrderItem, Contract, ContractDraw
+from models import (
+    ChangeOrder, ChangeOrderItem, Contract, ContractDraw, ChangeOrderPhoto,
+    CustomerApprover, Customer,
+)
 from quote_routes import (
     COMPANY, LOGO_PATH, _parse_items, _pdf_text, _validated_signature_data,
     safe_filename,
@@ -228,9 +234,17 @@ def build_change_order_pdf(change_order):
                  f"New contract total {_money(after)}", section)]
     if change_order.reason:
         elems.extend([
-            Spacer(1, 12), Paragraph('Reason for change:', section),
+            Spacer(1, 12), Paragraph('Cause / reason for change:', section),
             Spacer(1, 4), Paragraph(
                 _pdf_text(change_order.reason, preserve_newlines=True), small)])
+    _meta = []
+    if change_order.location:
+        _meta.append(f"Location: {_pdf_text(change_order.location, 200)}")
+    if change_order.schedule_impact_days is not None:
+        _meta.append(f"Schedule impact: {change_order.schedule_impact_days} day"
+                     f"{'s' if change_order.schedule_impact_days != 1 else ''}")
+    if _meta:
+        elems.extend([Spacer(1, 8), Paragraph(' &nbsp;·&nbsp; '.join(_meta), small)])
     if change_order.notes:
         elems.extend([
             Spacer(1, 12), Paragraph('Notes:', section), Spacer(1, 4),
@@ -357,6 +371,11 @@ def _save_change_order(change_order, contract):
                 db.session.add(change_order)
             change_order.title = title
             change_order.reason = (request.form.get('reason') or '').strip()
+            change_order.location = (request.form.get('location') or '').strip() or None
+            try:
+                change_order.schedule_impact_days = int(request.form.get('schedule_impact_days'))
+            except (TypeError, ValueError):
+                change_order.schedule_impact_days = None
             change_order.notes = (request.form.get('notes') or '').strip()
             change_order.add_as_draw = request.form.get('add_as_draw') == 'on'
             _apply_items(change_order, _parse_items(request.form))
@@ -364,8 +383,11 @@ def _save_change_order(change_order, contract):
             flash('Change order saved.', 'success')
             return redirect(url_for(
                 'change_orders.edit', change_order_id=change_order.id))
+    markup = (contract.unit_rate_markup_percent or 0) if contract else 0
     return render_template(
         'change_orders/form.html', change_order=change_order, contract=contract,
+        unit_rates=(contract.unit_rates if contract else []), markup_percent=markup,
+        approvers=(contract.customer.approvers if contract and contract.customer else []),
         signature_events=(
             events_for('change_order', change_order.id) if change_order else []),
         public_link_active=(
@@ -391,6 +413,19 @@ def delete(change_order_id):
 @login_required
 def send(change_order_id):
     change_order = _owned_change_order_or_404(change_order_id)
+    # Required-before-send (F10): a sent change order must state the cause, the
+    # location, and carry at least one priced line item.
+    missing = []
+    if not (change_order.reason or '').strip():
+        missing.append('cause')
+    if not (change_order.location or '').strip():
+        missing.append('location')
+    if not any((i.quantity or 0) * (i.unit_price or 0) for i in change_order.items):
+        missing.append('at least one priced line item')
+    if missing:
+        flash('Add ' + ', '.join(missing) + ' before sending this change order '
+              'for signature.', 'error')
+        return redirect(url_for('change_orders.edit', change_order_id=change_order.id))
     if change_order.status == 'draft':
         change_order.status = 'sent'
     if change_order.sent_at is None:
@@ -535,3 +570,104 @@ def public_pdf(token):
         build_change_order_pdf(change_order), mimetype='application/pdf',
         as_attachment=False,
         download_name=f"{safe_filename(change_order.customer.name if change_order.customer else None, change_order.number or ('Change Order ' + str(change_order.id)), 'Change Order')}.pdf")
+
+
+# ── Change-order photos (F10) ────────────────────────────────────────────────
+
+_PHOTO_EXTS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'heic'}
+
+
+@change_order_bp.route('/<int:change_order_id>/photos/upload', methods=['POST'])
+@login_required
+def upload_photo(change_order_id):
+    co = _owned_change_order_or_404(change_order_id)
+    fs = request.files.get('file')
+    if not fs or not fs.filename:
+        flash('Choose a file to attach.', 'error')
+        return redirect(url_for('change_orders.edit', change_order_id=co.id))
+    original = secure_filename(fs.filename)
+    ext = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
+    if ext not in _PHOTO_EXTS:
+        flash('That file type is not allowed (use a PDF or image).', 'error')
+        return redirect(url_for('change_orders.edit', change_order_id=co.id))
+    folder = current_app.config['UPLOAD_FOLDER']
+    os.makedirs(folder, exist_ok=True)
+    stored = f"co_{uuid.uuid4().hex}_{original}"
+    fs.save(os.path.join(folder, stored))
+    db.session.add(ChangeOrderPhoto(
+        change_order_id=co.id, filename=stored, original_name=original,
+        caption=(request.form.get('caption') or '').strip() or None))
+    db.session.commit()
+    flash('Photo attached.', 'success')
+    return redirect(url_for('change_orders.edit', change_order_id=co.id))
+
+
+@change_order_bp.route('/photos/<int:photo_id>/download')
+@login_required
+def download_photo(photo_id):
+    photo = ChangeOrderPhoto.query.get_or_404(photo_id)
+    co = photo.change_order
+    if co is None or co.user_id != current_user.id:
+        abort(404)
+    path = os.path.join(current_app.config['UPLOAD_FOLDER'], photo.filename)
+    if not os.path.exists(path):
+        abort(404)
+    return send_file(path, as_attachment=False,
+                     download_name=photo.original_name or photo.filename)
+
+
+@change_order_bp.route('/photos/<int:photo_id>/delete', methods=['POST'])
+@login_required
+def delete_photo(photo_id):
+    photo = ChangeOrderPhoto.query.get_or_404(photo_id)
+    co = photo.change_order
+    if co is None or co.user_id != current_user.id:
+        abort(404)
+    co_id = co.id
+    try:
+        path = os.path.join(current_app.config['UPLOAD_FOLDER'], photo.filename)
+        if os.path.exists(path):
+            os.remove(path)
+    except OSError:
+        pass
+    db.session.delete(photo)
+    db.session.commit()
+    flash('Photo removed.', 'success')
+    return redirect(url_for('change_orders.edit', change_order_id=co_id))
+
+
+# ── Authorized approvers, per customer (F10) ─────────────────────────────────
+
+@change_order_bp.route('/<int:change_order_id>/approvers/add', methods=['POST'])
+@login_required
+def add_approver(change_order_id):
+    co = _owned_change_order_or_404(change_order_id)
+    customer = co.customer
+    if customer is None or customer.user_id != current_user.id:
+        abort(404)
+    name = (request.form.get('name') or '').strip()
+    if not name:
+        flash('Enter the approver name.', 'error')
+        return redirect(url_for('change_orders.edit', change_order_id=co.id))
+    role = request.form.get('role', 'primary')
+    if role not in ('primary', 'alternate'):
+        role = 'primary'
+    db.session.add(CustomerApprover(
+        customer_id=customer.id, name=name, role=role,
+        email=(request.form.get('email') or '').strip() or None))
+    db.session.commit()
+    flash('Authorized approver added.', 'success')
+    return redirect(url_for('change_orders.edit', change_order_id=co.id))
+
+
+@change_order_bp.route('/approvers/<int:approver_id>/delete', methods=['POST'])
+@login_required
+def delete_approver(approver_id):
+    approver = CustomerApprover.query.get_or_404(approver_id)
+    customer = approver.customer
+    if customer is None or customer.user_id != current_user.id:
+        abort(404)
+    db.session.delete(approver)
+    db.session.commit()
+    flash('Approver removed.', 'success')
+    return redirect(request.referrer or url_for('quotes.customers'))
