@@ -1403,3 +1403,24 @@ class CustomerApprover(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     customer = db.relationship('Customer', back_populates='approvers')
+
+
+# ── Weekly progress report (F11) ──
+
+class WeeklyReport(db.Model):
+    """A per-customer weekly progress report (F11). The data sections (per-
+    property stage, work completed, upcoming inspections, open change orders)
+    are derived live at preview/PDF time; only the editable narrative persists.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'),
+                            nullable=False, index=True)
+    week_start = db.Column(db.Date, nullable=False)
+    week_end = db.Column(db.Date, nullable=False)
+    summary = db.Column(db.Text)          # editable overview
+    delays_issues = db.Column(db.Text)    # editable delays / issues
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    customer = db.relationship('Customer')
+    user = db.relationship('User')

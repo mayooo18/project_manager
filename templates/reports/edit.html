@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Weekly Report{% endblock %}
+
+{% block content %}
+<style>
+  .rwrap{max-width:820px;margin:0 auto;}
+  .fld{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-900);padding:.5rem .7rem;width:100%;font-size:.9rem;}
+  .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;margin-bottom:1.25rem;}
+  .step{color:var(--ink-500);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;}
+  .lbl{color:var(--ink-500);font-size:.72rem;}
+  .pj{border:1px solid var(--border);border-radius:var(--r);padding:.6rem .75rem;margin-bottom:.6rem;}
+</style>
+<div class="rwrap">
+  <div class="page-head">
+    <h1>Weekly Report</h1>
+    <a href="{{ url_for('reports.index') }}" class="lnk">← All reports</a>
+  </div>
+  <p class="muted" style="margin-bottom:1rem;">{{ report.customer.name }} · {{ report.week_start.strftime('%B %d') }} – {{ report.week_end.strftime('%B %d, %Y') }}</p>
+
+  <form method="POST" action="{{ url_for('reports.edit', report_id=report.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <div class="sec">
+      <p class="step" style="margin-bottom:.5rem;">Summary (editable)</p>
+      <textarea name="summary" class="fld" rows="3" placeholder="Overview of the week…">{{ report.summary or '' }}</textarea>
+      <p class="step" style="margin:.9rem 0 .5rem;">Delays &amp; issues (editable)</p>
+      <textarea name="delays_issues" class="fld" rows="3" placeholder="Any delays, blockers, or issues…">{{ report.delays_issues or '' }}</textarea>
+      <div class="flex items-center gap-3 flex-wrap" style="margin-top:.75rem;">
+        <button type="submit" class="btn">Save</button>
+        <a href="{{ url_for('reports.pdf', report_id=report.id) }}" target="_blank" class="obtn">Preview PDF</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="sec">
+    <p class="step" style="margin-bottom:.5rem;">Auto-built — properties</p>
+    {% for row in data.projects %}
+    <div class="pj">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <strong style="color:var(--ink-900);font-size:.9rem;">{{ row.project.name }}</strong>
+        <span class="muted" style="font-size:.8rem;">{{ row.stage }}</span>
+      </div>
+      {% if row.work_logs %}
+      <ul style="margin:.35rem 0 0;padding-left:1.1rem;font-size:.84rem;color:var(--ink-700);">
+        {% for wl in row.work_logs %}<li>{{ wl.worker.name if wl.worker else 'Crew' }}: {{ '%g'|format(wl.days_worked or 0) }} day(s){% if wl.note %} — {{ wl.note }}{% endif %}</li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted" style="font-size:.82rem;margin-top:.25rem;">No work logged this week.</p>
+      {% endif %}
+      {% if row.upcoming_inspections %}
+      <p style="font-size:.82rem;margin-top:.3rem;color:var(--ink-700);">Look-ahead: {% for i in row.upcoming_inspections %}{{ i.inspection_type }} ({{ i.scheduled_date.strftime('%m/%d') }}){% if not loop.last %}, {% endif %}{% endfor %}</p>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="muted" style="font-size:.85rem;">No properties for this customer.</p>
+    {% endfor %}
+  </div>
+
+  <div class="sec">
+    <p class="step" style="margin-bottom:.5rem;">Auto-built — open change orders</p>
+    {% if data.open_change_orders %}
+    {% for co in data.open_change_orders %}
+    <div class="flex items-center justify-between gap-2" style="padding:.3rem 0;border-top:1px solid var(--border);">
+      <a href="{{ url_for('change_orders.edit', change_order_id=co.id) }}" class="lnk" style="font-size:.85rem;">{{ co.number }} · {{ co.title }}</a>
+      <span class="muted" style="font-size:.82rem;">${{ '%.2f'|format(co.total or 0) }} · {{ co.status }}</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="muted" style="font-size:.85rem;">No open change orders.</p>
+    {% endif %}
+  </div>
+
+  <div class="flex items-center gap-3 flex-wrap" style="margin-bottom:1.5rem;">
+    {% if report.customer.email %}
+    <form method="POST" action="{{ url_for('reports.email', report_id=report.id) }}" onsubmit="return confirm('Email this weekly report to {{ report.customer.email }}?');" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="btn">✉ Email to {{ report.customer.email }}</button>
+    </form>
+    {% else %}
+    <span class="muted" style="font-size:.85rem;">Add a customer email to enable one-click send.</span>
+    {% endif %}
+    <form method="POST" action="{{ url_for('reports.delete', report_id=report.id) }}" onsubmit="return confirm('Delete this report?');" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="linkbtn danger">Delete report</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
