@@ -321,6 +321,53 @@
   </div>
   {% endif %}
 
+  {# Schedule of Values & unit rates (F9) — Progress/Developer or once rates exist. #}
+  {% if contract.terms_profile != 'simple' or contract.unit_rates %}
+  <div class="sec" style="margin-top:1.5rem;">
+    <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+      <p class="step">Schedule of Values &amp; unit rates</p>
+      <a href="{{ url_for('sov.exhibit_c', contract_id=contract.id) }}" target="_blank" class="obtn">Exhibit C PDF</a>
+    </div>
+    {% if contract.contract_total %}
+    <p class="{{ 'c-green' if contract.sov_balanced else 'c-amber' }}" style="font-size:.85rem;margin-bottom:.5rem;">
+      {% if contract.sov_balanced %}✓ Draw milestones balance to the contract total (${{ '%.2f'|format(contract.contract_total) }}).
+      {% else %}Milestones are off from the contract total by ${{ '%.2f'|format(contract.sov_variance|abs) }} (scheduled ${{ '%.2f'|format(contract.scheduled_total) }} vs ${{ '%.2f'|format(contract.contract_total) }}). Edit the draw schedule below.{% endif %}
+    </p>
+    {% endif %}
+
+    <p class="lbl" style="margin-top:.5rem;">Unit rates for extras</p>
+    {% if contract.unit_rates %}
+    <form method="POST" action="{{ url_for('sov.save_unit_rates', contract_id=contract.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      {% for r in contract.unit_rates %}
+      <div class="drow" style="padding:.3rem .6rem;gap:.5rem;">
+        <span style="font-size:.85rem;flex:1;min-width:0;">{{ r.label }}{% if r.unit %} <span class="muted">· {{ r.unit }}</span>{% endif %}</span>
+        <input type="hidden" name="rate_id" value="{{ r.id }}"/>
+        <input type="number" step="any" name="rate_value" class="fld" value="{{ r.rate if r.rate else '' }}" placeholder="0.00" style="max-width:120px;font-size:.82rem;"/>
+      </div>
+      {% endfor %}
+      <div class="flex items-center gap-3 flex-wrap" style="margin-top:.5rem;">
+        <label class="lbl">Markup % <input type="number" step="any" name="markup_percent" class="fld" value="{{ contract.unit_rate_markup_percent if contract.unit_rate_markup_percent is not none else '' }}" placeholder="e.g. 15" style="max-width:100px;font-size:.82rem;"/></label>
+        <button type="submit" class="btn">Save rates</button>
+      </div>
+    </form>
+    <form method="POST" action="{{ url_for('sov.add_unit_rate', contract_id=contract.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.5rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input name="label" class="fld" placeholder="Add item" style="max-width:180px;font-size:.82rem;"/>
+      <input name="unit" class="fld" placeholder="Unit (e.g. $/ton)" style="max-width:140px;font-size:.82rem;"/>
+      <input type="number" step="any" name="rate" class="fld" placeholder="Rate" style="max-width:100px;font-size:.82rem;"/>
+      <button type="submit" class="obtn">Add</button>
+    </form>
+    {% else %}
+    <form method="POST" action="{{ url_for('sov.setup_unit_rates', contract_id=contract.id) }}" style="margin-top:.25rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="obtn">Set up unit rates</button>
+      <span class="muted" style="margin-left:.5rem;font-size:.82rem;">Seeds the standard excavation/fill/stone/dewatering/standby items.</span>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="sec" style="margin-top:1.5rem;">
     <p class="step" style="margin-bottom:.75rem;">Progress billing</p>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" style="margin-bottom:1rem;">

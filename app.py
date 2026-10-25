@@ -38,6 +38,7 @@ from archive_routes import archive_bp, archived_copies
 from lot_release_routes import lot_release_bp
 from hold_point_routes import hold_point_bp
 from insurance_routes import insurance_bp, insurance_summary
+from sov_routes import sov_bp
 from portal_routes import portal_bp
 from crew_routes import crew_bp
 from payroll_routes import payroll_bp
@@ -78,6 +79,7 @@ app.register_blueprint(archive_bp)
 app.register_blueprint(lot_release_bp)
 app.register_blueprint(hold_point_bp)
 app.register_blueprint(insurance_bp)
+app.register_blueprint(sov_bp)
 
 
 @app.context_processor
