@@ -490,6 +490,25 @@
       </div>
       {% endif %}
 
+      {# Cost estimates (F15) — contract jobs, or once estimates exist. #}
+      {% if project.contracts or project.cost_estimates %}
+      <div style="margin-top:.75rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--r);">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <strong style="font-size:.9rem;color:var(--ink-900);">Cost estimates</strong>
+          <form method="POST" action="{{ url_for('estimates.new', project_id=project.id) }}" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="obtn">+ New estimate</button>
+          </form>
+        </div>
+        {% for est in project.cost_estimates %}
+        <div class="flex items-center justify-between gap-2" style="padding:.3rem 0;border-top:1px solid var(--border);">
+          <a href="{{ url_for('estimates.edit', estimate_id=est.id) }}" class="lnk" style="font-size:.85rem;">{{ est.name }}</a>
+          <span class="muted" style="font-size:.8rem;">cost ${{ '{:,.0f}'.format(est.total_cost) }}{% if est.margin_pct is not none %} · margin <span class="{{ 'c-green' if est.margin_amount >= 0 else 'c-red' }}">{{ '%.0f'|format(est.margin_pct) }}%</span>{% endif %}</span>
+        </div>
+        {% else %}<p class="muted" style="font-size:.82rem;margin-top:.25rem;">No estimates yet.</p>{% endfor %}
+      </div>
+      {% endif %}
+
       <p class="muted" style="margin-top:.5rem;">Permits ({{ permits|length }})</p>
       {% for p in permits %}
       <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('permits.edit', permit_id=p.id) }}">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>

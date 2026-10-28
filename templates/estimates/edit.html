@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Cost Estimate{% endblock %}
+
+{% block content %}
+<style>
+  .ewrap{max-width:900px;margin:0 auto;}
+  .fld{background:var(--canvas);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink-900);padding:.4rem .55rem;width:100%;font-size:.85rem;}
+  .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;margin-bottom:1.25rem;}
+  .step{color:var(--ink-500);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;}
+  .lbl{color:var(--ink-500);font-size:.7rem;}
+  .metric{background:var(--canvas);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .7rem;}
+  .metric .k{color:var(--ink-500);font-size:.66rem;text-transform:uppercase;} .metric .v{color:var(--ink-900);font-weight:700;}
+  .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;}
+  @media(min-width:640px){.mgrid{grid-template-columns:repeat(4,1fr);}}
+</style>
+<div class="ewrap">
+  <div class="page-head">
+    <h1>Cost Estimate</h1>
+    <a href="{{ url_for('project_detail', project_id=est.project_id) }}" class="lnk">← Back to job</a>
+  </div>
+
+  <!-- Results -->
+  <div class="sec">
+    <p class="step" style="margin-bottom:.6rem;">Estimate vs contract</p>
+    <div class="mgrid">
+      <div class="metric"><p class="k">Concrete</p><p class="v">{{ '%.1f'|format(est.concrete_cy) }} CY</p></div>
+      <div class="metric"><p class="k">Estimated cost</p><p class="v">${{ '{:,.0f}'.format(est.total_cost) }}</p></div>
+      <div class="metric"><p class="k">Contract price</p><p class="v">${{ '{:,.0f}'.format(est.price) }}</p></div>
+      <div class="metric"><p class="k">Margin</p><p class="v {{ 'c-green' if est.margin_amount >= 0 else 'c-red' }}">${{ '{:,.0f}'.format(est.margin_amount) }}{% if est.margin_pct is not none %} · {{ '%.1f'|format(est.margin_pct) }}%{% endif %}</p></div>
+    </div>
+    <p class="muted" style="font-size:.78rem;margin-top:.5rem;">Concrete ${{ '{:,.0f}'.format(est.concrete_cost) }} (footing {{ '%.1f'|format(est.footing_cy) }} + wall {{ '%.1f'|format(est.wall_cy) }} + slab {{ '%.1f'|format(est.slab_cy) }} CY, {{ '%g'|format(est.waste_pct or 0) }}% waste) · equipment ${{ '{:,.0f}'.format(est.equipment_cost) }} · lines ${{ '{:,.0f}'.format(est.lines_total) }}</p>
+  </div>
+
+  <!-- Takeoff -->
+  <form method="POST" action="{{ url_for('estimates.edit', estimate_id=est.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <div class="sec">
+      <p class="step" style="margin-bottom:.6rem;">Takeoff</p>
+      <div style="margin-bottom:.6rem;"><label class="lbl">Estimate name</label><input name="name" class="fld" value="{{ est.name or '' }}" style="max-width:300px;"/></div>
+      <div class="mgrid">
+        <div><label class="lbl">Footing LF</label><input type="number" step="any" name="footing_lf" class="fld" value="{{ est.footing_lf if est.footing_lf is not none else '' }}"/></div>
+        <div><label class="lbl">Footing width (in)</label><input type="number" step="any" name="footing_width_in" class="fld" value="{{ est.footing_width_in if est.footing_width_in is not none else '' }}"/></div>
+        <div><label class="lbl">Footing depth (in)</label><input type="number" step="any" name="footing_depth_in" class="fld" value="{{ est.footing_depth_in if est.footing_depth_in is not none else '' }}"/></div>
+        <div><label class="lbl">Waste %</label><input type="number" step="any" name="waste_pct" class="fld" value="{{ est.waste_pct if est.waste_pct is not none else '' }}"/></div>
+        <div><label class="lbl">Wall LF</label><input type="number" step="any" name="wall_lf" class="fld" value="{{ est.wall_lf if est.wall_lf is not none else '' }}"/></div>
+        <div><label class="lbl">Wall height (ft)</label><input type="number" step="any" name="wall_height_ft" class="fld" value="{{ est.wall_height_ft if est.wall_height_ft is not none else '' }}"/></div>
+        <div><label class="lbl">Wall thickness (in)</label><input type="number" step="any" name="wall_thickness_in" class="fld" value="{{ est.wall_thickness_in if est.wall_thickness_in is not none else '' }}"/></div>
+        <div><label class="lbl">Concrete $/CY</label><input type="number" step="any" name="concrete_per_cy" class="fld" value="{{ est.concrete_per_cy if est.concrete_per_cy is not none else '' }}"/></div>
+        <div><label class="lbl">Slab area (SF)</label><input type="number" step="any" name="slab_area_sf" class="fld" value="{{ est.slab_area_sf if est.slab_area_sf is not none else '' }}"/></div>
+        <div><label class="lbl">Slab thickness (in)</label><input type="number" step="any" name="slab_thickness_in" class="fld" value="{{ est.slab_thickness_in if est.slab_thickness_in is not none else '' }}"/></div>
+        <div><label class="lbl">Equipment $/mo</label><input type="number" step="any" name="equipment_monthly" class="fld" value="{{ est.equipment_monthly if est.equipment_monthly is not none else '' }}"/></div>
+        <div><label class="lbl">Spread over # lots</label><input type="number" name="equipment_lots" class="fld" value="{{ est.equipment_lots or 1 }}"/></div>
+        <div><label class="lbl">Price override</label><input type="number" step="any" name="price_override" class="fld" value="{{ est.price_override if est.price_override is not none else '' }}" placeholder="contract total"/></div>
+      </div>
+      <button type="submit" class="btn" style="margin-top:.75rem;">Save takeoff</button>
+    </div>
+  </form>
+
+  <!-- Cost lines -->
+  <div class="sec">
+    <p class="step" style="margin-bottom:.5rem;">Cost lines (rebar, stone, fill, subs, labor…)</p>
+    {% for ln in est.lines %}
+    <div class="flex items-center justify-between gap-2" style="padding:.3rem 0;border-top:1px solid var(--border);">
+      <span style="font-size:.85rem;">{{ ln.description }} <span class="muted">· {{ ln.category }} · {{ '%g'|format(ln.quantity or 0) }} × ${{ '%.2f'|format(ln.unit_cost or 0) }}</span></span>
+      <span class="flex items-center gap-3"><strong style="font-size:.85rem;">${{ '%.2f'|format(ln.line_total) }}</strong>
+        <form method="POST" action="{{ url_for('estimates.delete_line', line_id=ln.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+      </span>
+    </div>
+    {% else %}<p class="muted" style="font-size:.82rem;">No cost lines yet.</p>{% endfor %}
+    <form method="POST" action="{{ url_for('estimates.add_line', estimate_id=est.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.5rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <select name="category" class="fld" style="max-width:130px;font-size:.82rem;">{% for cat in categories %}<option>{{ cat }}</option>{% endfor %}</select>
+      <input name="description" class="fld" placeholder="Description" style="flex:1;min-width:140px;font-size:.82rem;"/>
+      <input type="number" step="any" name="quantity" class="fld" placeholder="Qty" style="max-width:90px;font-size:.82rem;"/>
+      <input type="number" step="any" name="unit_cost" class="fld" placeholder="Unit $" style="max-width:100px;font-size:.82rem;"/>
+      <button type="submit" class="obtn">Add</button>
+    </form>
+  </div>
+
+  <!-- Copy / delete -->
+  <div class="flex items-center gap-3 flex-wrap" style="margin-bottom:1.5rem;">
+    <form method="POST" action="{{ url_for('estimates.copy', estimate_id=est.id) }}" style="display:flex;gap:.4rem;align-items:center;margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <select name="target_project_id" class="fld" style="max-width:220px;font-size:.82rem;">
+        {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="obtn">Copy to lot</button>
+    </form>
+    <form method="POST" action="{{ url_for('estimates.delete', estimate_id=est.id) }}" onsubmit="return confirm('Delete this estimate?');" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="linkbtn danger">Delete estimate</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
