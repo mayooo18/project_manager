@@ -385,6 +385,51 @@
       </div>
       {% endif %}
 
+      {# Closeout package (F12) — only on non-Simple contract jobs. #}
+      {% set show_closeout = project.punch_items or project.is_closed_out or (project.contracts and (project.contracts|selectattr('terms_profile','ne','simple')|list|length > 0)) %}
+      {% if show_closeout %}
+      <div style="margin-top:.75rem;padding:.6rem .75rem;border:1px solid {{ 'var(--green-fg)' if project.is_closed_out else 'var(--border)' }};border-radius:var(--r);">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="flex items-center gap-2">
+            <strong style="font-size:.9rem;color:var(--ink-900);">Closeout</strong>
+            {% if project.is_closed_out %}<span class="pill" style="font-size:.6rem;text-transform:uppercase;border:1px solid var(--green-fg);color:var(--green-fg);border-radius:4px;padding:1px 6px;">Closed out {{ project.closeout_accepted_at.strftime('%Y-%m-%d') }}</span>{% endif %}
+          </span>
+          <a href="{{ url_for('closeout.package', project_id=project.id) }}" target="_blank" class="obtn">Download closeout package</a>
+        </div>
+
+        <p class="muted" style="font-size:.8rem;margin:.4rem 0 .3rem;">Punch list{% if project.open_punch_count %} · {{ project.open_punch_count }} open{% endif %}</p>
+        {% for p in project.punch_items %}
+        <div class="flex items-center justify-between gap-2" style="padding:.2rem 0;border-top:1px solid var(--border);">
+          <span style="font-size:.84rem;{{ 'text-decoration:line-through;opacity:.6;' if p.status == 'closed' }}">{{ p.description }}</span>
+          <span class="flex items-center gap-2">
+            <form method="POST" action="{{ url_for('closeout.toggle_punch', item_id=p.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="lnk" style="font-size:.78rem;">{{ 'Reopen' if p.status == 'closed' else 'Close' }}</button></form>
+            <form method="POST" action="{{ url_for('closeout.delete_punch', item_id=p.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+          </span>
+        </div>
+        {% endfor %}
+        <form method="POST" action="{{ url_for('closeout.add_punch', project_id=project.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.4rem;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input name="description" class="fld-sm" placeholder="Add punch item" style="flex:1;min-width:140px;"/>
+          <button type="submit" class="obtn">Add</button>
+        </form>
+
+        <div style="margin-top:.6rem;">
+          {% if not project.is_closed_out %}
+          <form method="POST" action="{{ url_for('closeout.accept', project_id=project.id) }}" onsubmit="return confirm('Mark this job closed out?{% if project.open_punch_count %} {{ project.open_punch_count }} punch item(s) are still open.{% endif %}');" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn">Mark closed out</button>
+            <span class="muted" style="margin-left:.5rem;font-size:.78rem;">Starts the retainage-release clock.</span>
+          </form>
+          {% elif current_user.is_owner %}
+          <form method="POST" action="{{ url_for('closeout.reopen', project_id=project.id) }}" onsubmit="return confirm('Reopen closeout?');" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="linkbtn danger">Reopen closeout</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
       <p class="muted" style="margin-top:.5rem;">Permits ({{ permits|length }})</p>
       {% for p in permits %}
       <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('permits.edit', permit_id=p.id) }}">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>

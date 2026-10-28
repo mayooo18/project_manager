@@ -77,6 +77,9 @@ class Project(db.Model):
     # Customer + Location links (Phase 7): who the job is for, and which property.
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=True)
     location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=True)
+    # Set when the property is formally closed out (F12). Starts the retainage-
+    # release clock (F2) and later the warranty clock (F13).
+    closeout_accepted_at = db.Column(db.DateTime)
     customer = db.relationship('Customer', backref='projects')
     location = db.relationship('Location', backref='projects')
 
@@ -103,6 +106,14 @@ class Project(db.Model):
     def hold_points_required(self):
         """True when any contract on this job has hold points turned on (F7)."""
         return any(getattr(c, 'hold_points_enabled', False) for c in self.contracts)
+
+    @property
+    def is_closed_out(self):
+        return self.closeout_accepted_at is not None
+
+    @property
+    def open_punch_count(self):
+        return sum(1 for p in self.punch_items if p.status != 'closed')
 
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1424,3 +1435,20 @@ class WeeklyReport(db.Model):
 
     customer = db.relationship('Customer')
     user = db.relationship('User')
+
+
+# ── Closeout punch list (F12) ──
+
+class PunchItem(db.Model):
+    """A punch-list item for a job's closeout (F12)."""
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'),
+                           nullable=False, index=True)
+    description = db.Column(db.String(400), nullable=False)
+    status = db.Column(db.String(20), default='open')   # open / closed
+    closed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    project = db.relationship('Project', backref=db.backref(
+        'punch_items', cascade='all, delete-orphan',
+        order_by='PunchItem.created_at'))
