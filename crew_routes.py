@@ -46,6 +46,14 @@ def index():
     return redirect(url_for('crew.login'))
 
 
+@crew_bp.route('/lang/<code>')
+def set_lang(code):
+    """Switch the crew-screen language (F16). English/Spanish only."""
+    if code in ('en', 'es'):
+        session['lang'] = code
+    return redirect(request.referrer or url_for('crew.index'))
+
+
 @crew_bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit('10 per minute', methods=['POST'])
 def login():

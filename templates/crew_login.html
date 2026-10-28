@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Crew Sign In</title>
+  <title>{{ tr('crew_signin') }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -35,8 +35,8 @@
   <div class="wrap">
     <div class="head">
       <div class="mark">👷</div>
-      <h1>Crew Sign In</h1>
-      <p>Enter your phone number and PIN.</p>
+      <h1>{{ tr('crew_signin') }}</h1>
+      <p>{{ tr('enter_phone_pin') }}</p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -46,17 +46,18 @@
     <form method="POST" action="{{ url_for('crew.login') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="field">
-        <label>Phone number</label>
+        <label>{{ tr('phone_number') }}</label>
         <input name="phone" type="tel" inputmode="tel" autocomplete="tel" required class="fld" placeholder="(555) 123-4567"/>
       </div>
       <div class="field">
-        <label>PIN</label>
+        <label>{{ tr('pin') }}</label>
         <input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" required class="fld" style="letter-spacing:.3em;" placeholder="••••"/>
       </div>
-      <button type="submit" class="btn">Sign in</button>
+      <button type="submit" class="btn">{{ tr('sign_in') }}</button>
     </form>
 
-    <p class="foot">Forgot your PIN? Ask your foreman to reset it.</p>
+    <p class="foot">{{ tr('forgot_pin') }}</p>
+    <p class="foot" style="margin-top:.5rem;"><a href="{{ url_for('crew.set_lang', code='en') }}" style="color:{{ 'var(--accent)' if lang=='en' else 'var(--muted)' }};text-decoration:none;">English</a> · <a href="{{ url_for('crew.set_lang', code='es') }}" style="color:{{ 'var(--accent)' if lang=='es' else 'var(--muted)' }};text-decoration:none;">Español</a></p>
   </div>
 </body>
 </html>

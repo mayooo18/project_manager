@@ -97,6 +97,14 @@ def inject_sent_copies():
     # Lets any template list a document's sent PDF snapshots, and read a
     # contract's insurance-compliance summary.
     return {'sent_copies': archived_copies, 'insurance_summary': insurance_summary}
+
+
+@app.context_processor
+def inject_translations():
+    # Crew-screen translations (F16): tr(key) + the active language code.
+    # Named `tr` (not `t`) to avoid clashing with task loop vars named `t`.
+    from translations import t as _t, get_lang
+    return {'tr': _t, 'lang': get_lang()}
 app.register_blueprint(portal_bp)
 app.register_blueprint(crew_bp)
 app.register_blueprint(payroll_bp)

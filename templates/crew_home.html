@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -53,10 +53,10 @@
 
     <div class="top">
       <div>
-        <p class="eyebrow">Crew portal</p>
-        <h1>Hi, {{ worker.name }}</h1>
+        <p class="eyebrow">{{ tr('crew_portal') }}</p>
+        <h1>{{ tr('hi') }} {{ worker.name }}</h1>
       </div>
-      <a href="{{ url_for('crew.logout') }}" class="signout">Sign out</a>
+      <span style="display:flex;gap:.5rem;align-items:center;"><a href="{{ url_for('crew.set_lang', code='en') }}" style="font-size:.75rem;color:{{ 'var(--accent)' if lang=='en' else 'var(--muted)' }};text-decoration:none;">EN</a><a href="{{ url_for('crew.set_lang', code='es') }}" style="font-size:.75rem;color:{{ 'var(--accent)' if lang=='es' else 'var(--muted)' }};text-decoration:none;">ES</a><a href="{{ url_for('crew.logout') }}" class="signout">{{ tr('sign_out') }}</a></span>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -67,39 +67,39 @@
 
     <div class="card {{ 'on' if open_punch }}">
       {% if open_punch %}
-      <p class="tpill prog" style="display:inline-block;">Clocked in</p>
+      <p class="tpill prog" style="display:inline-block;">{{ tr('clocked_in') }}</p>
       <p style="color:var(--ink);font-size:1.15rem;font-weight:700;margin-top:.5rem;">{{ open_punch.project.name if open_punch.project else 'Job' }}</p>
-      <p class="m">Since {{ open_punch.clock_in.strftime('%b %d, %I:%M %p') }} · {{ open_punch.hours }} h so far</p>
+      <p class="m">{{ tr('since') }} {{ open_punch.clock_in.strftime('%b %d, %I:%M %p') }} · {{ open_punch.hours }} {{ tr('hours_so_far') }}</p>
       <form method="POST" action="{{ url_for('crew.clock_out') }}" style="margin-top:1rem;" class="geo-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="lat"><input type="hidden" name="lng">
-        <button class="bigbtn red">Clock out</button>
+        <button class="bigbtn red">{{ tr('clock_out') }}</button>
       </form>
       {% elif my_jobs %}
-      <p class="lbl">Clock in</p>
+      <p class="lbl">{{ tr('clock_in') }}</p>
       <form method="POST" action="{{ url_for('crew.clock_in') }}" class="geo-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="lat"><input type="hidden" name="lng">
         <select name="project_id" class="fld" style="margin-bottom:.75rem;">
           {% for p in my_jobs %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
         </select>
-        <button class="bigbtn green">Clock in</button>
+        <button class="bigbtn green">{{ tr('clock_in') }}</button>
       </form>
       {% else %}
-      <p style="color:var(--muted);font-size:.9rem;text-align:center;">No jobs assigned yet — ask your foreman to add you.</p>
+      <p style="color:var(--muted);font-size:.9rem;text-align:center;">{{ tr('no_jobs') }}</p>
       {% endif %}
     </div>
 
-    <p class="lbl">Your tasks</p>
+    <p class="lbl">{{ tr('your_tasks') }}</p>
     {% if tasks %}
     {% for t in tasks %}
     <div class="task">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;">
         <div style="min-width:0;">
           <p class="t {{ 'done' if t.status == 'done' }}">{{ t.description }}</p>
-          <p class="m">{{ t.project.name }}{% if t.due_date %} · due {{ t.due_date.strftime('%b %d') }}{% endif %}</p>
+          <p class="m">{{ t.project.name }}{% if t.due_date %} · {{ tr('due') }} {{ t.due_date.strftime('%b %d') }}{% endif %}</p>
         </div>
-        <span class="tpill {{ 'done' if t.status == 'done' else 'prog' if t.status == 'in_progress' else 'todo' }}">{{ t.status.replace('_', ' ') }}</span>
+        <span class="tpill {{ 'done' if t.status == 'done' else 'prog' if t.status == 'in_progress' else 'todo' }}">{{ tr('status_' + t.status) }}</span>
       </div>
       {% if t.status != 'done' %}
       <div style="display:flex;gap:.5rem;margin-top:.75rem;">
@@ -107,28 +107,28 @@
         <form method="POST" action="{{ url_for('crew.task_status', task_id=t.id) }}" style="flex:1;">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="status" value="in_progress">
-          <button class="tbtn start">Start</button>
+          <button class="tbtn start">{{ tr('start') }}</button>
         </form>
         {% endif %}
         <form method="POST" action="{{ url_for('crew.task_status', task_id=t.id) }}" style="flex:1;">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="status" value="done">
-          <button class="tbtn done">Mark done</button>
+          <button class="tbtn done">{{ tr('mark_done') }}</button>
         </form>
       </div>
       {% else %}
       <form method="POST" action="{{ url_for('crew.task_status', task_id=t.id) }}" style="margin-top:.75rem;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="status" value="in_progress">
-        <button class="reopen">Reopen</button>
+        <button class="reopen">{{ tr('reopen') }}</button>
       </form>
       {% endif %}
     </div>
     {% endfor %}
     {% else %}
     <div class="empty">
-      <p style="color:var(--ink2);font-size:.9rem;">No tasks assigned right now.</p>
-      <p style="color:var(--muted);font-size:.78rem;margin-top:.5rem;">Your foreman will add them here.</p>
+      <p style="color:var(--ink2);font-size:.9rem;">{{ tr('no_tasks') }}</p>
+      <p style="color:var(--muted);font-size:.78rem;margin-top:.5rem;">{{ tr('foreman_add_tasks') }}</p>
     </div>
     {% endif %}
 
