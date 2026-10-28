@@ -123,7 +123,7 @@ def send_portal_email(project):
         return False, 'Google account not connected (GOOGLE_REFRESH_TOKEN missing).'
 
     link = url_for('portal.view', token=project.portal_token, _external=True)
-    html = render_template('portal_email.html', project=project, link=link, company=COMPANY)
+    html = render_template('portal/email.html', project=project, link=link, company=COMPANY)
 
     msg = MIMEMultipart('alternative')
     msg['To'] = customer.email
@@ -155,7 +155,7 @@ def email(project_id):
 @limiter.limit("60 per minute")
 def view(token):
     project = _project_by_token(token)
-    return render_template('portal.html', project=project, token=token,
+    return render_template('portal/index.html', project=project, token=token,
                            **_portal_data(project))
 
 

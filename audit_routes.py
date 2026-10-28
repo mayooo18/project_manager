@@ -65,6 +65,6 @@ def signatures():
                              arg={'change_order_id': doc.id}))
         # events for docs not owned by this account are skipped
 
-    return render_template('signature_audit.html', rows=rows,
+    return render_template('admin/signature_audit.html', rows=rows,
                            pagination=pagination,
                            f_type=f_type, f_action=f_action)

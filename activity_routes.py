@@ -56,7 +56,7 @@ def index():
     users = User.query.order_by(User.username.asc()).all()
 
     return render_template(
-        'activity_log.html',
+        'admin/activity_log.html',
         entries=entries.items,
         pagination=entries,
         users=users,

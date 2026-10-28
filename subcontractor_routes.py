@@ -66,7 +66,7 @@ def sync_reminders_for_subcontractor(sub):
 def index():
     subs = (Subcontractor.query.filter_by(user_id=current_user.id)
             .order_by(Subcontractor.name.asc()).all())
-    return render_template('subcontractors.html', subcontractors=subs,
+    return render_template('subcontractors/index.html', subcontractors=subs,
                            delete_form=DeleteForm(),
                            today=date.today(), timedelta=timedelta)
 
@@ -84,7 +84,7 @@ def add():
         db.session.commit()
         flash('Subcontractor added.', 'success')
         return redirect(url_for('subcontractors.index'))
-    return render_template('subcontractor_form.html', form=form, title='Add Subcontractor')
+    return render_template('subcontractors/form.html', form=form, title='Add Subcontractor')
 
 
 @subcontractor_bp.route('/<int:sub_id>/edit', methods=['GET', 'POST'])
@@ -103,7 +103,7 @@ def edit(sub_id):
         flash('Subcontractor updated.', 'success')
         return redirect(url_for('subcontractors.index'))
 
-    return render_template('subcontractor_form.html', form=form, title='Edit Subcontractor')
+    return render_template('subcontractors/form.html', form=form, title='Edit Subcontractor')
 
 
 @subcontractor_bp.route('/<int:sub_id>/delete', methods=['POST'])

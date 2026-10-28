@@ -535,7 +535,7 @@ def customers():
 
     all_customers = (Customer.query.filter_by(user_id=current_user.id)
                      .order_by(Customer.name.asc()).all())
-    return render_template('quotes/customers.html', form=form,
+    return render_template('customers/index.html', form=form,
                            customers=all_customers, delete_form=DeleteForm())
 
 
@@ -606,7 +606,7 @@ def customer_detail(customer_id):
     total_paid = sum(i.total or 0 for i in customer.invoices if i.status == 'paid')
 
     return render_template(
-        'quotes/customer_detail.html', customer=customer,
+        'customers/detail.html', customer=customer,
         location_groups=location_groups, unlocated=unlocated,
         proposals=sorted(customer.quotes, key=lambda q: q.id, reverse=True),
         contracts=sorted(customer.contracts, key=lambda c: c.id, reverse=True),

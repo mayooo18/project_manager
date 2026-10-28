@@ -196,7 +196,7 @@ def build_gc_document_pdf(doc):
 def index():
     docs = (GcDocument.query.filter_by(user_id=current_user.id)
             .order_by(GcDocument.created_at.desc()).all())
-    return render_template('waivers.html', documents=docs,
+    return render_template('waivers/index.html', documents=docs,
                            doc_labels=DOC_LABELS, delete_form=DeleteForm())
 
 
@@ -232,7 +232,7 @@ def _save_document(doc):
         flash('Document saved.', 'success')
         return redirect(url_for('waivers.edit', doc_id=doc.id))
 
-    return render_template('waiver_form.html', form=form, doc=doc)
+    return render_template('waivers/form.html', form=form, doc=doc)
 
 
 @waiver_bp.route('/<int:doc_id>/delete', methods=['POST'])

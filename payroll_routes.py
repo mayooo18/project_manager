@@ -104,7 +104,7 @@ def index():
     }
 
     return render_template(
-        'payroll.html',
+        'payroll/index.html',
         payroll=payroll, totals=totals,
         monday=monday, sunday=sunday,
         prev_start=(monday - timedelta(days=7)).isoformat(),

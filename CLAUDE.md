@@ -1,5 +1,8 @@
 # Project: Optimal Solutions Project Manager
 
+## Current handoff
+- Read [CONTEXT.md](CONTEXT.md) before continuing the UI redesign. It records the user preferences, all template coverage, and saved visual concepts from October 28, 2026.
+
 ## Stack
 - Backend: Flask, Python, SQLAlchemy, PostgreSQL
 - Frontend: Jinja2 HTML templates, Tailwind CSS, vanilla JavaScript
@@ -26,7 +29,7 @@
 - ai_routes.py
 - sms_routes.py
 - templates/ai_chat.html
-- templates/ai_history.html
+- templates/ai/history.html
 - static/js/ai_chat.js
 
 ## Environment Variables Needed

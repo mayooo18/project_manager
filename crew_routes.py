@@ -66,7 +66,7 @@ def login():
             session[SESSION_KEY] = worker.id
             return redirect(url_for('crew.home'))
         flash('Phone number or PIN is incorrect.', 'error')
-    return render_template('crew_login.html')
+    return render_template('crew/login.html')
 
 
 def _open_punch(worker):
@@ -91,7 +91,7 @@ def home():
     worker = g.crew_worker
     tasks = sorted(worker.tasks,
                    key=lambda t: (t.status == 'done', t.due_date or date.max, -t.id))
-    return render_template('crew_home.html', worker=worker, tasks=tasks,
+    return render_template('crew/home.html', worker=worker, tasks=tasks,
                            open_punch=_open_punch(worker), my_jobs=_my_jobs(worker))
 
 

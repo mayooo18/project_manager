@@ -26,7 +26,7 @@
 - ai_routes.py
 - sms_routes.py
 - templates/ai_chat.html
-- templates/ai_history.html
+- templates/ai/history.html
 - static/js/ai_chat.js
 
 ## Environment Variables Needed

@@ -236,7 +236,7 @@ def users():
             flash('Admin (foreman) account created.')
         return redirect(url_for('users'))
     all_users = User.query.order_by(User.role.desc(), User.username.asc()).all()
-    return render_template('users.html', form=form, users=all_users)
+    return render_template('admin/users.html', form=form, users=all_users)
 
 
 @app.route('/users/<int:user_id>/role', methods=['POST'])
@@ -287,7 +287,7 @@ def login():
             flash('Invalid username or password.')
             return redirect(url_for('login'))
             
-    return render_template('login.html', form=form)
+    return render_template('auth/login.html', form=form)
 
 @app.route('/logout')
 @login_required
@@ -355,7 +355,7 @@ def home():
     overdue_customers = sorted(overdue_by_customer.items(), key=lambda kv: -kv[1])
 
     return render_template(
-        "home.html",
+        "dashboard/index.html",
         worker_count=worker_count,
         project_count=project_count,
         active_projects=active_projects,
@@ -398,7 +398,7 @@ def workers():
         return redirect(url_for('workers'))
 
     all_workers = Worker.query.all()
-    return render_template('workers.html', form=form, workers=all_workers)
+    return render_template('workers/index.html', form=form, workers=all_workers)
 
 @app.route('/edit_worker/<int:worker_id>', methods=['GET', 'POST'])
 @login_required
@@ -422,7 +422,7 @@ def edit_worker(worker_id):
         flash('Worker updated successfully.')
         return redirect(url_for('workers'))
 
-    return render_template('edit_worker.html', form=form)
+    return render_template('workers/edit.html', form=form)
 
 @app.route('/toggle_worker/<int:worker_id>')
 @login_required
@@ -588,7 +588,7 @@ def projects():
     }
 
     return render_template(
-        'projects.html', projects=job_rows, dashboard=dashboard,
+        'jobs/index.html', projects=job_rows, dashboard=dashboard,
         project_form=project_form,
         search=request.args.get('q', ''), status_filter=status_filter)
 
@@ -640,7 +640,7 @@ def project_detail(project_id):
     workers = Worker.query.filter_by(active=True).order_by(Worker.name.asc()).all()
 
     return render_template(
-        'project_detail.html', project=project,
+        'jobs/detail.html', project=project,
         expenses_total=expenses_total, expense_categories=expense_categories,
         income_total=income_total,
         labor_total=labor_total, profit=profit,
@@ -859,7 +859,7 @@ def timeclock():
                    .options(selectinload(WorkLog.worker), selectinload(WorkLog.project))
                    .order_by(WorkLog.start_date.desc())
                    .limit(25).all())
-    return render_template('timeclock.html', open_punches=open_punches,
+    return render_template('timeclock/index.html', open_punches=open_punches,
                            recent=recent, approved_total=approved_total,
                            manual_form=manual_form, manual_logs=manual_logs)
 
@@ -1119,7 +1119,7 @@ def edit_project(project_id):
         flash('Job updated successfully.')
         return redirect(url_for('project_detail', project_id=project.id))
 
-    return render_template('edit_project.html', form=form, project=project)
+    return render_template('jobs/edit.html', form=form, project=project)
 
 @app.route('/delete_project/<int:project_id>', methods=['POST'])
 @login_required
@@ -1168,7 +1168,7 @@ def edit_file(file_id):
             return redirect(url_for('project_detail', project_id=file.project_id))
         return redirect(url_for('projects'))
 
-    return render_template('edit_file.html', form=form, file=file)
+    return render_template('files/edit.html', form=form, file=file)
 
 # Route for Work Logs
 @app.route('/work_logs', methods=['GET', 'POST'])
@@ -1244,7 +1244,7 @@ def work_logs():
                  .paginate(page=page_arg(), per_page=PAGE_SIZE, error_out=False))
 
     return render_template(
-        'work_logs.html',
+        'work_logs/index.html',
         form=form,
         filter_form=filter_form,
         logs=logs_page.items,
@@ -1274,7 +1274,7 @@ def edit_work_log(log_id):
         flash('Work log updated successfully')
         return redirect(url_for('work_logs'))
 
-    return render_template('edit_work_log.html', form=form, log=log)
+    return render_template('work_logs/edit.html', form=form, log=log)
 
 
 
@@ -1359,7 +1359,7 @@ def payments():
                      .order_by(Payment.payment_date.desc())
                      .paginate(page=page_arg(), per_page=PAGE_SIZE, error_out=False))
 
-    return render_template('payments.html',
+    return render_template('payments/index.html',
         form=form,
         payments=payments_page.items,
         pagination=payments_page,
@@ -1407,7 +1407,7 @@ def edit_payment(payment_id):
         flash('Payment updated successfully.')
         return redirect(url_for('payments'))
 
-    return render_template('edit_payment.html', form=form, payment=payment)
+    return render_template('payments/edit.html', form=form, payment=payment)
     
 
 @app.route('/payments/delete/<int:payment_id>', methods=['POST'])
@@ -1468,7 +1468,7 @@ def expenses():
                      .options(selectinload(Expense.project))
                      .order_by(Expense.date.desc())
                      .paginate(page=page_arg(), per_page=PAGE_SIZE, error_out=False))
-    return render_template('expenses.html', form=form, expenses=expenses_page.items,
+    return render_template('expenses/index.html', form=form, expenses=expenses_page.items,
                            pagination=expenses_page,
                            category_summary=category_summary, category_total=category_total)
 
@@ -1524,7 +1524,7 @@ def edit_expense(expense_id):
         flash('Expense updated successfully')
         return redirect(url_for('expenses'))
 
-    return render_template('edit_expense.html', form=form, expense=expense)
+    return render_template('expenses/edit.html', form=form, expense=expense)
 
 @app.route('/profitability')
 @login_required
@@ -1547,7 +1547,7 @@ def profitability():
             'profit': profit
         })
 
-    return render_template('profitability.html', data=data)
+    return render_template('profitability/index.html', data=data)
 
 
 @app.route('/income', methods=['GET', 'POST'])
@@ -1572,7 +1572,7 @@ def income():
     income_page = (Income.query
                    .order_by(Income.date.desc())
                    .paginate(page=page_arg(), per_page=PAGE_SIZE, error_out=False))
-    return render_template('income.html', form=form, incomes=income_page.items,
+    return render_template('income/index.html', form=form, incomes=income_page.items,
                            pagination=income_page)
 
 
@@ -1593,7 +1593,7 @@ def edit_income(income_id):
         flash('Income updated successfully.')
         return redirect(url_for('income'))
 
-    return render_template('edit_income.html', form=form, income=income)
+    return render_template('income/edit.html', form=form, income=income)
 
 @app.route('/income/delete/<int:income_id>', methods=['POST'])
 @login_required

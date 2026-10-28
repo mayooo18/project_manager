@@ -67,7 +67,7 @@ def index():
     # Postgres sorts NULLs last on ASC by default, so undated licenses fall to the bottom.
     licenses = (License.query.filter_by(user_id=current_user.id)
                 .order_by(License.expiration_date.asc()).all())
-    return render_template('licenses.html', licenses=licenses,
+    return render_template('licenses/index.html', licenses=licenses,
                            delete_form=DeleteForm(),
                            today=date.today(), timedelta=timedelta)
 
@@ -85,7 +85,7 @@ def add():
         db.session.commit()
         flash('License added.', 'success')
         return redirect(url_for('licenses.index'))
-    return render_template('license_form.html', form=form, title='Add License')
+    return render_template('licenses/form.html', form=form, title='Add License')
 
 
 @license_bp.route('/<int:license_id>/edit', methods=['GET', 'POST'])
@@ -104,7 +104,7 @@ def edit(license_id):
         flash('License updated.', 'success')
         return redirect(url_for('licenses.index'))
 
-    return render_template('license_form.html', form=form, title='Edit License')
+    return render_template('licenses/form.html', form=form, title='Edit License')
 
 
 @license_bp.route('/<int:license_id>/delete', methods=['POST'])

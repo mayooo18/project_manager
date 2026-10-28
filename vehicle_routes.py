@@ -57,7 +57,7 @@ def sync_reminders_for_vehicle(vehicle):
 def index():
     vehicles = Vehicle.query.filter_by(user_id=current_user.id).order_by(Vehicle.name.asc()).all()
     delete_form = DeleteForm()
-    return render_template('vehicles.html', vehicles=vehicles, delete_form=delete_form,
+    return render_template('vehicles/index.html', vehicles=vehicles, delete_form=delete_form,
                             today=date.today(), timedelta=timedelta)
 
 
@@ -74,7 +74,7 @@ def add():
         db.session.commit()
         flash('Vehicle added.', 'success')
         return redirect(url_for('vehicles.index'))
-    return render_template('vehicle_form.html', form=form, title='Add Vehicle')
+    return render_template('vehicles/form.html', form=form, title='Add Vehicle')
 
 
 @vehicle_bp.route('/<int:vehicle_id>/edit', methods=['GET', 'POST'])
@@ -93,7 +93,7 @@ def edit(vehicle_id):
         flash('Vehicle updated.', 'success')
         return redirect(url_for('vehicles.index'))
 
-    return render_template('vehicle_form.html', form=form, title='Edit Vehicle')
+    return render_template('vehicles/form.html', form=form, title='Edit Vehicle')
 
 
 @vehicle_bp.route('/<int:vehicle_id>/delete', methods=['POST'])

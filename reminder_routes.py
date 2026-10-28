@@ -14,7 +14,7 @@ def index():
         .order_by(Reminder.due_date.asc().nullslast(), Reminder.created_at.desc()).all()
     done = Reminder.query.filter_by(user_id=current_user.id, is_done=True)\
         .order_by(Reminder.created_at.desc()).limit(20).all()
-    return render_template('reminders.html', active=active, done=done, now=datetime.utcnow())
+    return render_template('reminders/index.html', active=active, done=done, now=datetime.utcnow())
 
 
 @reminder_bp.route('/<int:reminder_id>/done', methods=['POST'])

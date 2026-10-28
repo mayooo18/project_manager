@@ -89,7 +89,7 @@ def _project_choices():
 def index():
     permits = (Permit.query.filter_by(user_id=current_user.id)
                .order_by(Permit.created_at.desc()).all())
-    return render_template('permits.html', permits=permits,
+    return render_template('permits/index.html', permits=permits,
                            delete_form=DeleteForm(),
                            today=date.today(), timedelta=timedelta)
 
@@ -109,7 +109,7 @@ def add():
         db.session.commit()
         flash('Permit added.', 'success')
         return redirect(url_for('permits.edit', permit_id=permit.id))
-    return render_template('permit_form.html', form=form, permit=None,
+    return render_template('permits/form.html', form=form, permit=None,
                            inspection_form=InspectionForm())
 
 
@@ -128,7 +128,7 @@ def edit(permit_id):
         db.session.commit()
         flash('Permit updated.', 'success')
         return redirect(url_for('permits.edit', permit_id=permit.id))
-    return render_template('permit_form.html', form=form, permit=permit,
+    return render_template('permits/form.html', form=form, permit=permit,
                            inspection_form=InspectionForm())
 
 

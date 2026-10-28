@@ -249,4 +249,4 @@ def reject():
 def history():
     logs = AIActionLog.query.filter_by(user_id=current_user.id)\
         .order_by(AIActionLog.created_at.desc()).limit(50).all()
-    return render_template('ai_history.html', logs=logs)
+    return render_template('ai/history.html', logs=logs)
