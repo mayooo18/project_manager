@@ -7,7 +7,6 @@ import os
 import uuid
 from datetime import date, datetime, timedelta
 
-from dateutil.relativedelta import relativedelta
 from flask import (
     Blueprint, request, redirect, url_for, flash, abort, send_file, current_app,
 )
@@ -38,6 +37,15 @@ def _owned_call_or_404(call_id):
     return call
 
 
+def _plus_one_year(d):
+    """One calendar year after `d`. Falls back to Feb 28 when the start is
+    Feb 29 and the next year isn't a leap year (same rule dateutil used)."""
+    try:
+        return d.replace(year=d.year + 1)
+    except ValueError:
+        return d.replace(year=d.year + 1, day=28)
+
+
 def _parse_date(raw):
     raw = (raw or '').strip()
     if not raw:
@@ -66,7 +74,7 @@ def start(project_id):
     start_date = (project.closeout_accepted_at.date()
                   if project.closeout_accepted_at else date.today())
     project.warranty_start = start_date
-    project.warranty_end = start_date + relativedelta(years=1)
+    project.warranty_end = _plus_one_year(start_date)
     _sync_warranty_reminder(project)
     db.session.commit()
     flash('1-year warranty started.', 'success')
