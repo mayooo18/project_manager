@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Program{% endblock %}
+
+{% block content %}
+<style>
+  .pwrap{max-width:1000px;margin:0 auto;}
+  .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;margin-bottom:1.25rem;}
+  .step{color:var(--ink-500);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;}
+  .metric{background:var(--canvas);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .75rem;}
+  .metric .k{color:var(--ink-500);font-size:.68rem;text-transform:uppercase;} .metric .v{color:var(--ink-900);font-weight:700;font-size:1rem;}
+  .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;}
+  @media(min-width:640px){.mgrid{grid-template-columns:repeat(5,1fr);}}
+  .prow{border-top:1px solid var(--border);padding:.6rem 0;}
+  .pipe{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.35rem;}
+  .dot{font-size:.62rem;text-transform:uppercase;border:1px solid var(--border-strong);color:var(--ink-500);border-radius:999px;padding:1px 8px;}
+  .dot.on{border-color:var(--green-fg);color:var(--green-fg);}
+</style>
+<div class="pwrap">
+  <div class="page-head"><h1>Program Dashboard</h1></div>
+
+  <div class="sec">
+    <p class="step" style="margin-bottom:.6rem;">All customers — totals</p>
+    <div class="mgrid">
+      <div class="metric"><p class="k">Contract value</p><p class="v">${{ '{:,.0f}'.format(data.grand.contract) }}</p></div>
+      <div class="metric"><p class="k">Billed</p><p class="v">${{ '{:,.0f}'.format(data.grand.billed) }}</p></div>
+      <div class="metric"><p class="k">Paid</p><p class="v c-green">${{ '{:,.0f}'.format(data.grand.paid) }}</p></div>
+      <div class="metric"><p class="k">Retainage held</p><p class="v">${{ '{:,.0f}'.format(data.grand.retainage) }}</p></div>
+      <div class="metric"><p class="k">Overdue</p><p class="v {{ 'c-red' if data.grand.overdue > 0 }}">${{ '{:,.0f}'.format(data.grand.overdue) }}</p></div>
+    </div>
+  </div>
+
+  {% for card in data.cards %}
+  <div class="sec">
+    <div class="flex items-center justify-between gap-2 flex-wrap" style="margin-bottom:.6rem;">
+      <h2 style="font-size:1.05rem;color:var(--ink-900);margin:0;">{{ card.customer.name }}</h2>
+    </div>
+    <div class="mgrid" style="margin-bottom:.75rem;">
+      <div class="metric"><p class="k">Contract value</p><p class="v">${{ '{:,.0f}'.format(card.totals.contract) }}</p></div>
+      <div class="metric"><p class="k">Billed</p><p class="v">${{ '{:,.0f}'.format(card.totals.billed) }}</p></div>
+      <div class="metric"><p class="k">Paid</p><p class="v c-green">${{ '{:,.0f}'.format(card.totals.paid) }}</p></div>
+      <div class="metric"><p class="k">Retainage held</p><p class="v">${{ '{:,.0f}'.format(card.totals.retainage) }}</p></div>
+      <div class="metric"><p class="k">Overdue</p><p class="v {{ 'c-red' if card.totals.overdue > 0 }}">${{ '{:,.0f}'.format(card.totals.overdue) }}</p></div>
+    </div>
+    {% for row in card.rows %}
+    <div class="prow">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <a href="{{ url_for('contracts.edit', contract_id=row.contract.id) }}" class="lnk" style="font-weight:600;">{{ row.property }}</a>
+        <span class="muted" style="font-size:.8rem;">{{ row.contract.number }} · {{ row.stage_text }}</span>
+      </div>
+      <div class="pipe">
+        {% for stage in data.stages %}
+        <span class="dot {{ 'on' if row.pipeline[stage] }}">{{ stage }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="sec"><p class="muted">No customers with contracts yet.</p></div>
+  {% endfor %}
+</div>
+{% endblock %}
