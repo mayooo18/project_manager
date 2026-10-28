@@ -288,6 +288,16 @@ a.lnk:hover{color:var(--accent) !important;}
 .fld:focus{outline:none;border-color:var(--accent);}
 .lbl{display:block;font-size:.8rem;font-weight:600;color:var(--ink-700);margin-bottom:.3rem;}
 
+/* Progress bar (job % complete / % billed) */
+.pbar{height:6px;background:var(--canvas);border:1px solid var(--border);border-radius:999px;overflow:hidden;}
+.pbar>span{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s ease;}
+.pbar.billed>span{background:var(--blue-fg);}
+.pbar-row{display:flex;align-items:center;gap:.5rem;}
+.pbar-row .pbar{flex:1;}
+.pbar-row .pct{font-size:.72rem;color:var(--ink-500);white-space:nowrap;min-width:2.4rem;text-align:right;}
+.pbar-wrap{display:flex;flex-direction:column;gap:.25rem;}
+.pbar-lbl{font-size:.7rem;color:var(--ink-500);text-transform:uppercase;letter-spacing:.04em;}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width:768px){
   .container,.layout-content-container{padding:1rem !important;}

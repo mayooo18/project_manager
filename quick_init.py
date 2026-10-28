@@ -46,6 +46,15 @@ with app.app_context():
         'ON contract (public_token)'))
     db.session.commit()
 
+    # Manual "% complete" per job (job progress bar). Existing rows default to 0.
+    project_cols = {c['name'] for c in insp.get_columns('project')}
+    if 'progress' not in project_cols:
+        db.session.execute(text('ALTER TABLE project ADD COLUMN progress INTEGER DEFAULT 0'))
+        db.session.commit()
+        print(" Added column project.progress")
+    else:
+        print(" Column project.progress already present")
+
     # Seed an admin user if missing
     username = "admin"
 

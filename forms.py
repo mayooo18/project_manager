@@ -21,6 +21,7 @@ class ProjectForm(FlaskForm):
     address = StringField('Address')
     start_date = DateField('Start Date', format='%Y-%m-%d')
     status = SelectField('Status', choices=[('Active', 'Active'), ('Completed', 'Completed'), ('On Hold', 'On Hold')])
+    progress = IntegerField('% Complete', validators=[Optional(), NumberRange(min=0, max=100)], default=0)
     submit = SubmitField('Add Job')
 
 class DeleteForm(FlaskForm):

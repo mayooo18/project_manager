@@ -69,6 +69,9 @@ class Project(db.Model):
     address = db.Column(db.String(200))
     start_date = db.Column(db.Date)
     status = db.Column(db.String(50), default="Active", index=True)
+    # Manual "% complete" the user sets per job (0-100). Separate from the
+    # computed "% billed" (billed_to_date / contract_total) shown alongside it.
+    progress = db.Column(db.Integer, default=0)
     google_folder_id = db.Column(db.String(200), nullable=True)
     google_doc_id = db.Column(db.String(200), nullable=True)
     # Client portal magic-link (Phase 5): one private, revocable link per job.

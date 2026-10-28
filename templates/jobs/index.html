@@ -182,10 +182,20 @@
 
       <div style="margin-top:1rem;">
         <div class="flex justify-between" style="font-size:.75rem;margin-bottom:.25rem;">
-          <span class="muted">Billing progress</span>
-          <span style="color:var(--ink-500);">{{ '%.0f'|format([billing_percent, 100]|min) }}%</span>
+          <span class="muted">Completion</span>
+          <span style="color:var(--ink-500);">{{ job.progress or 0 }}%</span>
         </div>
-        <div class="bar"><div class="bar-fill" style="width:{{ [billing_percent, 100]|min }}%"></div></div>
+        <div class="bar"><div class="bar-fill" style="width:{{ [job.progress or 0, 100]|min }}%"></div></div>
+      </div>
+
+      <div style="margin-top:.75rem;">
+        <div class="flex justify-between" style="font-size:.75rem;margin-bottom:.25rem;">
+          <span class="muted">Billed</span>
+          <span style="color:var(--ink-500);">
+            {% if row.billed_pct is not none %}{{ row.billed_pct }}%{% else %}No contract{% endif %}
+          </span>
+        </div>
+        <div class="bar"><div class="bar-fill" style="width:{{ row.billed_pct or 0 }}%;background:var(--blue-fg);"></div></div>
       </div>
 
       {% if row.attention %}
