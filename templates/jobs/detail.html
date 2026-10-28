@@ -96,6 +96,25 @@
     <div class="kpi"><p class="k">Work logs</p><p class="v sm">{{ work_logs|length }}</p></div>
   </div>
 
+  <div class="card" style="padding:1.1rem 1.25rem;margin-bottom:1.5rem;">
+    <div class="pbar-wrap" style="margin-bottom:.95rem;">
+      <div class="flex justify-between">
+        <span class="pbar-lbl">Completion</span>
+        <span class="muted" style="font-size:.78rem;">{{ project.progress or 0 }}%</span>
+      </div>
+      <div class="pbar"><span style="width:{{ [project.progress or 0, 100]|min }}%;"></span></div>
+    </div>
+    <div class="pbar-wrap">
+      <div class="flex justify-between">
+        <span class="pbar-lbl">Billed</span>
+        <span class="muted" style="font-size:.78rem;">
+          {% if billed_pct is not none %}{{ billed_pct }}% · ${{ '{:,.0f}'.format(billed_total) }} of ${{ '{:,.0f}'.format(contract_total) }}{% else %}No contract{% endif %}
+        </span>
+      </div>
+      <div class="pbar billed"><span style="width:{{ billed_pct or 0 }}%;"></span></div>
+    </div>
+  </div>
+
   {% include 'partials/job_activity.html' %}
 
   {% if expense_categories %}

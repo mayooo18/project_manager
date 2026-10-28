@@ -558,6 +558,9 @@ def projects():
         if status_filter != 'all' and project.status != status_filter:
             continue
 
+        billed_pct = (min(100, round(100 * billed_total / contract_total))
+                      if contract_total else None)
+
         job_rows.append({
             'project': project,
             'customer_name': customer_name,
@@ -567,6 +570,7 @@ def projects():
             'profit': profit,
             'attention': attention,
             'file_count': len(project.files),
+            'billed_pct': billed_pct,
         })
 
     status_order = {'Active': 0, 'On Hold': 1, 'Completed': 2}
@@ -637,6 +641,8 @@ def project_detail(project_id):
     contract_total = sum(c.contract_total or 0 for c in contracts)
     billed_total = sum(c.billed_to_date for c in contracts)
     paid_total = sum(inv.total or 0 for inv in invoices if inv.status == 'paid')
+    billed_pct = (min(100, round(100 * billed_total / contract_total))
+                  if contract_total else None)
 
     tasks = sorted(project.tasks, key=lambda t: (t.status == 'done', t.id))
     workers = Worker.query.filter_by(active=True).order_by(Worker.name.asc()).all()
@@ -653,6 +659,7 @@ def project_detail(project_id):
         change_orders=change_orders, permits=permits, documents=documents,
         work_logs=list(project.work_logs), files=list(project.files),
         contract_total=contract_total, billed_total=billed_total, paid_total=paid_total,
+        billed_pct=billed_pct,
         tasks=tasks, workers=workers,
         expense_categories_choices=EXPENSE_CATEGORIES,
         today=datetime.utcnow().date().strftime('%Y-%m-%d'),
@@ -1119,6 +1126,7 @@ def edit_project(project_id):
         project.address = form.address.data
         project.start_date = form.start_date.data
         project.status = form.status.data
+        project.progress = form.progress.data or 0
         _sync_project_customer_location(project, form.customer_id.data, form.address.data)
         db.session.commit()
         flash('Job updated successfully.')

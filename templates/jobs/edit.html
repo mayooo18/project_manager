@@ -48,6 +48,12 @@
       {{ form.status() }}
     </div>
 
+    <div class="field">
+      <label for="progress">% Complete</label>
+      {{ form.progress(min=0, max=100, type="number") }}
+      <p class="hint">How far along the work is (0–100). Shown as the completion bar on the job.</p>
+    </div>
+
     <div class="form-foot">
       <a href="{{ url_for('projects') }}" class="c-accent" style="font-size:.88rem;">← Cancel</a>
       <button type="submit" class="btn">Update Job</button>
