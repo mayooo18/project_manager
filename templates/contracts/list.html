@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% block title %}Contracts{% endblock %}
 
+{% block breadcrumbs %}
+<div class="crumbs"><span>Sales</span> / <span class="here">Contracts</span></div>
+{% endblock %}
+
 {% block content %}
 {% from 'partials/status_tabs.html' import status_tabs %}
 <div style="max-width:920px;margin:0 auto;">
