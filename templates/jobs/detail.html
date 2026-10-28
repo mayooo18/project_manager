@@ -96,6 +96,8 @@
     <div class="kpi"><p class="k">Work logs</p><p class="v sm">{{ work_logs|length }}</p></div>
   </div>
 
+  {% include 'partials/job_activity.html' %}
+
   {% if expense_categories %}
   <div class="card" style="padding:1.25rem;margin-bottom:1.5rem;">
     <p class="sec-title" style="margin-bottom:.85rem;">Expenses by category</p>

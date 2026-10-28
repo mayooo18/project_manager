@@ -641,8 +641,11 @@ def project_detail(project_id):
     tasks = sorted(project.tasks, key=lambda t: (t.status == 'done', t.id))
     workers = Worker.query.filter_by(active=True).order_by(Worker.name.asc()).all()
 
+    from activity_feed import build_job_activity
+    activity = build_job_activity(project)
+
     return render_template(
-        'jobs/detail.html', project=project,
+        'jobs/detail.html', project=project, activity=activity,
         expenses_total=expenses_total, expense_categories=expense_categories,
         income_total=income_total,
         labor_total=labor_total, profit=profit,
