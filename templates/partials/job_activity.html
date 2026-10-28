@@ -1,0 +1,42 @@
+{# Job activity feed — expects `activity` (list from build_job_activity). Reusable card. #}
+<style>
+  .act-feed{display:flex;flex-direction:column;}
+  .act-item{display:flex;gap:.75rem;padding:.6rem 0;border-top:1px solid var(--border);}
+  .act-item:first-child{border-top:none;}
+  .act-ico{width:30px;height:30px;border-radius:50%;background:var(--canvas);
+    border:1px solid var(--border-strong);color:var(--ink-500);font-size:1rem !important;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .act-body{flex:1;min-width:0;}
+  .act-top{display:flex;align-items:baseline;justify-content:space-between;gap:.75rem;}
+  .act-label{color:var(--ink-900) !important;font-weight:600;font-size:.88rem;text-decoration:none !important;}
+  a.act-label:hover{color:var(--accent) !important;}
+  .act-date{color:var(--ink-500);font-size:.75rem;white-space:nowrap;flex-shrink:0;}
+  .act-detail{color:var(--ink-500);font-size:.8rem;margin-top:.1rem;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+</style>
+
+<div class="card" style="padding:1.25rem;margin-bottom:1.5rem;">
+  <p class="sec-title" style="margin-bottom:.85rem;">Recent activity</p>
+  {% if activity %}
+  <div class="act-feed">
+    {% for ev in activity %}
+    <div class="act-item">
+      <span class="act-ico material-icons">{{ ev.icon }}</span>
+      <div class="act-body">
+        <div class="act-top">
+          {% if ev.url %}
+            <a href="{{ ev.url }}" class="act-label">{{ ev.label }}</a>
+          {% else %}
+            <span class="act-label">{{ ev.label }}</span>
+          {% endif %}
+          <span class="act-date">{{ ev.when.strftime('%b %d, %Y') }}</span>
+        </div>
+        {% if ev.detail %}<div class="act-detail">{{ ev.detail }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">No activity yet — invoices, payments, work logs, files and notes for this job will show up here.</p>
+  {% endif %}
+</div>
