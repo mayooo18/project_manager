@@ -430,6 +430,66 @@
       </div>
       {% endif %}
 
+      {# Warranty tracker (F13) — once closed out or warranty data exists. #}
+      {% if project.is_closed_out or project.warranty_start or project.warranty_calls %}
+      <div style="margin-top:.75rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--r);">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <strong style="font-size:.9rem;color:var(--ink-900);">Warranty</strong>
+          {% if project.warranty_end %}
+            {% if project.warranty_active %}
+            <span class="pill" style="font-size:.6rem;text-transform:uppercase;border:1px solid var(--green-fg);color:var(--green-fg);border-radius:4px;padding:1px 6px;">Active · {{ project.warranty_days_left }}d left</span>
+            {% else %}
+            <span class="pill" style="font-size:.6rem;text-transform:uppercase;border:1px solid var(--red-fg);color:var(--red-fg);border-radius:4px;padding:1px 6px;">Expired</span>
+            {% endif %}
+          {% endif %}
+        </div>
+        {% if project.warranty_start %}
+        <form method="POST" action="{{ url_for('warranty.set_period', project_id=project.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:flex-end;margin-top:.4rem;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div><span class="muted" style="font-size:.72rem;">Start</span><br><input type="date" name="warranty_start" class="fld-sm" value="{{ project.warranty_start.strftime('%Y-%m-%d') }}"/></div>
+          <div><span class="muted" style="font-size:.72rem;">End</span><br><input type="date" name="warranty_end" class="fld-sm" value="{{ project.warranty_end.strftime('%Y-%m-%d') if project.warranty_end else '' }}"/></div>
+          <button type="submit" class="obtn">Save period</button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('warranty.start', project_id=project.id) }}" style="margin-top:.4rem;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="obtn">Start 1-year warranty</button>
+          <span class="muted" style="margin-left:.5rem;font-size:.78rem;">From the closeout date; adds an expiry reminder.</span>
+        </form>
+        {% endif %}
+
+        <p class="muted" style="font-size:.8rem;margin:.5rem 0 .3rem;">Warranty calls</p>
+        {% for call in project.warranty_calls %}
+        <div style="padding:.3rem 0;border-top:1px solid var(--border);">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span style="font-size:.84rem;">{{ call.call_date.strftime('%Y-%m-%d') if call.call_date }} · {{ call.issue }}</span>
+            <span class="flex items-center gap-2">
+              <span class="{{ 'c-green' if call.status == 'resolved' else 'c-amber' }}" style="font-size:.72rem;">{{ call.status }}</span>
+              <form method="POST" action="{{ url_for('warranty.resolve_call', call_id=call.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="lnk" style="font-size:.78rem;">{{ 'Reopen' if call.status == 'resolved' else 'Resolve' }}</button></form>
+              <form method="POST" action="{{ url_for('warranty.delete_call', call_id=call.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+            </span>
+          </div>
+          {% if call.resolution %}<p class="muted" style="font-size:.78rem;">Resolution: {{ call.resolution }}</p>{% endif %}
+          <div class="flex flex-wrap gap-2" style="margin-top:.2rem;align-items:center;">
+            {% for ph in call.photos %}<a href="{{ url_for('warranty.download_photo', photo_id=ph.id) }}" target="_blank" class="lnk" style="font-size:.72rem;">{{ ph.original_name or 'photo' }}</a>
+            <form method="POST" action="{{ url_for('warranty.delete_photo', photo_id=ph.id) }}" style="display:inline;margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>{% endfor %}
+            <form method="POST" action="{{ url_for('warranty.upload_photo', call_id=call.id) }}" enctype="multipart/form-data" style="display:flex;gap:.3rem;align-items:center;margin:0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input type="file" name="file" class="fld-sm" style="max-width:150px;font-size:.75rem;"/>
+              <button type="submit" class="obtn" style="font-size:.72rem;">Add photo</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+        <form method="POST" action="{{ url_for('warranty.add_call', project_id=project.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.4rem;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="date" name="call_date" class="fld-sm"/>
+          <input name="issue" class="fld-sm" placeholder="Issue / claim" style="flex:1;min-width:140px;"/>
+          <button type="submit" class="obtn">Log call</button>
+        </form>
+      </div>
+      {% endif %}
+
       <p class="muted" style="margin-top:.5rem;">Permits ({{ permits|length }})</p>
       {% for p in permits %}
       <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('permits.edit', permit_id=p.id) }}">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>
