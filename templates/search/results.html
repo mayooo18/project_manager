@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}Search{% endblock %}
+
+{% block content %}
+<style>
+  .srch{max-width:900px;margin:0 auto;}
+  .srch-form{display:flex;gap:.5rem;margin-bottom:1.5rem;}
+  .srch-form input{flex:1;}
+  .srch-group{margin-bottom:1.5rem;}
+  .srch-group .sect-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--ink-500);font-weight:600;margin-bottom:.5rem;display:flex;gap:.4rem;align-items:center;}
+  .srch-group .count{color:var(--ink-400);font-weight:500;}
+  .srow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:.65rem .9rem;text-decoration:none;margin-bottom:.5rem;}
+  a.srow:hover{border-color:var(--accent);}
+  .srow .t{font-size:.9rem;color:var(--ink-900);display:block;font-weight:500;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .srow .m{font-size:.76rem;color:var(--ink-500);}
+  .srow .right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .pill{font-size:10px;border:1px solid var(--border-strong);border-radius:4px;
+    padding:1px 6px;text-transform:capitalize;white-space:nowrap;color:var(--ink-500);}
+</style>
+
+<div class="srch">
+
+  <div style="font-size:.78rem;color:var(--ink-500);margin-bottom:.4rem;">
+    <a href="{{ url_for('home') }}" class="lnk">Home</a> / Search
+  </div>
+
+  <div class="page-head">
+    <div>
+      <h1>Search</h1>
+      {% if q and not too_short %}
+        <div class="sub">{{ total }} result{{ '' if total == 1 else 's' }} for “{{ q }}”</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <form class="srch-form" method="get" action="{{ url_for('search.index') }}" role="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search jobs, customers, proposals, invoices…" autofocus>
+    <button type="submit" class="btn">Search</button>
+  </form>
+
+  {% if too_short %}
+    <div class="list-empty">
+      <p class="muted">Type at least 2 characters to search.</p>
+    </div>
+  {% elif not q %}
+    <div class="list-empty">
+      <p class="muted">Search across your jobs, customers, proposals, and invoices.</p>
+    </div>
+  {% elif total == 0 %}
+    <div class="list-empty">
+      <p class="muted">No matches for “{{ q }}”.</p>
+    </div>
+  {% else %}
+
+    {% if jobs %}
+    <div class="srch-group">
+      <div class="sect-label">Jobs <span class="count">{{ jobs|length }}</span></div>
+      {% for p in jobs %}
+      <a href="{{ url_for('project_detail', project_id=p.id) }}" class="srow">
+        <span style="min-width:0;">
+          <span class="t">{{ p.name }}</span>
+          <span class="m">{{ p.address or (p.customer.name if p.customer else '—') }}</span>
+        </span>
+        <span class="right">
+          {% if p.status %}<span class="pill">{{ p.status }}</span>{% endif %}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if customers %}
+    <div class="srch-group">
+      <div class="sect-label">Customers <span class="count">{{ customers|length }}</span></div>
+      {% for c in customers %}
+      <a href="{{ url_for('quotes.customer_detail', customer_id=c.id) }}" class="srow">
+        <span style="min-width:0;">
+          <span class="t">{{ c.name }}</span>
+          <span class="m">{{ c.email or c.phone or '—' }}</span>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if proposals %}
+    <div class="srch-group">
+      <div class="sect-label">Proposals <span class="count">{{ proposals|length }}</span></div>
+      {% for q_ in proposals %}
+      <a href="{{ url_for('quotes.edit', quote_id=q_.id) }}" class="srow">
+        <span style="min-width:0;">
+          <span class="t">{{ q_.title }}</span>
+          <span class="m">{{ q_.customer.name if q_.customer else '—' }}</span>
+        </span>
+        <span class="right">
+          <span class="t">${{ '{:,.0f}'.format(q_.total or 0) }}</span>
+          {% if q_.status %}<span class="pill">{{ q_.status }}</span>{% endif %}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if invoices %}
+    <div class="srch-group">
+      <div class="sect-label">Invoices <span class="count">{{ invoices|length }}</span></div>
+      {% for inv in invoices %}
+      <a href="{{ url_for('invoices.edit', invoice_id=inv.id) }}" class="srow">
+        <span style="min-width:0;">
+          <span class="t">{{ inv.number or inv.title }}</span>
+          <span class="m">{{ inv.customer.name if inv.customer else inv.title }}</span>
+        </span>
+        <span class="right">
+          {% if inv.status %}<span class="pill">{{ inv.status }}</span>{% endif %}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  {% endif %}
+
+</div>
+{% endblock %}
