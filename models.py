@@ -80,6 +80,9 @@ class Project(db.Model):
     # Set when the property is formally closed out (F12). Starts the retainage-
     # release clock (F2) and later the warranty clock (F13).
     closeout_accepted_at = db.Column(db.DateTime)
+    # Warranty window (F13). Defaults to 1 year from closeout acceptance.
+    warranty_start = db.Column(db.Date)
+    warranty_end = db.Column(db.Date)
     customer = db.relationship('Customer', backref='projects')
     location = db.relationship('Location', backref='projects')
 
@@ -114,6 +117,16 @@ class Project(db.Model):
     @property
     def open_punch_count(self):
         return sum(1 for p in self.punch_items if p.status != 'closed')
+
+    @property
+    def warranty_active(self):
+        return self.warranty_end is not None and date.today() <= self.warranty_end
+
+    @property
+    def warranty_days_left(self):
+        if self.warranty_end is None:
+            return None
+        return (self.warranty_end - date.today()).days
 
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1452,3 +1465,35 @@ class PunchItem(db.Model):
     project = db.relationship('Project', backref=db.backref(
         'punch_items', cascade='all, delete-orphan',
         order_by='PunchItem.created_at'))
+
+
+# ── Warranty tracker (F13) ──
+
+class WarrantyCall(db.Model):
+    """A warranty call/claim logged against a property (F13)."""
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'),
+                           nullable=False, index=True)
+    call_date = db.Column(db.Date, default=date.today)
+    issue = db.Column(db.Text, nullable=False)
+    resolution = db.Column(db.Text)
+    status = db.Column(db.String(20), default='open')   # open / resolved
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    project = db.relationship('Project', backref=db.backref(
+        'warranty_calls', cascade='all, delete-orphan',
+        order_by='WarrantyCall.call_date.desc()'))
+    photos = db.relationship('WarrantyCallPhoto', back_populates='call',
+                             cascade='all, delete-orphan',
+                             order_by='WarrantyCallPhoto.uploaded_at')
+
+
+class WarrantyCallPhoto(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    warranty_call_id = db.Column(db.Integer, db.ForeignKey('warranty_call.id'),
+                                 nullable=False, index=True)
+    filename = db.Column(db.String(300), nullable=False)   # under UPLOAD_FOLDER
+    original_name = db.Column(db.String(300))
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    call = db.relationship('WarrantyCall', back_populates='photos')
