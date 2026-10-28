@@ -33,6 +33,7 @@
                         <a href="{{ url_for('quotes.index') }}" class="{{ 'nav-active' if request.endpoint in ['quotes.index', 'quotes.new', 'quotes.edit'] }}">Proposals</a>
                         <a href="{{ url_for('contracts.index') }}" class="{{ 'nav-active' if request.endpoint in ['contracts.index', 'contracts.new', 'contracts.edit'] }}">Contracts</a>
                         <a href="{{ url_for('invoices.index') }}" class="{{ 'nav-active' if request.endpoint in ['invoices.index', 'invoices.new', 'invoices.edit'] }}">Invoices</a>
+                        <a href="{{ url_for('reports.index') }}" class="{{ 'nav-active' if request.endpoint in ['reports.index', 'reports.edit'] }}">Weekly Reports</a>
                     </div>
                 </div>
 
