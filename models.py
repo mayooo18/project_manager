@@ -1497,3 +1497,114 @@ class WarrantyCallPhoto(db.Model):
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     call = db.relationship('WarrantyCall', back_populates='photos')
+
+
+# ── Cost estimate per lot (F15) ──
+
+ESTIMATE_LINE_CATEGORIES = ['Material', 'Subcontractor', 'Labor', 'Equipment', 'Other']
+
+
+def _n(x):
+    return x or 0
+
+
+class CostEstimate(db.Model):
+    """A takeoff-based cost estimate for a lot/property (F15). Concrete yardage
+    is computed from the footing/wall/slab dimensions (with waste); other
+    materials, subs, labor and equipment are flexible cost lines. Compared
+    against the contract price for a margin %."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True)
+    name = db.Column(db.String(150), default='Estimate')
+
+    # Takeoff dimensions
+    footing_lf = db.Column(db.Float)          # linear feet
+    footing_width_in = db.Column(db.Float)
+    footing_depth_in = db.Column(db.Float)
+    wall_lf = db.Column(db.Float)
+    wall_height_ft = db.Column(db.Float)
+    wall_thickness_in = db.Column(db.Float)
+    slab_area_sf = db.Column(db.Float)
+    slab_thickness_in = db.Column(db.Float)
+    waste_pct = db.Column(db.Float, default=0.0)
+    concrete_per_cy = db.Column(db.Float, default=0.0)
+
+    # Equipment rental spread across lots
+    equipment_monthly = db.Column(db.Float, default=0.0)
+    equipment_lots = db.Column(db.Integer, default=1)
+
+    # Override the contract price for the margin comparison
+    price_override = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    project = db.relationship('Project', backref=db.backref(
+        'cost_estimates', cascade='all, delete-orphan'))
+    contract = db.relationship('Contract')
+    lines = db.relationship('CostEstimateLine', back_populates='estimate',
+                            cascade='all, delete-orphan',
+                            order_by='CostEstimateLine.id')
+
+    @property
+    def footing_cy(self):
+        return _n(self.footing_lf) * (_n(self.footing_width_in) / 12) * (_n(self.footing_depth_in) / 12) / 27
+
+    @property
+    def wall_cy(self):
+        return _n(self.wall_lf) * _n(self.wall_height_ft) * (_n(self.wall_thickness_in) / 12) / 27
+
+    @property
+    def slab_cy(self):
+        return _n(self.slab_area_sf) * (_n(self.slab_thickness_in) / 12) / 27
+
+    @property
+    def concrete_cy(self):
+        return (self.footing_cy + self.wall_cy + self.slab_cy) * (1 + _n(self.waste_pct) / 100)
+
+    @property
+    def concrete_cost(self):
+        return self.concrete_cy * _n(self.concrete_per_cy)
+
+    @property
+    def equipment_cost(self):
+        lots = self.equipment_lots or 1
+        return _n(self.equipment_monthly) / lots if lots else 0.0
+
+    @property
+    def lines_total(self):
+        return sum(ln.line_total for ln in self.lines)
+
+    @property
+    def total_cost(self):
+        return self.concrete_cost + self.equipment_cost + self.lines_total
+
+    @property
+    def price(self):
+        if self.price_override is not None:
+            return self.price_override
+        return (self.contract.contract_total or 0) if self.contract else 0.0
+
+    @property
+    def margin_amount(self):
+        return self.price - self.total_cost
+
+    @property
+    def margin_pct(self):
+        return (self.margin_amount / self.price * 100) if self.price else None
+
+
+class CostEstimateLine(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    estimate_id = db.Column(db.Integer, db.ForeignKey('cost_estimate.id'),
+                            nullable=False, index=True)
+    category = db.Column(db.String(30), default='Material')
+    description = db.Column(db.String(200), nullable=False)
+    quantity = db.Column(db.Float, default=1.0)
+    unit_cost = db.Column(db.Float, default=0.0)
+
+    estimate = db.relationship('CostEstimate', back_populates='lines')
+
+    @property
+    def line_total(self):
+        return _n(self.quantity) * _n(self.unit_cost)

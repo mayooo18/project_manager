@@ -43,6 +43,7 @@ from report_routes import report_bp
 from closeout_routes import closeout_bp
 from warranty_routes import warranty_bp
 from program_routes import program_bp
+from estimate_routes import estimate_bp
 from portal_routes import portal_bp
 from crew_routes import crew_bp
 from payroll_routes import payroll_bp
@@ -88,6 +89,7 @@ app.register_blueprint(report_bp)
 app.register_blueprint(closeout_bp)
 app.register_blueprint(warranty_bp)
 app.register_blueprint(program_bp)
+app.register_blueprint(estimate_bp)
 
 
 @app.context_processor
