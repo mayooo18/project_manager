@@ -1,0 +1,260 @@
+    <div class="card" style="padding:1.25rem;">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <p class="sec-title">Field &amp; Compliance</p>
+        <div class="flex gap-2 flex-wrap">
+          <a href="{{ url_for('permits.add') }}" class="obtn">+ Permit</a>
+          <a href="{{ url_for('waivers.new') }}" class="obtn">+ Waiver</a>
+        </div>
+      </div>
+
+      {# Lot release (F6) — only shown when a contract requires one or releases exist. #}
+      {% if project.lot_release_required or project.lot_releases %}
+      <div style="margin-top:.75rem;padding:.6rem .75rem;border:1px solid {{ 'var(--red-fg)' if not project.lot_release_ok else 'var(--border)' }};border-radius:var(--r);">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="flex items-center gap-2">
+            <strong style="font-size:.9rem;color:var(--ink-900);">Lot release</strong>
+            {% if not project.lot_release_ok %}
+            <span class="pill" style="font-size:.62rem;text-transform:uppercase;border:1px solid var(--red-fg);color:var(--red-fg);border-radius:4px;padding:1px 6px;">NOT RELEASED</span>
+            {% elif project.lot_release_required %}
+            <span class="pill" style="font-size:.62rem;text-transform:uppercase;border:1px solid var(--green-fg);color:var(--green-fg);border-radius:4px;padding:1px 6px;">RELEASED</span>
+            {% endif %}
+          </span>
+          <form method="POST" action="{{ url_for('lot_releases.new', project_id=project.id) }}" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="obtn">+ Lot release</button>
+          </form>
+        </div>
+        {% if not project.lot_release_ok %}
+        <p class="muted" style="font-size:.78rem;margin-top:.35rem;">Work logging and invoicing are blocked until a lot release is signed by both parties.</p>
+        {% endif %}
+        {% for lr in project.lot_releases %}
+        <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('lot_releases.edit', lot_release_id=lr.id) }}">Lot release #{{ lr.id }}{% if lr.address %} · {{ lr.address }}{% endif %}</a>
+          <span class="pill" style="font-size:.62rem;text-transform:uppercase;border:1px solid {{ 'var(--green-fg)' if lr.is_fully_signed else 'var(--border-strong)' }};color:{{ 'var(--green-fg)' if lr.is_fully_signed else 'var(--ink-500)' }};border-radius:4px;padding:1px 6px;">{{ 'Signed' if lr.is_fully_signed else 'Draft' }}</span></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# Hold-point checklist (F7) — only when a contract requires hold points. #}
+      {% if project.hold_points_required or project.hold_points %}
+      <div style="margin-top:.75rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--r);">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <strong style="font-size:.9rem;color:var(--ink-900);">Hold points</strong>
+          {% if not project.hold_points %}
+          <form method="POST" action="{{ url_for('hold_points.setup', project_id=project.id) }}" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="obtn">Set up hold points</button>
+          </form>
+          {% endif %}
+        </div>
+        {% for hp in project.hold_points %}
+        {% set passed = hp.is_passed %}
+        {% set unlocked = hp.is_unlocked %}
+        <div style="margin-top:.5rem;padding:.5rem .6rem;border:1px solid {{ 'var(--green-fg)' if passed else 'var(--border)' }};border-radius:var(--r-sm);">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span style="font-size:.88rem;color:var(--ink-900);">{{ loop.index }}. {{ hp.name }}</span>
+            <span class="pill" style="font-size:.6rem;text-transform:uppercase;border:1px solid {{ 'var(--green-fg)' if passed else ('var(--border-strong)' if unlocked else 'var(--border)') }};color:{{ 'var(--green-fg)' if passed else ('var(--ink-700)' if unlocked else 'var(--ink-500)') }};border-radius:4px;padding:1px 6px;">{{ 'Passed' if passed else ('Open' if unlocked else 'Locked') }}</span>
+          </div>
+
+          {% if passed %}
+          <p class="muted" style="font-size:.78rem;margin-top:.25rem;">Passed by {{ hp.approved_by }}{% if hp.approved_at %} on {{ hp.approved_at.strftime('%Y-%m-%d') }}{% endif %}{% if hp.inspection %} · inspection: {{ hp.inspection.inspection_type }} ({{ hp.inspection.status }}){% endif %}</p>
+          {% if current_user.is_owner %}
+          <form method="POST" action="{{ url_for('hold_points.reopen', hold_point_id=hp.id) }}" onsubmit="return confirm('Reopen this gate and all later gates?');" style="margin-top:.25rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="linkbtn danger" style="font-size:.78rem;">Reopen</button>
+          </form>
+          {% endif %}
+
+          {% elif unlocked %}
+          <form method="POST" action="{{ url_for('hold_points.update', hold_point_id=hp.id) }}" style="margin-top:.4rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <textarea name="required_items" class="fld-sm" rows="2" placeholder="Required items / checklist" style="width:100%;">{{ hp.required_items or '' }}</textarea>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" style="margin-top:.3rem;">
+              <select name="inspection_id" class="fld-sm">
+                <option value="">— Link inspection (optional) —</option>
+                {% for perm in project.permits %}{% for insp in perm.inspections %}
+                <option value="{{ insp.id }}" {{ 'selected' if hp.inspection_id == insp.id }}>{{ insp.inspection_type }} · {{ insp.status }}</option>
+                {% endfor %}{% endfor %}
+              </select>
+              <input name="notes" class="fld-sm" placeholder="Notes" value="{{ hp.notes or '' }}"/>
+            </div>
+            <button type="submit" class="obtn" style="margin-top:.3rem;">Save</button>
+          </form>
+          <form method="POST" action="{{ url_for('hold_points.pass_gate', hold_point_id=hp.id) }}" style="margin-top:.4rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input name="approved_by" class="fld-sm" placeholder="Approved by" style="max-width:180px;"/>
+            <button type="submit" class="obtn green">Mark passed</button>
+          </form>
+          {% else %}
+          <p class="muted" style="font-size:.78rem;margin-top:.25rem;">Locked — pass the previous gate first.</p>
+          {% endif %}
+
+          {% if hp.photos %}
+          <div class="flex flex-wrap gap-2" style="margin-top:.4rem;">
+            {% for ph in hp.photos %}
+            <span style="font-size:.72rem;border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:.1rem .4rem;">
+              <a href="{{ url_for('hold_points.download_photo', photo_id=ph.id) }}" target="_blank" class="lk">{{ ph.original_name or ph.filename }}</a>
+              <form method="POST" action="{{ url_for('hold_points.delete_photo', photo_id=ph.id) }}" onsubmit="return confirm('Remove photo?');" style="display:inline;margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+            </span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if not passed and unlocked %}
+          <form method="POST" action="{{ url_for('hold_points.upload_photo', hold_point_id=hp.id) }}" enctype="multipart/form-data" style="margin-top:.35rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="file" name="file" class="fld-sm" style="max-width:190px;"/>
+            <button type="submit" class="obtn" style="font-size:.78rem;">Add photo</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# Closeout package (F12) — only on non-Simple contract jobs. #}
+      {% set show_closeout = project.punch_items or project.is_closed_out or (project.contracts and (project.contracts|selectattr('terms_profile','ne','simple')|list|length > 0)) %}
+      {% if show_closeout %}
+      <div style="margin-top:.75rem;padding:.6rem .75rem;border:1px solid {{ 'var(--green-fg)' if project.is_closed_out else 'var(--border)' }};border-radius:var(--r);">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="flex items-center gap-2">
+            <strong style="font-size:.9rem;color:var(--ink-900);">Closeout</strong>
+            {% if project.is_closed_out %}<span class="pill" style="font-size:.6rem;text-transform:uppercase;border:1px solid var(--green-fg);color:var(--green-fg);border-radius:4px;padding:1px 6px;">Closed out {{ project.closeout_accepted_at.strftime('%Y-%m-%d') }}</span>{% endif %}
+          </span>
+          <a href="{{ url_for('closeout.package', project_id=project.id) }}" target="_blank" class="obtn">Download closeout package</a>
+        </div>
+
+        <p class="muted" style="font-size:.8rem;margin:.4rem 0 .3rem;">Punch list{% if project.open_punch_count %} · {{ project.open_punch_count }} open{% endif %}</p>
+        {% for p in project.punch_items %}
+        <div class="flex items-center justify-between gap-2" style="padding:.2rem 0;border-top:1px solid var(--border);">
+          <span style="font-size:.84rem;{{ 'text-decoration:line-through;opacity:.6;' if p.status == 'closed' }}">{{ p.description }}</span>
+          <span class="flex items-center gap-2">
+            <form method="POST" action="{{ url_for('closeout.toggle_punch', item_id=p.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="lnk" style="font-size:.78rem;">{{ 'Reopen' if p.status == 'closed' else 'Close' }}</button></form>
+            <form method="POST" action="{{ url_for('closeout.delete_punch', item_id=p.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+          </span>
+        </div>
+        {% endfor %}
+        <form method="POST" action="{{ url_for('closeout.add_punch', project_id=project.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.4rem;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input name="description" class="fld-sm" placeholder="Add punch item" style="flex:1;min-width:140px;"/>
+          <button type="submit" class="obtn">Add</button>
+        </form>
+
+        <div style="margin-top:.6rem;">
+          {% if not project.is_closed_out %}
+          <form method="POST" action="{{ url_for('closeout.accept', project_id=project.id) }}" onsubmit="return confirm('Mark this job closed out?{% if project.open_punch_count %} {{ project.open_punch_count }} punch item(s) are still open.{% endif %}');" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn">Mark closed out</button>
+            <span class="muted" style="margin-left:.5rem;font-size:.78rem;">Starts the retainage-release clock.</span>
+          </form>
+          {% elif current_user.is_owner %}
+          <form method="POST" action="{{ url_for('closeout.reopen', project_id=project.id) }}" onsubmit="return confirm('Reopen closeout?');" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="linkbtn danger">Reopen closeout</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# Warranty tracker (F13) — once closed out or warranty data exists. #}
+      {% if project.is_closed_out or project.warranty_start or project.warranty_calls %}
+      <div style="margin-top:.75rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--r);">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <strong style="font-size:.9rem;color:var(--ink-900);">Warranty</strong>
+          {% if project.warranty_end %}
+            {% if project.warranty_active %}
+            <span class="pill" style="font-size:.6rem;text-transform:uppercase;border:1px solid var(--green-fg);color:var(--green-fg);border-radius:4px;padding:1px 6px;">Active · {{ project.warranty_days_left }}d left</span>
+            {% else %}
+            <span class="pill" style="font-size:.6rem;text-transform:uppercase;border:1px solid var(--red-fg);color:var(--red-fg);border-radius:4px;padding:1px 6px;">Expired</span>
+            {% endif %}
+          {% endif %}
+        </div>
+        {% if project.warranty_start %}
+        <form method="POST" action="{{ url_for('warranty.set_period', project_id=project.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:flex-end;margin-top:.4rem;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div><span class="muted" style="font-size:.72rem;">Start</span><br><input type="date" name="warranty_start" class="fld-sm" value="{{ project.warranty_start.strftime('%Y-%m-%d') }}"/></div>
+          <div><span class="muted" style="font-size:.72rem;">End</span><br><input type="date" name="warranty_end" class="fld-sm" value="{{ project.warranty_end.strftime('%Y-%m-%d') if project.warranty_end else '' }}"/></div>
+          <button type="submit" class="obtn">Save period</button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('warranty.start', project_id=project.id) }}" style="margin-top:.4rem;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="obtn">Start 1-year warranty</button>
+          <span class="muted" style="margin-left:.5rem;font-size:.78rem;">From the closeout date; adds an expiry reminder.</span>
+        </form>
+        {% endif %}
+
+        <p class="muted" style="font-size:.8rem;margin:.5rem 0 .3rem;">Warranty calls</p>
+        {% for call in project.warranty_calls %}
+        <div style="padding:.3rem 0;border-top:1px solid var(--border);">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span style="font-size:.84rem;">{{ call.call_date.strftime('%Y-%m-%d') if call.call_date }} · {{ call.issue }}</span>
+            <span class="flex items-center gap-2">
+              <span class="{{ 'c-green' if call.status == 'resolved' else 'c-amber' }}" style="font-size:.72rem;">{{ call.status }}</span>
+              <form method="POST" action="{{ url_for('warranty.resolve_call', call_id=call.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="lnk" style="font-size:.78rem;">{{ 'Reopen' if call.status == 'resolved' else 'Resolve' }}</button></form>
+              <form method="POST" action="{{ url_for('warranty.delete_call', call_id=call.id) }}" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>
+            </span>
+          </div>
+          {% if call.resolution %}<p class="muted" style="font-size:.78rem;">Resolution: {{ call.resolution }}</p>{% endif %}
+          <div class="flex flex-wrap gap-2" style="margin-top:.2rem;align-items:center;">
+            {% for ph in call.photos %}<a href="{{ url_for('warranty.download_photo', photo_id=ph.id) }}" target="_blank" class="lnk" style="font-size:.72rem;">{{ ph.original_name or 'photo' }}</a>
+            <form method="POST" action="{{ url_for('warranty.delete_photo', photo_id=ph.id) }}" style="display:inline;margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="linkbtn danger">✕</button></form>{% endfor %}
+            <form method="POST" action="{{ url_for('warranty.upload_photo', call_id=call.id) }}" enctype="multipart/form-data" style="display:flex;gap:.3rem;align-items:center;margin:0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input type="file" name="file" class="fld-sm" style="max-width:150px;font-size:.75rem;"/>
+              <button type="submit" class="obtn" style="font-size:.72rem;">Add photo</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+        <form method="POST" action="{{ url_for('warranty.add_call', project_id=project.id) }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.4rem;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="date" name="call_date" class="fld-sm"/>
+          <input name="issue" class="fld-sm" placeholder="Issue / claim" style="flex:1;min-width:140px;"/>
+          <button type="submit" class="obtn">Log call</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <p class="muted" style="margin-top:.5rem;">Permits ({{ permits|length }})</p>
+      {% for p in permits %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('permits.edit', permit_id=p.id) }}">{{ p.permit_type or 'Permit' }}{% if p.permit_number %} · #{{ p.permit_number }}{% endif %}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(p.status,'text-gray-300 border-gray-500') }}">{{ p.status }}</span><span class="muted">{{ p.inspections|length }} insp</span></span></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
+
+      <form method="POST" action="{{ url_for('add_project_permit', project_id=project.id) }}"
+            style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="muted" style="margin-bottom:.5rem;">Add a job permit</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <select name="permit_type" class="fld-sm" required>
+            <option value="General">General</option>
+            <option value="Building">Building</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Plumbing">Plumbing</option>
+            <option value="HVAC">HVAC</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Roofing">Roofing</option>
+            <option value="Other">Other</option>
+          </select>
+          <input name="permit_number" class="fld-sm" placeholder="Permit #">
+          <input name="issuing_authority" class="fld-sm" placeholder="Issuing authority">
+          <select name="status" class="fld-sm">
+            <option value="Applied">Applied</option>
+            <option value="Issued">Issued</option>
+            <option value="Expired">Expired</option>
+            <option value="Finaled">Finaled</option>
+            <option value="Closed">Closed</option>
+          </select>
+          <input type="date" name="applied_date" class="fld-sm" value="{{ today }}">
+          <input type="date" name="expiration_date" class="fld-sm" title="Expiration date">
+        </div>
+        <textarea name="notes" class="fld-sm" style="margin-top:.5rem;width:100%;" placeholder="Notes" rows="2"></textarea>
+        <button type="submit" class="obtn accent" style="margin-top:.5rem;">Add permit</button>
+      </form>
+
+      <p class="muted" style="margin-top:.85rem;">Waivers &amp; Certificates ({{ documents|length }})</p>
+      {% for d in documents %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('waivers.edit', doc_id=d.id) }}">{{ d.doc_kind.replace('_',' ')|title }}</a>
+        <a class="c-accent" style="font-size:.75rem;" href="{{ url_for('waivers.pdf', doc_id=d.id) }}" target="_blank">PDF</a></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
+    </div>

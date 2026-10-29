@@ -1,0 +1,75 @@
+
+    <div class="card" style="padding:1.1rem 1.25rem;margin-bottom:1.5rem;">
+      <div class="pbar-wrap" style="margin-bottom:.95rem;">
+        <div class="flex justify-between">
+          <span class="pbar-lbl">Completion</span>
+          <span class="muted" style="font-size:.78rem;">{{ project.progress or 0 }}%</span>
+        </div>
+        <div class="pbar"><span style="width:{{ [project.progress or 0, 100]|min }}%;"></span></div>
+      </div>
+      <div class="pbar-wrap">
+        <div class="flex justify-between">
+          <span class="pbar-lbl">Billed</span>
+          <span class="muted" style="font-size:.78rem;">
+            {% if billed_pct is not none %}{{ billed_pct }}% · ${{ '{:,.0f}'.format(billed_total) }} of ${{ '{:,.0f}'.format(contract_total) }}{% else %}No contract{% endif %}
+          </span>
+        </div>
+        <div class="pbar billed"><span style="width:{{ billed_pct or 0 }}%;"></span></div>
+      </div>
+    </div>
+
+    {% include 'partials/job_activity.html' %}
+
+    <!-- Client portal -->
+    {% set portal_active = project.portal_token and not project.portal_token_revoked_at %}
+    <div class="card" style="padding:1.25rem;margin-bottom:1rem;">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p class="sec-title">Client portal</p>
+          <p class="muted" style="margin-top:.35rem;">
+            {% if portal_active %}A private, read-only link is live for this job.
+            {% else %}Share a private link — status, invoices, change orders, and documents. No login for the client.{% endif %}
+          </p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          {% if portal_active %}
+          {% set portal_link = url_for('portal.view', token=project.portal_token, _external=True) %}
+          <input id="portal-link" readonly value="{{ portal_link }}" class="fld-sm" style="min-width:15rem;"/>
+          <button type="button" onclick="copyPortal()" class="obtn">Copy</button>
+          <a href="{{ portal_link }}" target="_blank" class="obtn">Open</a>
+          {% if project.customer and project.customer.email %}
+          <form method="POST" action="{{ url_for('portal.email', project_id=project.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="obtn accent">✉ Email to {{ project.customer.name }}</button>
+          </form>
+          {% endif %}
+          <form method="POST" action="{{ url_for('portal.regenerate', project_id=project.id) }}"
+                onsubmit="return confirm('Create a new link? The current one will stop working.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="obtn">New link</button>
+          </form>
+          <form method="POST" action="{{ url_for('portal.revoke', project_id=project.id) }}"
+                onsubmit="return confirm('Revoke the client link? The client will lose access.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="obtn red">Revoke</button>
+          </form>
+          {% else %}
+          <form method="POST" action="{{ url_for('portal.enable', project_id=project.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="obtn accent">Enable client portal</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <script>
+      function copyPortal() {
+        var el = document.getElementById('portal-link');
+        if (!el) return;
+        el.select();
+        navigator.clipboard.writeText(el.value).then(function(){
+          var b = event.target; var t = b.textContent; b.textContent = 'Copied';
+          setTimeout(function(){ b.textContent = t; }, 1200);
+        });
+      }
+    </script>

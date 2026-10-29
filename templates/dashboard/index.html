@@ -32,6 +32,14 @@
   .listrow .m{font-size:.75rem;color:var(--ink-500);}
   .pill{font-size:10px;border:1px solid;border-radius:4px;padding:1px 6px;text-transform:uppercase;white-space:nowrap;}
   .sect-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-500);font-weight:600;margin-bottom:.5rem;}
+  .ministat-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:1.5rem;}
+  @media(min-width:768px){.ministat-strip{grid-template-columns:repeat(4,minmax(0,1fr));}}
+  a.ministat{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;
+             background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+             padding:.6rem .85rem;text-decoration:none;transition:border-color .15s;}
+  a.ministat:hover{border-color:var(--accent);}
+  a.ministat .ms-lab{font-size:.78rem;color:var(--ink-500);}
+  a.ministat .ms-val{font-size:1.05rem;font-weight:700;color:var(--ink-900);}
 </style>
 
 <div class="dash">
@@ -43,17 +51,17 @@
     </div>
   </div>
 
-  <!-- KPIs -->
-  <div class="kgrid" style="margin-bottom:1.5rem;">
+  <!-- Hero metrics -->
+  <div class="kgrid" style="margin-bottom:1rem;">
     <a href="{{ url_for('projects') }}" class="kpi">
       <div class="lbl">Active Jobs</div>
       <div class="val">{{ active_projects }}</div>
       <div class="foot">{{ project_count }} total</div>
     </a>
-    <a href="{{ url_for('workers') }}" class="kpi">
-      <div class="lbl">Active Workers</div>
-      <div class="val">{{ active_workers }}</div>
-      <div class="foot">{{ worker_count }} total</div>
+    <a href="{{ url_for('quotes.index') }}" class="kpi">
+      <div class="lbl">Pending Proposals</div>
+      <div class="val">{{ pending_quote_count }}</div>
+      <div class="foot">${{ '{:,.0f}'.format(pending_quote_value) }} outstanding</div>
     </a>
     <a href="{{ url_for('income') }}" class="kpi">
       <div class="lbl">Revenue</div>
@@ -65,26 +73,14 @@
       <div class="val {{ 'c-green' if net_profit >= 0 else 'c-red' }}">${{ '{:,.0f}'.format(net_profit) }}</div>
       <div class="foot">income − expenses − pay</div>
     </a>
-    <a href="{{ url_for('quotes.index') }}" class="kpi">
-      <div class="lbl">Pending Proposals</div>
-      <div class="val">{{ pending_quote_count }}</div>
-      <div class="foot">${{ '{:,.0f}'.format(pending_quote_value) }} outstanding</div>
-    </a>
-    <a href="{{ url_for('quotes.customers') }}" class="kpi">
-      <div class="lbl">Customers</div>
-      <div class="val">{{ customer_count }}</div>
-      <div class="foot">on file</div>
-    </a>
-    <a href="{{ url_for('expenses') }}" class="kpi">
-      <div class="lbl">Expenses</div>
-      <div class="val">${{ '{:,.0f}'.format(total_expenses) }}</div>
-      <div class="foot">to date</div>
-    </a>
-    <a href="{{ url_for('reminders.index') }}" class="kpi">
-      <div class="lbl">Reminders</div>
-      <div class="val">{{ upcoming_reminders|length }}</div>
-      <div class="foot">due in 30 days</div>
-    </a>
+  </div>
+
+  <!-- Secondary stats (demoted from hero row; still reachable here and in their sections) -->
+  <div class="ministat-strip">
+    <a href="{{ url_for('workers') }}" class="ministat"><span class="ms-lab">Active Workers</span><span class="ms-val">{{ active_workers }}</span></a>
+    <a href="{{ url_for('quotes.customers') }}" class="ministat"><span class="ms-lab">Customers</span><span class="ms-val">{{ customer_count }}</span></a>
+    <a href="{{ url_for('expenses') }}" class="ministat"><span class="ms-lab">Expenses</span><span class="ms-val">${{ '{:,.0f}'.format(total_expenses) }}</span></a>
+    <a href="{{ url_for('reminders.index') }}" class="ministat"><span class="ms-lab">Reminders</span><span class="ms-val">{{ upcoming_reminders|length }}</span></a>
   </div>
 
   <!-- Quick actions -->

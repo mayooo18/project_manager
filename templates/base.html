@@ -180,62 +180,74 @@
                 <span class="material-icons">dashboard</span> Overview
             </a>
 
-            <!-- Operations -->
-            <div class="sb-group-label">Operations</div>
-            <a href="{{ url_for('projects') }}" class="sb-link {{ 'active' if request.endpoint in ['projects', 'project_detail'] }}">
-                <span class="material-icons">work</span> Jobs
-            </a>
-            <a href="{{ url_for('reports.index') }}" class="sb-link {{ 'active' if request.endpoint in ['reports.index', 'reports.edit'] }}">
-                <span class="material-icons">assessment</span> Weekly Reports
-            </a>
-            <a href="{{ url_for('program.index') }}" class="sb-link {{ 'active' if request.endpoint == 'program.index' }}">
-                <span class="material-icons">event</span> Program
-            </a>
+            <!-- Operations (collapsible) -->
+            {% set operations_eps = ['projects', 'project_detail', 'reports.index', 'reports.edit', 'program.index'] %}
+            <details class="sb-coll" id="grp-operations" {{ 'open data-active=1' if request.endpoint in operations_eps }}>
+                <summary><span>Operations</span><span class="material-icons chev">expand_more</span></summary>
+                <a href="{{ url_for('projects') }}" class="sb-link {{ 'active' if request.endpoint in ['projects', 'project_detail'] }}">
+                    <span class="material-icons">work</span> Jobs
+                </a>
+                <a href="{{ url_for('reports.index') }}" class="sb-link {{ 'active' if request.endpoint in ['reports.index', 'reports.edit'] }}">
+                    <span class="material-icons">assessment</span> Weekly Reports
+                </a>
+                <a href="{{ url_for('program.index') }}" class="sb-link {{ 'active' if request.endpoint == 'program.index' }}">
+                    <span class="material-icons">event</span> Program
+                </a>
+            </details>
 
-            <!-- Sales -->
-            <div class="sb-group-label">Sales</div>
-            <a href="{{ url_for('quotes.customers') }}" class="sb-link {{ 'active' if request.endpoint in ['quotes.customers', 'quotes.customer_detail'] }}">
-                <span class="material-icons">people</span> Customers
-            </a>
-            <a href="{{ url_for('quotes.index') }}" class="sb-link {{ 'active' if request.endpoint in ['quotes.index', 'quotes.new', 'quotes.edit'] }}">
-                <span class="material-icons">description</span> Proposals
-            </a>
-            <a href="{{ url_for('contracts.index') }}" class="sb-link {{ 'active' if request.endpoint in ['contracts.index', 'contracts.new', 'contracts.edit'] }}">
-                <span class="material-icons">article</span> Contracts
-            </a>
+            <!-- Sales (collapsible) -->
+            {% set sales_eps = ['quotes.customers', 'quotes.customer_detail', 'quotes.index', 'quotes.new', 'quotes.edit', 'contracts.index', 'contracts.new', 'contracts.edit'] %}
+            <details class="sb-coll" id="grp-sales" {{ 'open data-active=1' if request.endpoint in sales_eps }}>
+                <summary><span>Sales</span><span class="material-icons chev">expand_more</span></summary>
+                <a href="{{ url_for('quotes.customers') }}" class="sb-link {{ 'active' if request.endpoint in ['quotes.customers', 'quotes.customer_detail'] }}">
+                    <span class="material-icons">people</span> Customers
+                </a>
+                <a href="{{ url_for('quotes.index') }}" class="sb-link {{ 'active' if request.endpoint in ['quotes.index', 'quotes.new', 'quotes.edit'] }}">
+                    <span class="material-icons">description</span> Proposals
+                </a>
+                <a href="{{ url_for('contracts.index') }}" class="sb-link {{ 'active' if request.endpoint in ['contracts.index', 'contracts.new', 'contracts.edit'] }}">
+                    <span class="material-icons">article</span> Contracts
+                </a>
+            </details>
 
-            <!-- Finance -->
-            <div class="sb-group-label">Finance</div>
-            <a href="{{ url_for('invoices.index') }}" class="sb-link {{ 'active' if request.endpoint in ['invoices.index', 'invoices.new', 'invoices.edit'] }}">
-                <span class="material-icons">receipt_long</span> Invoices
-            </a>
-            <a href="{{ url_for('income') }}" class="sb-link {{ 'active' if request.endpoint == 'income' }}">
-                <span class="material-icons">trending_up</span> Income
-            </a>
-            <a href="{{ url_for('expenses') }}" class="sb-link {{ 'active' if request.endpoint == 'expenses' }}">
-                <span class="material-icons">trending_down</span> Expenses
-            </a>
-            <a href="{{ url_for('payments') }}" class="sb-link {{ 'active' if request.endpoint == 'payments' }}">
-                <span class="material-icons">account_balance_wallet</span> Payments
-            </a>
-            <a href="{{ url_for('profitability') }}" class="sb-link {{ 'active' if request.endpoint == 'profitability' }}">
-                <span class="material-icons">bar_chart</span> Profitability
-            </a>
+            <!-- Finance (collapsible) -->
+            {% set finance_eps = ['invoices.index', 'invoices.new', 'invoices.edit', 'income', 'expenses', 'payments', 'profitability'] %}
+            <details class="sb-coll" id="grp-finance" {{ 'open data-active=1' if request.endpoint in finance_eps }}>
+                <summary><span>Finance</span><span class="material-icons chev">expand_more</span></summary>
+                <a href="{{ url_for('invoices.index') }}" class="sb-link {{ 'active' if request.endpoint in ['invoices.index', 'invoices.new', 'invoices.edit'] }}">
+                    <span class="material-icons">receipt_long</span> Invoices
+                </a>
+                <a href="{{ url_for('income') }}" class="sb-link {{ 'active' if request.endpoint == 'income' }}">
+                    <span class="material-icons">trending_up</span> Income
+                </a>
+                <a href="{{ url_for('expenses') }}" class="sb-link {{ 'active' if request.endpoint == 'expenses' }}">
+                    <span class="material-icons">trending_down</span> Expenses
+                </a>
+                <a href="{{ url_for('payments') }}" class="sb-link {{ 'active' if request.endpoint == 'payments' }}">
+                    <span class="material-icons">account_balance_wallet</span> Payments
+                </a>
+                <a href="{{ url_for('profitability') }}" class="sb-link {{ 'active' if request.endpoint == 'profitability' }}">
+                    <span class="material-icons">bar_chart</span> Profitability
+                </a>
+            </details>
 
-            <!-- Team -->
-            <div class="sb-group-label">Team</div>
-            <a href="{{ url_for('workers') }}" class="sb-link {{ 'active' if request.endpoint == 'workers' }}">
-                <span class="material-icons">groups</span> Workers
-            </a>
-            <a href="{{ url_for('timeclock') }}" class="sb-link {{ 'active' if request.endpoint == 'timeclock' }}">
-                <span class="material-icons">schedule</span> Time Clock
-            </a>
-            <a href="{{ url_for('work_logs') }}" class="sb-link {{ 'active' if request.endpoint == 'work_logs' }}">
-                <span class="material-icons">assignment</span> Work Logs
-            </a>
-            <a href="{{ url_for('payroll.index') }}" class="sb-link {{ 'active' if request.endpoint == 'payroll.index' }}">
-                <span class="material-icons">paid</span> Payroll
-            </a>
+            <!-- Team (collapsible) -->
+            {% set team_eps = ['workers', 'timeclock', 'work_logs', 'payroll.index'] %}
+            <details class="sb-coll" id="grp-team" {{ 'open data-active=1' if request.endpoint in team_eps }}>
+                <summary><span>Team</span><span class="material-icons chev">expand_more</span></summary>
+                <a href="{{ url_for('workers') }}" class="sb-link {{ 'active' if request.endpoint == 'workers' }}">
+                    <span class="material-icons">groups</span> Workers
+                </a>
+                <a href="{{ url_for('timeclock') }}" class="sb-link {{ 'active' if request.endpoint == 'timeclock' }}">
+                    <span class="material-icons">schedule</span> Time Clock
+                </a>
+                <a href="{{ url_for('work_logs') }}" class="sb-link {{ 'active' if request.endpoint == 'work_logs' }}">
+                    <span class="material-icons">assignment</span> Work Logs
+                </a>
+                <a href="{{ url_for('payroll.index') }}" class="sb-link {{ 'active' if request.endpoint == 'payroll.index' }}">
+                    <span class="material-icons">paid</span> Payroll
+                </a>
+            </details>
 
             <!-- Compliance (collapsible) -->
             {% set compliance_eps = ['permits.index', 'permits.add', 'permits.edit', 'licenses.index', 'licenses.add', 'licenses.edit', 'subcontractors.index', 'subcontractors.add', 'subcontractors.edit', 'waivers.index', 'waivers.new', 'waivers.edit'] %}
@@ -375,6 +387,23 @@
     window.addEventListener('resize', function () {
         if (window.innerWidth >= 1024) closeSidebar();
     });
+    // Remember which sidebar groups are open across pages (active group always wins).
+    (function () {
+        var KEY = 'sb-groups';
+        var saved = {};
+        try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+        document.querySelectorAll('.sb-nav details.sb-coll').forEach(function (d) {
+            if (!d.id) return;
+            if (d.hasAttribute('data-active')) {
+                d.open = true;                      // current page's group: force open
+            } else if (saved.hasOwnProperty(d.id)) {
+                d.open = saved[d.id];               // otherwise restore last choice
+            }
+            d.addEventListener('toggle', function () {
+                try { saved[d.id] = d.open; localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+            });
+        });
+    })();
     function toggleAvatar(e) {
         e.stopPropagation();
         document.getElementById('avatar-wrap').classList.toggle('open');

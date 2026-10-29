@@ -1,0 +1,36 @@
+    {% set tstyle = {'assigned':'text-gray-300 border-gray-500','in_progress':'text-blue-300 border-blue-500','done':'text-green-300 border-green-500'} %}
+    <div class="card" style="padding:1.25rem;">
+      <p class="sec-title" style="margin-bottom:.85rem;">Crew tasks</p>
+      {% if tasks %}
+      <div style="margin-bottom:1rem;">
+        {% for t in tasks %}
+        <div class="row">
+          <div style="min-width:0;">
+            <p style="font-size:.88rem;color:var(--ink-700);{{ 'text-decoration:line-through;color:var(--ink-500);' if t.status == 'done' }}">{{ t.description }}</p>
+            <p class="muted">{{ t.worker.name if t.worker else 'Unassigned' }}{% if t.due_date %} · due {{ t.due_date.strftime('%b %d') }}{% endif %}</p>
+          </div>
+          <span class="flex items-center gap-2 flex-shrink-0">
+            <span class="pill {{ tstyle.get(t.status, 'text-gray-300 border-gray-500') }}">{{ t.status.replace('_', ' ') }}</span>
+            <form method="POST" action="{{ url_for('delete_task', task_id=t.id) }}" onsubmit="return confirm('Remove this task?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="linkbtn danger" style="font-size:.9rem;">✕</button>
+            </form>
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="muted" style="margin-bottom:1rem;">No tasks yet.</p>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('add_task', project_id=project.id) }}" class="task-grid">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" name="description" placeholder="Task description…" required class="fld-sm"/>
+        <select name="worker_id" class="fld-sm">
+          <option value="0">— Assign to —</option>
+          {% for w in workers %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+        </select>
+        <input type="date" name="due_date" class="fld-sm"/>
+        <button type="submit" class="obtn accent">Assign</button>
+      </form>
+    </div>

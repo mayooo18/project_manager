@@ -1,0 +1,151 @@
+
+    <!-- Money snapshot (full) -->
+    <div class="kgrid" style="margin-bottom:1.5rem;">
+      <div class="kpi"><p class="k">Contract</p><p class="v">${{ '{:,.0f}'.format(contract_total) }}</p></div>
+      <div class="kpi"><p class="k">Billed</p><p class="v">${{ '{:,.0f}'.format(billed_total) }}</p></div>
+      <div class="kpi"><p class="k">Paid</p><p class="v">${{ '{:,.0f}'.format(paid_total) }}</p></div>
+      <div class="kpi"><p class="k">Profit</p><p class="v {{ 'c-green' if profit >= 0 else 'c-red' }}">${{ '{:,.0f}'.format(profit) }}</p></div>
+      <div class="kpi"><p class="k">Income</p><p class="v sm">${{ '{:,.0f}'.format(income_total) }}</p></div>
+      <div class="kpi"><p class="k">Expenses</p><p class="v sm">${{ '{:,.0f}'.format(expenses_total) }}</p></div>
+      <div class="kpi"><p class="k">Labor</p><p class="v sm">${{ '{:,.0f}'.format(labor_total) }}</p></div>
+      <div class="kpi"><p class="k">Work logs</p><p class="v sm">{{ work_logs|length }}</p></div>
+    </div>
+
+    {% if expense_categories %}
+    <div class="card" style="padding:1.25rem;margin-bottom:1.5rem;">
+      <p class="sec-title" style="margin-bottom:.85rem;">Expenses by category</p>
+      <div class="catgrid">
+        {% for label, amount in expense_categories %}
+        <div class="kpi"><p class="k">{{ label }}</p><p class="v sm">${{ '{:,.0f}'.format(amount) }}</p></div>
+        {% endfor %}
+      </div>
+      <p class="muted" style="margin-top:.85rem;">Labor isn't shown here — it's tracked separately under the Labor total above (crew time clock + work logs).</p>
+    </div>
+    {% endif %}
+
+    <div class="card" style="padding:1.25rem;margin-bottom:1.5rem;">
+      <div class="flex items-center justify-between gap-3 flex-wrap" style="margin-bottom:1rem;">
+        <div>
+          <p class="sec-title">Money entries</p>
+          <p class="muted" style="margin-top:.25rem;">Quick-add records already linked to this job.</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <a href="{{ url_for('expenses') }}" class="obtn">Expense history</a>
+          <a href="{{ url_for('payments') }}" class="obtn">Payment history</a>
+          <a href="{{ url_for('income') }}" class="obtn">Income history</a>
+        </div>
+      </div>
+      <div class="money-entry-grid">
+        <form class="mini-form" method="POST" enctype="multipart/form-data" action="{{ url_for('add_project_expense', project_id=project.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <p class="sec-title" style="font-size:.9rem;margin-bottom:.75rem;">Add expense</p>
+          <label class="muted">Category</label>
+          <select name="category" class="fld-sm">
+            {% for key, label in expense_categories_choices %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+          </select>
+          <label class="muted">Amount</label>
+          <input name="amount" type="number" step="0.01" class="fld-sm" required>
+          <label class="muted">Description</label>
+          <input name="description" type="text" class="fld-sm">
+          <label class="muted">Date</label>
+          <input name="date" type="date" value="{{ today }}" class="fld-sm">
+          <label class="muted">Receipt</label>
+          <input name="receipt" type="file" accept="image/*,application/pdf" class="fld-sm">
+          <label class="muted">Note</label>
+          <textarea name="note" rows="2" class="fld-sm"></textarea>
+          <button type="submit" class="obtn accent">Add expense</button>
+        </form>
+
+        <form class="mini-form" method="POST" enctype="multipart/form-data" action="{{ url_for('add_project_payment', project_id=project.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <p class="sec-title" style="font-size:.9rem;margin-bottom:.75rem;">Record payment</p>
+          <label class="muted">Worker</label>
+          <select name="worker_id" class="fld-sm">
+            <option value="">— None —</option>
+            {% for worker in workers %}<option value="{{ worker.id }}">{{ worker.name }}</option>{% endfor %}
+          </select>
+          <label class="muted">Amount</label>
+          <input name="amount" type="number" step="0.01" class="fld-sm" required>
+          <label class="muted">Date</label>
+          <input name="payment_date" type="date" value="{{ today }}" class="fld-sm">
+          <label class="muted">Method</label>
+          <input name="method" type="text" class="fld-sm" placeholder="Cash, Check, Zelle...">
+          <label class="muted">Receipt</label>
+          <input name="receipt" type="file" accept="image/*,application/pdf" class="fld-sm">
+          <label class="muted">Note</label>
+          <textarea name="note" rows="2" class="fld-sm"></textarea>
+          <button type="submit" class="obtn accent">Record payment</button>
+        </form>
+
+        <form class="mini-form" method="POST" action="{{ url_for('add_project_income', project_id=project.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <p class="sec-title" style="font-size:.9rem;margin-bottom:.75rem;">Record income</p>
+          <label class="muted">Amount</label>
+          <input name="amount" type="number" step="0.01" class="fld-sm" required>
+          <label class="muted">Source</label>
+          <input name="source" type="text" class="fld-sm" placeholder="Deposit, cash payment...">
+          <label class="muted">Date</label>
+          <input name="date" type="date" value="{{ today }}" class="fld-sm">
+          <label class="muted">Note</label>
+          <textarea name="note" rows="2" class="fld-sm"></textarea>
+          <button type="submit" class="obtn accent">Record income</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Sales & Billing -->
+    <div class="card" style="padding:1.25rem;margin-bottom:1.5rem;">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <p class="sec-title">Sales &amp; Billing</p>
+        <div class="flex gap-2 flex-wrap">
+          <a href="{{ url_for('quotes.new') }}" class="obtn">+ Proposal</a>
+          <a href="{{ url_for('contracts.new') }}" class="obtn">+ Contract</a>
+          <a href="{{ url_for('invoices.new') }}" class="obtn">+ Invoice</a>
+        </div>
+      </div>
+
+      <p class="muted" style="margin-top:.5rem;">Proposals ({{ proposals|length }})</p>
+      {% for q in proposals %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('quotes.edit', quote_id=q.id) }}">{{ q.title }}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(q.status,'text-gray-300 border-gray-500') }}">{{ q.status }}</span><span style="color:var(--ink-700);font-size:.88rem;">${{ '%.0f'|format(q.total or 0) }}</span></span></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
+
+      <p class="muted" style="margin-top:.85rem;">Contracts ({{ contracts|length }})</p>
+      {% for c in contracts %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('contracts.edit', contract_id=c.id) }}">{{ c.number or ('Contract #' ~ c.id) }}</a>
+        <span class="muted">${{ '%.0f'|format(c.billed_to_date) }} billed / ${{ '%.0f'|format(c.contract_total or 0) }}</span></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
+
+      {% if change_orders %}
+      <p class="muted" style="margin-top:.85rem;">Change Orders ({{ change_orders|length }})</p>
+      {% for co in change_orders %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('change_orders.edit', change_order_id=co.id) }}">{{ co.number }} · {{ co.title }}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(co.status,'text-gray-300 border-gray-500') }}">{{ co.status }}</span><span style="color:var(--ink-700);font-size:.88rem;">${{ '%.0f'|format(co.total or 0) }}</span></span></div>
+      {% endfor %}
+      {% endif %}
+
+      <p class="muted" style="margin-top:.85rem;">Invoices ({{ invoices|length }})</p>
+      {% for inv in invoices %}
+      <div class="row"><a class="lk" style="font-size:.88rem;" href="{{ url_for('invoices.edit', invoice_id=inv.id) }}">{{ inv.number or ('Invoice #' ~ inv.id) }}</a>
+        <span class="flex items-center gap-2"><span class="pill {{ status_styles.get(inv.status,'text-gray-300 border-gray-500') }}">{{ inv.status }}</span><span style="color:var(--ink-700);font-size:.88rem;">${{ '%.0f'|format(inv.total or 0) }}</span></span></div>
+      {% else %}<p class="muted" style="padding:.25rem 0;">None yet.</p>{% endfor %}
+    </div>
+
+    <!-- Cost estimates (F15) — moved here from Field & Compliance -->
+    {% if project.contracts or project.cost_estimates %}
+    <div class="card" style="padding:1.25rem;margin-bottom:1.5rem;">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <strong style="font-size:.9rem;color:var(--ink-900);">Cost estimates</strong>
+        <form method="POST" action="{{ url_for('estimates.new', project_id=project.id) }}" style="margin:0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="obtn">+ New estimate</button>
+        </form>
+      </div>
+      {% for est in project.cost_estimates %}
+      <div class="flex items-center justify-between gap-2" style="padding:.3rem 0;border-top:1px solid var(--border);">
+        <a href="{{ url_for('estimates.edit', estimate_id=est.id) }}" class="lnk" style="font-size:.85rem;">{{ est.name }}</a>
+        <span class="muted" style="font-size:.8rem;">cost ${{ '{:,.0f}'.format(est.total_cost) }}{% if est.margin_pct is not none %} · margin <span class="{{ 'c-green' if est.margin_amount >= 0 else 'c-red' }}">{{ '%.0f'|format(est.margin_pct) }}%</span>{% endif %}</span>
+      </div>
+      {% else %}<p class="muted" style="font-size:.82rem;margin-top:.25rem;">No estimates yet.</p>{% endfor %}
+    </div>
+    {% endif %}
