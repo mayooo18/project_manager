@@ -21,3 +21,6 @@ reset_business_data.py
 .DS_Store
 .vscode/
 node_modules
+
+# Local dev login credentials (never commit)
+DEV_LOGIN.txt
