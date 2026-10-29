@@ -307,10 +307,18 @@ def home():
     from models import Customer, Quote, Reminder
 
     worker_count = Worker.query.count()
-    project_count = Project.query.count()
 
     # ── Dashboard metrics ──
-    active_projects = Project.query.filter_by(status='Active').count()
+    # "Jobs" = signed work only (matches the Jobs list in projects()): a project
+    # counts once one of its contracts is e-signed. Keep these two in sync.
+    signed_pids = [pid for (pid,) in db.session.query(Contract.project_id)
+                   .filter(Contract.signed_at.isnot(None),
+                           Contract.project_id.isnot(None))
+                   .distinct().all()]
+    project_count = len(signed_pids)
+    active_projects = (Project.query
+                       .filter(Project.id.in_(signed_pids),
+                               Project.status == 'Active').count())
     active_workers = Worker.query.filter_by(active=True).count()
     customer_count = Customer.query.filter_by(user_id=current_user.id).count()
 
@@ -1548,9 +1556,14 @@ def edit_expense(expense_id):
 @login_required
 def profitability():
     projects = (Project.query
-                .options(selectinload(Project.expenses), selectinload(Project.incomes))
+                .options(selectinload(Project.expenses),
+                         selectinload(Project.incomes),
+                         selectinload(Project.contracts))
                 .order_by(Project.name.asc())
                 .all())
+    # Signed work only — match the Jobs list / dashboard definition: a project
+    # appears once one of its contracts is e-signed (Contract.signed_at set).
+    projects = [p for p in projects if any(c.signed_at for c in p.contracts)]
     data = []
 
     for project in projects:
