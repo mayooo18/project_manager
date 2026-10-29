@@ -53,7 +53,7 @@
     <div>
       <div class="sect-label" style="color:var(--accent);letter-spacing:.08em;">Operations</div>
       <h1>Jobs</h1>
-      <div class="sub">Jobs begin automatically when an approved proposal is converted into a contract.</div>
+      <div class="sub">Jobs begin automatically when a contract is signed.</div>
     </div>
   </div>
 
@@ -233,7 +233,7 @@
     <p class="muted" style="margin-top:.5rem;">Try clearing the search or status filter.</p>
     <a href="{{ url_for('projects') }}" class="c-accent" style="display:inline-block;margin-top:.75rem;">Clear filters</a>
     {% else %}
-    <p class="muted" style="margin-top:.5rem;max-width:32rem;margin-left:auto;margin-right:auto;">Start with a customer and proposal. When the approved proposal becomes a contract, its Job will appear here automatically.</p>
+    <p class="muted" style="margin-top:.5rem;max-width:32rem;margin-left:auto;margin-right:auto;">Start with a customer and proposal. Once the contract is signed, its Job will appear here automatically.</p>
     <div class="flex justify-center gap-3" style="margin-top:1.25rem;">
       <a href="{{ url_for('quotes.customers') }}" class="obtn">Customers</a>
       <a href="{{ url_for('quotes.new') }}" class="btn">New Proposal</a>

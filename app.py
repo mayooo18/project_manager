@@ -483,6 +483,11 @@ def projects():
                     .order_by(Project.id.desc())
                     .all())
 
+    # Jobs = signed work only: a project appears once one of its contracts is
+    # e-signed (Contract.signed_at set). Unsigned/draft work stays off the list.
+    all_projects = [p for p in all_projects
+                    if any(c.signed_at for c in p.contracts)]
+
     if project_form.validate_on_submit() and 'add_project' in request.form:
         new_project = Project(
             name=project_form.name.data,
