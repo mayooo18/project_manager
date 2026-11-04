@@ -48,7 +48,7 @@ PAGE_SIZE = 100
 # 'sent' (awaiting signature) and 'accepted' (signed, not yet started) are
 # in-progress work, so they belong in Active — not hidden until 'all'.
 CONTRACT_ACTIVE_STATUSES = ('draft', 'sent', 'accepted', 'active')
-CONTRACT_ARCHIVED_STATUSES = ('completed',)
+CONTRACT_ARCHIVED_STATUSES = ('completed', 'archived')
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
@@ -789,6 +789,9 @@ def combine():
 @login_required
 def send(contract_id):
     contract = _owned_contract_or_404(contract_id)
+    if contract.status == 'archived':
+        flash('This contract is archived and cannot be sent.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
     if contract.status in ('active', 'completed'):
         flash('This contract is already under way.', 'error')
         return redirect(url_for('contracts.edit', contract_id=contract.id))
@@ -814,6 +817,9 @@ def send(contract_id):
 @login_required
 def email(contract_id):
     contract = _owned_contract_or_404(contract_id)
+    if contract.status == 'archived':
+        flash('This contract is archived and cannot be sent.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
     if contract.status in ('active', 'completed'):
         flash('This contract is already under way.', 'error')
         return redirect(url_for('contracts.edit', contract_id=contract.id))
@@ -849,6 +855,8 @@ def public_view(token):
 def public_accept(token):
     contract = Contract.query.filter_by(public_token=token).first_or_404()
     if not _contract_link_is_active(contract):
+        abort(404)
+    if contract.status == 'archived':
         abort(404)
     if contract.signed_at:
         flash('This contract has already been accepted.', 'success')
@@ -918,6 +926,11 @@ def bill_draw(contract_id, draw_id):
 
     if draw.is_billed:
         flash('That draw has already been billed.', 'error')
+        return redirect(url_for('contracts.edit', contract_id=contract.id))
+
+    # Archived contracts are kept for history only and can never be billed.
+    if contract.status == 'archived':
+        flash('This contract is archived and cannot be billed.', 'error')
         return redirect(url_for('contracts.edit', contract_id=contract.id))
 
     # Gate billing on acceptance: a contract that was sent for signature

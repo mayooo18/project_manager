@@ -41,7 +41,8 @@ def program_data():
     cards = []
     grand = {'contract': 0.0, 'billed': 0.0, 'paid': 0.0, 'retainage': 0.0, 'overdue': 0.0}
     for cu in customers:
-        contracts = list(cu.contracts)
+        # Archived contracts are history only — keep them out of program totals.
+        contracts = [c for c in cu.contracts if c.status != 'archived']
         if not contracts:
             continue
         rows = []

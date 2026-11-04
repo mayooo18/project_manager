@@ -37,7 +37,7 @@
   {% set status_styles = {
     'draft':'text-gray-300 border-gray-500','sent':'text-blue-300 border-blue-500',
     'accepted':'text-green-300 border-green-500','active':'text-blue-300 border-blue-500',
-    'completed':'text-green-300 border-green-500'} %}
+    'completed':'text-green-300 border-green-500','archived':'text-amber-300 border-amber-500'} %}
 
   {% if contracts %}
   {% for con in contracts %}
@@ -66,6 +66,17 @@
         <span style="color:var(--ink-900);font-weight:600;">${{ '%.2f'|format(con.contract_total or 0) }}</span>
         <a href="{{ url_for('contracts.edit', contract_id=con.id) }}" class="lnk">Edit</a>
         <a href="{{ url_for('contracts.pdf', contract_id=con.id) }}" target="_blank" class="lnk">PDF</a>
+        {% if current_user.is_owner and con.status == 'archived' %}
+        <form method="POST" action="{{ url_for('contract_archive.unarchive', contract_id=con.id) }}">
+          {{ delete_form.csrf_token }}<input type="hidden" name="next" value="list"/>
+          <button type="submit" class="linkbtn">Restore</button>
+        </form>
+        {% elif current_user.is_owner and con.billed_to_date == 0 %}
+        <form method="POST" action="{{ url_for('contract_archive.archive', contract_id=con.id) }}" onsubmit="return confirm('Archive this contract? It moves to the Archived tab and can no longer be billed or sent. Nothing is deleted.');">
+          {{ delete_form.csrf_token }}<input type="hidden" name="next" value="list"/>
+          <button type="submit" class="linkbtn">Archive</button>
+        </form>
+        {% endif %}
         {% if current_user.is_owner %}
         <form method="POST" action="{{ url_for('contracts.delete', contract_id=con.id) }}" onsubmit="return confirm('Delete this contract? This cannot be undone.');">
           {{ delete_form.csrf_token }}

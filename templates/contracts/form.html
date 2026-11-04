@@ -20,10 +20,28 @@
 <div class="cwrap">
   <div class="page-head">
     <h1>{{ 'Edit Contract' if contract else 'New Contract' }}{% if contract and contract.number %} <span class="muted" style="font-size:1rem;font-weight:400;">· {{ contract.number }}</span>{% endif %}
-      {% if contract %}{% set sp = {'draft':'muted','sent':'c-blue','accepted':'c-green','active':'c-blue','completed':'c-green'} %}<span class="spill {{ sp.get(contract.status, 'muted') }}" style="margin-left:.5rem;border-color:var(--border-strong);">{{ contract.status }}</span>{% endif %}
+      {% if contract %}{% set sp = {'draft':'muted','sent':'c-blue','accepted':'c-green','active':'c-blue','completed':'c-green','archived':'c-amber'} %}<span class="spill {{ sp.get(contract.status, 'muted') }}" style="margin-left:.5rem;border-color:var(--border-strong);">{{ contract.status }}</span>{% endif %}
     </h1>
     <a href="{{ url_for('contracts.index') }}" class="lnk">← All contracts</a>
   </div>
+
+  {% if contract and contract.status == 'archived' %}
+  <div class="sec" style="border-color:var(--amber-fg);background:var(--amber-bg);margin-bottom:1rem;">
+    <p style="color:var(--amber-fg);font-weight:700;">Archived — kept for history only</p>
+    <p class="muted" style="margin-top:.25rem;">Billing, emailing, share links and e-signing are turned off. Nothing was deleted.</p>
+    {% if current_user.is_owner %}
+    <form method="POST" action="{{ url_for('contract_archive.unarchive', contract_id=contract.id) }}" style="margin-top:.5rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="obtn">Restore contract</button>
+    </form>
+    {% endif %}
+  </div>
+  {% elif contract and current_user.is_owner and contract.billed_to_date == 0 %}
+  <form method="POST" action="{{ url_for('contract_archive.archive', contract_id=contract.id) }}" style="margin-bottom:1rem;" onsubmit="return confirm('Archive this contract? It moves to the Archived tab and can no longer be billed or sent. Nothing is deleted.');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <button type="submit" class="obtn">Archive contract</button>
+  </form>
+  {% endif %}
 
   <form method="POST" action="{{ url_for('contracts.edit', contract_id=contract.id) if contract else url_for('contracts.new') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -427,6 +445,8 @@
         {% elif d.is_billed %}
         <span class="spill c-blue" style="border-color:var(--blue-fg);">INVOICED</span>
         <a href="{{ url_for('invoices.edit', invoice_id=d.invoice_id) }}" class="lnk">{{ d.invoice.number }}</a>
+        {% elif contract.status == 'archived' %}
+        <span class="spill c-amber" style="border-color:var(--amber-fg);">ARCHIVED</span>
         {% elif contract.evidence_required and not d.evidence_ok %}
         <button type="button" class="obtn" disabled style="opacity:.5;cursor:not-allowed;" title="Attach evidence first">Bill this draw</button>
         {% else %}
