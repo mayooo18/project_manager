@@ -39,6 +39,7 @@
       <h1>{{ customer.name }}</h1>
       <div class="sub">{{ customer.email or '' }}{% if customer.email and customer.phone %} · {% endif %}{{ customer.phone or '' }}</div>
     </div>
+    <a href="{{ url_for('customer_edit.edit', customer_id=customer.id) }}" class="obtn">Edit customer</a>
   </div>
 
   <div class="kgrid">

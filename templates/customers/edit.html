@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Edit {{ customer.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+  <a href="{{ url_for('quotes.customer_detail', customer_id=customer.id) }}" class="lnk">← {{ customer.name }}</a>
+  <div class="page-head" style="margin-top:.5rem;"><h1>Edit customer</h1></div>
+
+  <form method="POST" class="form-card">
+    {{ form.hidden_tag() }}
+    {% for field in [form.name, form.email, form.phone, form.address] %}
+    <div class="field">
+      {{ field.label }}
+      {{ field(class_='fld') }}
+      {% for e in field.errors %}<p class="c-red" style="font-size:.8rem;">{{ e }}</p>{% endfor %}
+    </div>
+    {% endfor %}
+    <div class="field">
+      {{ form.notes.label }}
+      {{ form.notes(class_='fld', rows=3) }}
+    </div>
+    <p class="hint">The email is where contracts, invoices and lot releases are sent when you use "Email".</p>
+    <div class="form-foot">
+      <a href="{{ url_for('quotes.customer_detail', customer_id=customer.id) }}" class="c-accent" style="font-size:.88rem;">← Cancel</a>
+      {{ form.submit(class_='btn') }}
+    </div>
+  </form>
+</div>
+{% endblock %}

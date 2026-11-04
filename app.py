@@ -28,6 +28,7 @@ from quote_routes import quote_bp
 from invoice_routes import invoice_bp
 from contract_routes import contract_bp
 from contract_archive_routes import contract_archive_bp
+from customer_edit_routes import customer_edit_bp
 from change_order_routes import change_order_bp
 from subcontractor_routes import subcontractor_bp
 from license_routes import license_bp
@@ -76,6 +77,7 @@ app.register_blueprint(quote_bp)
 app.register_blueprint(invoice_bp)
 app.register_blueprint(contract_bp)
 app.register_blueprint(contract_archive_bp)
+app.register_blueprint(customer_edit_bp)
 app.register_blueprint(change_order_bp)
 app.register_blueprint(subcontractor_bp)
 app.register_blueprint(license_bp)
