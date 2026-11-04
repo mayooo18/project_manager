@@ -463,7 +463,7 @@ def build_contract_pdf(contract):
     if contract.notes:
         elems.append(Paragraph('Notes &amp; Exclusions:', section))
         elems.append(Spacer(1, 4))
-        elems.append(Paragraph(_pdf_text(contract.notes, preserve_newlines=True), small))
+        elems.append(Paragraph(_pdf_text(contract.notes, max_length=20000, preserve_newlines=True), small))
         elems.append(Spacer(1, 12))
 
     elems.append(Spacer(1, 18))
