@@ -60,7 +60,7 @@ COMPANY = {
     'address_line1': '1204 W County Line Rd',
     'address_line2': 'Beecher, Illinois 60401',
     'phone': '708-769-9181',
-    'email': 'Office@OptimalSES.com',
+    'email': 'mendezelectrical1@gmail.com',
     'doc_title': 'PROPOSAL',
     'footer': 'THANK YOU FOR YOUR BUSINESS!',
 }
