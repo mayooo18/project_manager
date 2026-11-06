@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% block title %}Payroll{% endblock %}
 
+{% block breadcrumbs %}
+<div class="crumbs"><span>Team</span> / <span class="here">Payroll</span></div>
+{% endblock %}
+
 {% block content %}
 <style>
   .pr-wrap { max-width: 980px; margin: 0 auto; padding: 8px 0 32px; }
@@ -30,10 +34,10 @@
 
 <div class="pr-wrap">
 
-  <div class="pr-head">
+  <div class="page-head">
     <div>
-      <div class="pr-title">Weekly Payroll</div>
-      <div class="pr-sub">
+      <h1>Weekly Payroll</h1>
+      <div class="sub">
         {{ monday.strftime('%b %d') }} – {{ sunday.strftime('%b %d, %Y') }}
         {% if is_current_week %}<span class="pill pill-week">This week</span>{% endif %}
       </div>
