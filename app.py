@@ -1777,7 +1777,7 @@ def download_document():
     header_section.add_run('1204 W County Line Rd\n')
     header_section.add_run('Beecher IL, 60401\n')
     header_section.add_run('708-825-4774\n')
-    header_section.add_run('MendezConstruction39@yahoo.com\n')
+    header_section.add_run('mendezelectrical1@gmail.com\n')
     
     # Add horizontal line
     doc.add_paragraph('_' * 80)
@@ -1866,7 +1866,7 @@ def download_document():
     footer_para.add_run('\nIf you have any questions concerning this ')
     footer_para.add_run(doc_data['doc_type'].lower())
     footer_para.add_run(', contact:\n')
-    footer_para.add_run('Mario Mendez | 708-825-4774 | MendezConstruction39@yahoo.com\n')
+    footer_para.add_run('Mario Mendez | 708-825-4774 | mendezelectrical1@gmail.com\n')
     
     doc.add_paragraph()  # Spacing
     doc.add_paragraph('_' * 80)
