@@ -537,6 +537,8 @@ def public_approve(token):
     record_signature_event(
         'change_order', change_order.id, 'approved', signer_name=name)
     db.session.commit()
+    from sign_notify import notify_signed
+    notify_signed('change_order', change_order)
     flash('Thank you — the change order has been approved.', 'success')
     return redirect(url_for(
         'change_orders.public_view', token=change_order.public_token))

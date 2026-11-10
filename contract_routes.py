@@ -879,6 +879,8 @@ def public_accept(token):
         contract.status = 'accepted'
     record_signature_event('contract', contract.id, 'approved', signer_name=name)
     db.session.commit()
+    from sign_notify import notify_signed
+    notify_signed('contract', contract)
     flash('Thank you — your acceptance has been recorded.', 'success')
     return redirect(url_for('contracts.public_view', token=token))
 

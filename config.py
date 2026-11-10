@@ -79,3 +79,7 @@ class Config:
     TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
     TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
     TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
+
+    # Where "a customer signed" alerts are sent. Falls back to the company
+    # email (COMPANY['email']) when unset.
+    SIGN_NOTIFY_EMAIL = os.environ.get('SIGN_NOTIFY_EMAIL')

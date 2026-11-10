@@ -997,6 +997,8 @@ def public_approve(token):
     quote.status = 'approved'
     record_signature_event('quote', quote.id, 'approved', signer_name=name)
     db.session.commit()
+    from sign_notify import notify_signed
+    notify_signed('quote', quote)
     flash('Thank you — your approval has been recorded.', 'success')
     return redirect(url_for('quotes.public_view', token=token))
 
