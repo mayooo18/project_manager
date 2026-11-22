@@ -303,6 +303,13 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route('/privacy')
+def privacy():
+    # Public page (no login) — linked from the Google OAuth consent screen.
+    from quote_routes import COMPANY
+    return render_template('legal/privacy.html', company=COMPANY)
+
+
 @app.route('/')
 @login_required
 def home():
