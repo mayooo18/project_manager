@@ -116,6 +116,24 @@
         <p style="color:var(--ink-900);font-weight:600;">Contractor</p>
         {% if lr.contractor_signed_at %}
         <p class="c-green" style="font-size:.85rem;">✓ Signed by {{ lr.contractor_signature_name }} on {{ lr.contractor_signed_at.strftime('%Y-%m-%d') }}</p>
+        {% if not lr.owner_signed_at %}
+        <details style="margin-top:.5rem;">
+          <summary style="cursor:pointer;font-size:.82rem;color:var(--ink-500);">Re-sign (replace this signature)</summary>
+          <p class="muted" style="font-size:.78rem;margin:.4rem 0;">Only available until the owner signs. This replaces the current contractor signature and is recorded in the Signature Log.</p>
+          <form method="POST" action="{{ url_for('lot_releases.contractor_resign', lot_release_id=lr.id) }}" onsubmit="return prepareSignature();">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <label class="lbl">Your name</label>
+            <input type="text" name="signature_name" class="fld" required placeholder="Full name" style="margin-bottom:.4rem;"/>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem;">
+              <label class="lbl">Sign below</label>
+              <button type="button" id="sig-clear" style="background:none;border:none;color:var(--ink-500);font-size:.78rem;cursor:pointer;">Clear</button>
+            </div>
+            <canvas id="sigpad"></canvas>
+            <input type="hidden" name="signature_data" id="signature_data"/>
+            <button type="submit" class="btn" style="margin-top:.6rem;">Redo contractor signature</button>
+          </form>
+        </details>
+        {% endif %}
         {% else %}
         <form method="POST" action="{{ url_for('lot_releases.contractor_sign', lot_release_id=lr.id) }}" onsubmit="return prepareSignature();">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -145,7 +163,7 @@
   </form>
   {% endif %}
 </div>
-{% if not lr.contractor_signed_at %}
+{% if not lr.contractor_signed_at or not lr.owner_signed_at %}
 <script src="{{ url_for('static', filename='js/signature.js') }}"></script>
 {% endif %}
 {% endblock %}

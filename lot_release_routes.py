@@ -152,6 +152,37 @@ def contractor_sign(lot_release_id):
     return redirect(url_for('lot_releases.edit', lot_release_id=lr.id))
 
 
+# ── contractor re-signs (in-app, only before the owner has signed) ───────────
+
+@lot_release_bp.route('/<int:lot_release_id>/contractor-resign', methods=['POST'])
+@login_required
+def contractor_resign(lot_release_id):
+    lr = _owned_lr_or_404(lot_release_id)
+    if not lr.contractor_signed_at:
+        flash('There is no contractor signature to redo yet.', 'error')
+        return redirect(url_for('lot_releases.edit', lot_release_id=lr.id))
+    if lr.owner_signed_at:
+        flash('The owner has already signed — the contractor signature can no '
+              'longer be redone.', 'error')
+        return redirect(url_for('lot_releases.edit', lot_release_id=lr.id))
+    name = (request.form.get('signature_name') or '').strip()
+    signature = _validated_signature_data(request.form.get('signature_data') or '')
+    if not name or signature is None:
+        flash('Enter a name and draw a signature to re-sign.', 'error')
+        return redirect(url_for('lot_releases.edit', lot_release_id=lr.id))
+    lr.contractor_signature_name = name
+    lr.contractor_signature_data = signature
+    lr.contractor_signed_at = datetime.utcnow()
+    record_signature_event(
+        'lot_release', lr.id, 'resigned', signer_name=name,
+        consent_text='Contractor re-signed the lot release, replacing a prior '
+                     'contractor signature (owner had not yet signed).')
+    _refresh_status(lr)
+    db.session.commit()
+    flash('Contractor signature redone.', 'success')
+    return redirect(url_for('lot_releases.edit', lot_release_id=lr.id))
+
+
 # ── send for owner e-signature ───────────────────────────────────────────────
 
 @lot_release_bp.route('/<int:lot_release_id>/send', methods=['POST'])

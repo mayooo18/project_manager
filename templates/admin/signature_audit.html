@@ -57,6 +57,7 @@
           <td><a href="{{ url_for(r.endpoint, **r.arg) }}" style="color:var(--ink-900);font-weight:600;">{{ r.kind }}: {{ r.label }}</a></td>
           <td>
             {% if e.action == 'approved' %}<span class="pill pill-ok">Approved</span>
+            {% elif e.action == 'resigned' %}<span class="pill pill-ok">Re-signed</span>
             {% else %}<span class="pill pill-no">Declined</span>{% endif %}
           </td>
           <td>{{ e.signer_name or '—' }}</td>
