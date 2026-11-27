@@ -140,11 +140,19 @@
 
         <div style="margin-top:.6rem;">
           {% if not project.is_closed_out %}
-          <form method="POST" action="{{ url_for('closeout.accept', project_id=project.id) }}" onsubmit="return confirm('Mark this job closed out?{% if project.open_punch_count %} {{ project.open_punch_count }} punch item(s) are still open.{% endif %}');" style="margin:0;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <button type="submit" class="btn">Mark closed out</button>
-            <span class="muted" style="margin-left:.5rem;font-size:.78rem;">Starts the retainage-release clock.</span>
-          </form>
+          <div class="closeout-wrap" style="position:relative;display:inline-block;">
+            <button type="button" class="btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none';">Mark closed out</button>
+            <div class="closeout-confirm" style="display:none;margin-top:.5rem;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:.8rem .9rem;">
+              <p style="font-size:.82rem;color:var(--ink-700);margin:0 0 .6rem;">Mark this job closed out? This marks the job Completed at 100% and starts the retainage-release clock.{% if project.open_punch_count %} <strong>{{ project.open_punch_count }} punch item(s) are still open.</strong>{% endif %}</p>
+              <div style="display:flex;gap:.5rem;">
+                <button type="button" class="obtn" onclick="var w=this.closest('.closeout-wrap');w.querySelector('.closeout-confirm').style.display='none';w.querySelector('button').style.display='';">Cancel</button>
+                <form method="POST" action="{{ url_for('closeout.accept', project_id=project.id) }}" style="margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn">Yes, close out</button>
+                </form>
+              </div>
+            </div>
+          </div>
           {% elif current_user.is_owner %}
           <form method="POST" action="{{ url_for('closeout.reopen', project_id=project.id) }}" onsubmit="return confirm('Reopen closeout?');" style="margin:0;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

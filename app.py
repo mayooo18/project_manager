@@ -46,6 +46,7 @@ from closeout_routes import closeout_bp
 from warranty_routes import warranty_bp
 from program_routes import program_bp
 from estimate_routes import estimate_bp
+from receipt_routes import receipt_bp
 from portal_routes import portal_bp
 from crew_routes import crew_bp
 from payroll_routes import payroll_bp
@@ -95,6 +96,7 @@ app.register_blueprint(closeout_bp)
 app.register_blueprint(warranty_bp)
 app.register_blueprint(program_bp)
 app.register_blueprint(estimate_bp)
+app.register_blueprint(receipt_bp)
 
 
 @app.context_processor
@@ -668,6 +670,18 @@ def project_detail(project_id):
     billed_pct = (min(100, round(100 * billed_total / contract_total))
                   if contract_total else None)
 
+    # Close-out tie-in: offer to close the job once every (non-void) invoice is
+    # paid and all contracted work has been billed. Hidden once already complete.
+    nonvoid_invoices = [inv for inv in invoices if inv.status != 'void']
+    all_invoices_paid = bool(nonvoid_invoices) and all(
+        inv.status == 'paid' for inv in nonvoid_invoices)
+    billed_complete = (abs(billed_total - contract_total) < 0.005
+                       if contract_total else True)
+    job_fully_paid = (all_invoices_paid and billed_complete
+                      and project.status != 'Completed')
+    # Whether a job-complete email (with all receipts attached) can be offered.
+    job_has_receipts = any(inv.status == 'paid' for inv in nonvoid_invoices)
+
     tasks = sorted(project.tasks, key=lambda t: (t.status == 'done', t.id))
     workers = Worker.query.filter_by(active=True).order_by(Worker.name.asc()).all()
 
@@ -683,7 +697,8 @@ def project_detail(project_id):
         change_orders=change_orders, permits=permits, documents=documents,
         work_logs=list(project.work_logs), files=list(project.files),
         contract_total=contract_total, billed_total=billed_total, paid_total=paid_total,
-        billed_pct=billed_pct,
+        billed_pct=billed_pct, job_fully_paid=job_fully_paid,
+        job_has_receipts=job_has_receipts,
         tasks=tasks, workers=workers,
         expense_categories_choices=EXPENSE_CATEGORIES,
         today=datetime.utcnow().date().strftime('%Y-%m-%d'),
@@ -1103,6 +1118,7 @@ def project_closeout(project_id):
     for contract in project.contracts:
         contract.status = 'completed'
     project.status = 'Completed'
+    project.progress = 100
     db.session.flush()
     filed = _archive_job_documents(project)
     db.session.commit()

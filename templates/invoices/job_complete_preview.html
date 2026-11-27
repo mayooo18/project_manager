@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Job-complete email{% endblock %}
+
+{% block content %}
+<div style="max-width:1000px;margin:0 auto;">
+  <div class="page-head"><h1>Job-complete email — {{ project.name }}</h1></div>
+  <p class="muted" style="margin-bottom:1rem;">
+    Review the email below. Nothing is sent until you press <strong>Send email</strong>.
+    {{ receipt_count }} receipt{{ '' if receipt_count == 1 else 's' }} will be attached as one PDF.
+  </p>
+
+  {% if no_email %}
+  <div class="sec" style="border:1px solid var(--amber-fg,#d97706);">
+    <p class="c-amber">This job's customer has no email address on file. Add one on the Customers page, then come back.</p>
+    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn" style="margin-top:.75rem;">← Back to job</a>
+  </div>
+  {% else %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Email (editable) -->
+    <form method="POST" action="{{ url_for('receipts.job_send', project_id=project.id) }}" class="sec">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <p class="step" style="margin-bottom:.75rem;">Email</p>
+
+      <div style="margin-bottom:.9rem;">
+        <label class="lbl">To</label>
+        <input type="text" class="fld" value="{{ project.customer.email }}" readonly/>
+      </div>
+      <div style="margin-bottom:.9rem;">
+        <label class="lbl">Subject</label>
+        <input type="text" name="subject" class="fld" value="{{ subject }}"/>
+      </div>
+      <div style="margin-bottom:.9rem;">
+        <label class="lbl">Message</label>
+        <textarea name="body" class="fld" rows="11" style="font-family:inherit;">{{ body }}</textarea>
+      </div>
+      <p class="muted" style="font-size:.85rem;margin-bottom:1rem;">
+        All {{ receipt_count }} receipt{{ '' if receipt_count == 1 else 's' }} for this job (shown at right) are attached automatically.
+      </p>
+      <div class="flex items-center gap-3 flex-wrap">
+        <button type="submit" class="obtn green">✉ Send email</button>
+        <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn">Cancel</a>
+      </div>
+    </form>
+
+    <!-- Attached receipts preview -->
+    <div class="sec">
+      <p class="step" style="margin-bottom:.75rem;">Attached receipts</p>
+      <iframe src="{{ url_for('receipts.job_pdf', project_id=project.id) }}"
+              style="width:100%;height:620px;border:1px solid var(--border);border-radius:var(--r-card);background:#fff;"
+              title="Receipts PDF preview"></iframe>
+      <p style="margin-top:.6rem;">
+        <a href="{{ url_for('receipts.job_pdf', project_id=project.id) }}" target="_blank" class="lnk">Open PDF in a new tab</a>
+      </p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

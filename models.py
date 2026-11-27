@@ -634,6 +634,16 @@ class Invoice(db.Model):
     # so the action can be undone without leaving an orphan Income row.
     income_id = db.Column(db.Integer, db.ForeignKey('income.id'), nullable=True, index=True)
 
+    # ── Paid receipt (final receipt / paid invoice) ──
+    # A receipt is numbered separately from invoices (RCT-XXXX). The number is
+    # assigned once, the first time a receipt PDF is generated for this invoice,
+    # and stays stable on reprints. The *_sent_at / recipient fields summarise
+    # the last time the receipt was emailed (full history lives in ReceiptSend).
+    receipt_number = db.Column(db.String(50))
+    receipt_first_sent_at = db.Column(db.DateTime)
+    receipt_last_sent_at = db.Column(db.DateTime)
+    receipt_last_recipient = db.Column(db.String(200))
+
     # Public, tokenized view link (/i/<token>) — mirrors the quote approval link.
     public_token = db.Column(db.String(64), unique=True, nullable=False)
     public_token_expires_at = db.Column(
@@ -756,6 +766,26 @@ class InvoiceItem(db.Model):
     @property
     def line_total(self):
         return (self.quantity or 0) * (self.unit_price or 0)
+
+
+class ReceiptSend(db.Model):
+    """One row per paid-receipt email sent to a customer.
+
+    Gives the invoice a send history (date + recipient + receipt #) and feeds
+    the job's Recent activity. The invoice also caches the latest send on its
+    own receipt_last_sent_at / receipt_last_recipient for quick list display.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'),
+                           nullable=False, index=True)
+    receipt_number = db.Column(db.String(50))
+    recipient = db.Column(db.String(200))
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    invoice = db.relationship('Invoice', backref=db.backref(
+        'receipt_sends', cascade='all, delete-orphan',
+        order_by='ReceiptSend.sent_at.desc()'))
 
 
 # ── Contracts + draw schedule / progress billing (Phase 3) ──

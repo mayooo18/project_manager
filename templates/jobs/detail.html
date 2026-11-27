@@ -86,14 +86,49 @@
         <button type="submit" class="obtn">File documents</button>
       </form>
       {% if project.status != 'Completed' %}
-      <form method="POST" action="{{ url_for('project_closeout', project_id=project.id) }}"
-            onsubmit="return confirm('Close out this job? This generates the completion certificate and final lien waiver, files all documents to the job, and marks the contract + job complete.');">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="obtn green">Close out</button>
-      </form>
+      <div class="closeout-wrap" style="position:relative;">
+        <button type="button" class="obtn green" onclick="this.nextElementSibling.style.display='block';this.style.display='none';">Close out</button>
+        <div class="closeout-confirm" style="display:none;position:absolute;right:0;top:calc(100% + .4rem);z-index:20;width:300px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:.9rem 1rem;box-shadow:0 8px 24px rgba(0,0,0,.18);text-align:left;">
+          <p style="font-size:.82rem;color:var(--ink-700);margin:0 0 .7rem;">Close out this job? This generates the completion certificate and final lien waiver, files all documents to the job, and marks the contract + job complete at 100%.</p>
+          <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+            <button type="button" class="obtn" onclick="var w=this.closest('.closeout-wrap');w.querySelector('.closeout-confirm').style.display='none';w.querySelector('button').style.display='';">Cancel</button>
+            <form method="POST" action="{{ url_for('project_closeout', project_id=project.id) }}" style="margin:0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="obtn green">Yes, close out</button>
+            </form>
+          </div>
+        </div>
+      </div>
       {% endif %}
     </div>
   </div>
+
+  {% if job_fully_paid %}
+  <div class="card" style="padding:.9rem 1.25rem;margin:0 0 1rem;border-color:var(--green-fg,#16a34a);background:var(--green-bg,rgba(22,163,74,.08));">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <p class="sec-title" style="color:var(--green-fg,#16a34a);">Job fully paid — close out?</p>
+        <p class="muted" style="margin-top:.2rem;">Every invoice is paid and all contracted work is billed. Closing out marks this job Completed at 100%.</p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        {% if job_has_receipts %}
+        <a href="{{ url_for('receipts.job_preview', project_id=project.id) }}" class="obtn">✉ Email job-complete + receipts</a>
+        {% endif %}
+        <form method="POST" action="{{ url_for('closeout.accept', project_id=project.id) }}" style="margin:0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="obtn green">Close out job</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% elif project.status == 'Completed' and job_has_receipts %}
+  <div class="card" style="padding:.75rem 1.25rem;margin:0 0 1rem;">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <p class="muted">This job is complete. Send the customer a wrap-up email with all receipts attached.</p>
+      <a href="{{ url_for('receipts.job_preview', project_id=project.id) }}" class="obtn">✉ Email job-complete + receipts</a>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Condensed KPIs (persistent header) -->
   <div class="hdr-kpis">

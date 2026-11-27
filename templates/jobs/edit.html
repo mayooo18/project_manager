@@ -17,6 +17,17 @@
   <form method="POST" class="form-card">
     {{ form.hidden_tag() }}
 
+    {% if form.errors %}
+    <div class="field" style="background:var(--red-bg,#fef2f2);border:1px solid var(--red-fg,#dc2626);border-radius:var(--r-card);padding:.75rem 1rem;">
+      <strong style="color:var(--red-fg,#dc2626);font-size:.85rem;">Please fix the following:</strong>
+      <ul style="margin:.4rem 0 0 1rem;font-size:.82rem;color:var(--red-fg,#dc2626);">
+        {% for field, errs in form.errors.items() %}
+          {% for err in errs %}<li>{{ form[field].label.text }}: {{ err }}</li>{% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
     <div class="field">
       <label for="name">Job Name</label>
       {{ form.name() }}

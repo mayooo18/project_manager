@@ -91,6 +91,11 @@ def accept(project_id):
         flash('This job is already closed out.', 'error')
         return redirect(url_for('project_detail', project_id=project.id))
     project.closeout_accepted_at = datetime.utcnow()
+    # Closing out finishes the job: mark it Completed at 100% so the Jobs page
+    # status and completion bar reflect reality (previously only the closeout
+    # timestamp was set, leaving the job showing Active / its old %).
+    project.status = 'Completed'
+    project.progress = 100
     # Start the retainage-release clock (F2): a reminder per retainage contract.
     for con in project.contracts:
         if getattr(con, 'retainage_enabled', False):

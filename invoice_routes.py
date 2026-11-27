@@ -771,6 +771,10 @@ def mark_paid(invoice_id):
         flash('Invoice marked as paid.', 'success')
 
     db.session.commit()
+    # If the user asked to email the paid receipt, go to the preview-then-send
+    # screen rather than sending anything now (never send without confirmation).
+    if request.form.get('email_receipt') == 'on' and invoice.customer and invoice.customer.email:
+        return redirect(url_for('receipts.preview', invoice_id=invoice.id))
     return redirect(url_for('invoices.edit', invoice_id=invoice.id))
 
 

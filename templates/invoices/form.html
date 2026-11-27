@@ -81,13 +81,11 @@
     <p class="step" style="margin-bottom:.75rem;">Payment</p>
     {% if invoice.status == 'paid' %}
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="c-green" style="font-size:.9rem;">✓ Paid {{ invoice.paid_at.strftime('%Y-%m-%d') if invoice.paid_at }}{% if invoice.payment_method %} via {{ invoice.payment_method }}{% endif %}{% if invoice.income_id %}<span class="muted"> · recorded as income on the linked job</span>{% endif %}</p>
+      <p class="c-green" style="font-size:.9rem;">✓ Paid {{ invoice.paid_at.strftime('%Y-%m-%d') if invoice.paid_at }}{% if invoice.payment_method %} via {{ invoice.payment_method }}{% endif %}{% if invoice.income_id %}<span class="muted"> · recorded as income on the linked job</span>{% endif %}{% if invoice.receipt_last_sent_at %}<br><span class="muted">Receipt sent {{ invoice.receipt_last_sent_at.strftime('%Y-%m-%d') }}{% if invoice.receipt_last_recipient %} to {{ invoice.receipt_last_recipient }}{% endif %}</span>{% endif %}</p>
       <div class="flex items-center gap-3 flex-wrap">
+        <a href="{{ url_for('receipts.pdf', invoice_id=invoice.id) }}" target="_blank" class="btn">⬇ Download receipt</a>
         {% if invoice.customer.email %}
-        <form method="POST" action="{{ url_for('invoices.receipt_email', invoice_id=invoice.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-          <button type="submit" class="btn">✉ Email receipt</button>
-        </form>
+        <a href="{{ url_for('receipts.preview', invoice_id=invoice.id) }}" class="btn">✉ Email receipt</a>
         {% endif %}
         {% if current_user.is_owner %}
         <form method="POST" action="{{ url_for('invoices.unpay', invoice_id=invoice.id) }}" onsubmit="return confirm('Revert this payment?{% if invoice.income_id %} The auto-recorded income will also be removed.{% endif %}');">
@@ -112,6 +110,12 @@
       </label>
       {% else %}
       <p class="muted" style="margin-top:.5rem;">Tip: link a job above to auto-record income when paid.</p>
+      {% endif %}
+      {% if invoice.customer.email %}
+      <label class="flex items-center gap-2" style="margin-top:.6rem;font-size:.9rem;color:var(--ink-700);">
+        <input type="checkbox" name="email_receipt" style="width:auto;"/>
+        Email paid receipt to <span style="color:var(--ink-900);">{{ invoice.customer.email }}</span> <span class="muted">(you'll review it before it sends)</span>
+      </label>
       {% endif %}
       <button type="submit" class="obtn green" style="margin-top:1rem;">Mark as paid</button>
     </form>

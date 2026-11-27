@@ -47,6 +47,11 @@ def build_job_activity(project, limit=15):
         detail = "{} · {}".format(_money(inv.total), inv.status or 'draft')
         add(inv.created_at, 'invoice', 'receipt_long', label, detail,
             url=url_for('invoices.edit', invoice_id=inv.id))
+        # Receipts emailed for this invoice (newest send shown per event).
+        for rs in getattr(inv, 'receipt_sends', []):
+            add(rs.sent_at, 'receipt', 'receipt_long',
+                "Receipt {} sent".format(rs.receipt_number or ''),
+                rs.recipient, url=url_for('invoices.edit', invoice_id=inv.id))
 
     # Proposals (quotes)
     for q in getattr(project, 'quotes', []):

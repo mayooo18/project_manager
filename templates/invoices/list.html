@@ -37,6 +37,7 @@
           {% if inv.created_at %} · {{ inv.created_at.strftime('%Y-%m-%d') }}{% endif %}
           {% if inv.project %} · Job: {{ inv.project.name }}{% endif %}
           {% if inv.status == 'paid' and inv.paid_at %} · Paid {{ inv.paid_at.strftime('%Y-%m-%d') }}{% if inv.payment_method %} · {{ inv.payment_method }}{% endif %}{% endif %}
+          {% if inv.receipt_last_sent_at %} · <span class="c-green">Receipt sent {{ inv.receipt_last_sent_at.strftime('%Y-%m-%d') }}</span>{% endif %}
           {% if inv.deadline_status %} · Due {{ inv.payment_due_date.strftime('%Y-%m-%d') }}{% endif %}
         </p>
       </div>
